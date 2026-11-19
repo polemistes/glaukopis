@@ -27,6 +27,7 @@ Date: 2026-11-19. Status: the box itself built on 2026-11-19 (the second stage o
 13. **A project file is written in the form of its texts** (`projectfile.rs`, `FORMAT` now 2, held to `FORM` by a test): one of a project that holds a box is refused by the versions that are out, by the guard they have always had.
 14. **In a shared project the first box is asked about**: *Rich text is new. Those who share this project with an earlier version of Glaukopis are kept out of it until they have updated. What they write meanwhile is kept, and brought along then.* A second box is not asked about, nor is a box in a project that is not shared, or in a note.
 15. **In a note** the box is offered by Insert on the notebook's page, and by a button of its own in the row of the window of a note alone; a note written there with a box comes through the inbox with it.
+16. **It is not offered yet.** One switch, `RICH_TEXT_OFFERED` (`byhand/offered.ts`), false, keeps *Rich text* out of the Insert menu and out of the row of the note window. Everything else is built in: a version with the switch off knows the box, shows one it is given with its head and its menu, keeps it and writes in it. So that version is the release the owner chose to send ahead of the box (0111), and those who have it are not kept out of a project when someone later puts a box in. It stays off until what a box is for is built: a white sheet that does nothing is not to be offered. The scripts that drive the running application are offered it whatever the switch says. The guide says nothing of rich text while it is off; what it is to say is kept in the plan.
 
 ## What the plan said otherwise
 
@@ -35,15 +36,16 @@ Date: 2026-11-19. Status: the box itself built on 2026-11-19 (the second stage o
 
 ## Choices made in building this, which the owner has not been asked about
 
-1. **The guide and the interface never say "box"**, which is the notebook's word for where notes are kept: the thing is *Rich text*, and the guide calls what is seen a sheet.
-2. **Where the box is put** (6): in the place of an empty line, around what is selected, else after the paragraph the cursor is in, and not around the paragraph the cursor is in.
-3. **Enter leaves only from an empty paragraph at the end** (7), so that an empty line can be made anywhere else in a box.
-4. **The menu** (8): *Select*, *Make it ordinary text*, *Delete*, with no asking before *Delete*, which undo takes back. *Make it ordinary text* does not ask yet: there is nothing set by hand to lose.
-5. **The head shows its menu always**, small, and not only while the cursor is in the box.
-6. **The words** of the question in a shared project (14), and its button, *Put it in*.
-7. **The icon** in the Insert menu and in the row of the note window: a small and a large A.
-8. **The form is raised by the first box and never lowered** (12), though the box is taken away again.
-9. **Two boxes that stand together stay two**, and are not made one.
+1. **The switch** (16), and that a release with it off is the one that goes ahead, in the place of a release with the guard alone.
+2. **The guide and the interface never say "box"**, which is the notebook's word for where notes are kept: the thing is *Rich text*, and the guide calls what is seen a sheet.
+3. **Where the box is put** (6): in the place of an empty line, around what is selected, else after the paragraph the cursor is in, and not around the paragraph the cursor is in.
+4. **Enter leaves only from an empty paragraph at the end** (7), so that an empty line can be made anywhere else in a box.
+5. **The menu** (8): *Select*, *Make it ordinary text*, *Delete*, with no asking before *Delete*, which undo takes back. *Make it ordinary text* does not ask yet: there is nothing set by hand to lose.
+6. **The head shows its menu always**, small, and not only while the cursor is in the box.
+7. **The words** of the question in a shared project (14), and its button, *Put it in*.
+8. **The icon** in the Insert menu and in the row of the note window: a small and a large A.
+9. **The form is raised by the first box and never lowered** (12), though the box is taken away again.
+10. **Two boxes that stand together stay two**, and are not made one.
 
 ## Left for the stages that follow
 

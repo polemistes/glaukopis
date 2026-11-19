@@ -11,7 +11,10 @@
 // with the box as it sets it without. The project says the second form of
 // its texts from the first box on, its readable copy has the box as a
 // block of Org, and the box is there when the project is opened again. In
-// a note of the notebook, Insert puts a box in as well.
+// a note of the notebook, Insert puts a box in as well. And, since rich
+// text is not offered yet (`src/lib/byhand/offered.ts`) but to the scripts:
+// in a window as someone works in it, started without what the harness
+// asks for, Insert has no Rich text.
 // Screenshots in e2e/output/rich-text-<n>-<what>.png.
 
 import { existsSync, readFileSync } from 'node:fs';
@@ -308,6 +311,25 @@ try {
   await app.screenshot('rich-text-stopped').catch(() => {});
 } finally {
   await app.close().catch(() => {});
+}
+
+// ---- not offered where someone works ----
+// A window as it is outside the scripts: nothing tells the application that a script drives it.
+const working = await App.launch({ width: 1360, height: 880, env: { GLAUKOPIS_E2E: '' } });
+try {
+  await begin(working, 'As it is offered');
+  await working.click('.text-view .section .body');
+  await working.barMenu('data-insert');
+  const offered = await working.exec(`return Array.from(document.querySelectorAll('.menu [role="menuitem"]')).map((e) => e.textContent.trim())`);
+  check('Insert has what it had', offered.includes('Two texts side by side') && offered.includes('Page break'), offered.join(' | '));
+  check('and no Rich text, which is not offered yet', !offered.includes('Rich text'), offered.join(' | '));
+  await working.press('Escape');
+} catch (error) {
+  console.log('FAIL  the script stopped in the working window:', error?.message ?? error);
+  checks.push({ name: 'the working window was tried', ok: false });
+  await working.screenshot('rich-text-stopped-working').catch(() => {});
+} finally {
+  await working.close().catch(() => {});
 }
 
 const failed = checks.filter((c) => !c.ok);

@@ -1,6 +1,6 @@
 # A box of rich text — the build plan
 
-From the owner's words of 2026-11-19 (the last section of `docs/brief.md`: read it first). This is the plan of the whole, written to be read by the owner before anything is built. **Built**: stage 1, the guard (record 0111, on 2026-11-19), and stage 2, the box with nothing set by hand (record 0112, the same day). Each stage is given its detailed part here (the files, the words, the checks) when it is begun, after the code it touches has been read, and its record when it is built, as the notebook's stages were.
+From the owner's words of 2026-11-19 (the last section of `docs/brief.md`: read it first). This is the plan of the whole, written to be read by the owner before anything is built. **Built**: stage 1, the guard (record 0111, on 2026-11-19), and stage 2, the box with nothing set by hand (record 0112, the same day). **Rich text is not offered yet**: one switch, `RICH_TEXT_OFFERED` in `src/lib/byhand/offered.ts`, keeps it out of the Insert menu and the row of the note window, while everything of it is built in, kept and tried by the scripts (see *Not offered yet* below). Each stage is given its detailed part here (the files, the words, the checks) when it is begun, after the code it touches has been read, and its record when it is built, as the notebook's stages were.
 
 ## What it is
 
@@ -36,6 +36,52 @@ The owner has read these and not objected; none is confirmed. They are the assis
 11. **A button in the row opens the Look at Type**, for the font and the size of the whole document: the remedy for the font set by hand on everything, which leaves the notes behind.
 12. **Never the usual way of writing.** A document brought in never makes a box. A kind of element cannot say that its text begins with one. *Make it ordinary text* takes the box away and what was set by hand with it, after a warning (decided, number 8 above).
 13. **Left out** (see *Later, on the owner's word*).
+
+## Not offered yet
+
+The owner chose that the guard goes out a release ahead of the box. The box is built on the same branch as the guard, so a release cut now would have both. One switch settles it: `RICH_TEXT_OFFERED` (`src/lib/byhand/offered.ts`), false.
+
+- **A version built with it false is the release that goes ahead**, and more than a guard: it knows the box, shows one it is given, keeps it and writes in it, and is not kept out of a project when someone with a later version puts a box in. It offers no way of making one.
+- **It stays false until what a box is for is built** (stages 3 to 5): a white sheet that does nothing is not to be offered.
+- **The scripts that drive the running application are offered it** whatever the switch says, so that all of it stays tried.
+- **To offer it**: set the switch to true, bring the section below into the guide, and release; the release before must have been one with the guard.
+
+### What the guide says when Rich text is offered
+
+Written with stage 2, and to be added to with each stage. In the guide's part on writing, before *Kinds of paragraph and of words*; *Rich text* is also named among what Insert puts in, among what a note holds, in the row of the window of a note, and, in *Your project as Org*, as the block `#+BEGIN_rich` around what it holds. In *Working together*, after what is said of versions: *Rich text is such a thing: before the first is put into a shared project, Glaukopis asks, and says who will be kept out.*
+
+#### Rich text
+
+**Rich text**, under *Insert*, puts a white sheet into the text, with its
+name at its head: a stretch of the text of its own. On an empty line the
+sheet takes the line's place; with paragraphs selected it is put around
+them; otherwise it is put after the paragraph the cursor is in. You write
+in it as anywhere else, with the same keys, kinds of paragraph, marks,
+citations, notes, figures and tables, and what it holds is counted, found,
+numbered and set in the document as the rest of the text is.
+
+- **Enter** in an empty paragraph at its end leaves the sheet, as an empty
+  point leaves a list. **Backspace** in a sheet that holds nothing takes it
+  away.
+- The head stays in view while a long sheet is scrolled through. The
+  **…** at its right has **Select**, which selects all the sheet holds;
+  **Make it ordinary text**, which takes the sheet away and leaves what it
+  holds where it stood; and **Delete**, which takes both away.
+- The sheet is white whatever the colours of the window, since it shows
+  the paper of the document.
+- A sheet stands in a text itself: not in a table, not in one of two texts
+  side by side, and not within another sheet.
+
+It is the place where the look of a text is to be set by hand, as in a
+word processor; the tools for that are not in it yet.
+
+A version of Glaukopis from before rich text does not know it. A project
+that holds rich text is not opened by such a version, which says that the
+project was written by a later one, and a project file of it is refused
+the same way. In a project that is shared, the first rich text is asked
+about before it is put in: those who share the project with an earlier
+version are kept out of it from then on, until they have updated (see
+*Working together*).
 
 ## The rule that keeps it small
 

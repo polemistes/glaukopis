@@ -42,6 +42,7 @@
   } from '$lib/editor/commands';
   import type { TextHolder } from '$lib/editor/holder';
   import { insertBox } from '$lib/byhand/box';
+  import { richTextOffered } from '$lib/byhand/offered';
   import { putBox } from '$lib/byhand/put';
   import RichText from '$lib/editor/RichText.svelte';
   import { bodySchema } from '$lib/editor/schema';
@@ -383,18 +384,20 @@
       >
     {/each}
     <span class="between"></span>
-    <!-- A box of rich text (ADR 0112), as Insert has it in the other texts. -->
-    <IconButton
-      label={t('byhand-name')}
-      size="sm"
-      disabled={!current || !insertBox(current)}
-      data-note-window-rich
-      onmousedown={keep}
-      onclick={() => {
-        const v = view();
-        if (v) void putBox(v);
-      }}><ALargeSmall size={14} /></IconButton
-    >
+    <!-- A box of rich text (ADR 0112), as Insert has it in the other texts, where it is offered. -->
+    {#if richTextOffered}
+      <IconButton
+        label={t('byhand-name')}
+        size="sm"
+        disabled={!current || !insertBox(current)}
+        data-note-window-rich
+        onmousedown={keep}
+        onclick={() => {
+          const v = view();
+          if (v) void putBox(v);
+        }}><ALargeSmall size={14} /></IconButton
+      >
+    {/if}
     <IconButton
       label={t('notebook-note-window-add-file')}
       size="sm"

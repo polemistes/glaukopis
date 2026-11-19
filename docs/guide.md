@@ -324,7 +324,7 @@ double-clicked in the diagram has the same three menus and **Insert**.
   **Comment**, an **Image**, a **Table**, a table from a file, a
   **Formula** in the line, an **Equation** on a line of its own, a
   **Cross-reference**, an **Inline number**, two texts side by side, a page
-  break and a column break, and **Rich text**.
+  break and a column break.
 
 A new element is made from the keys, below, or from the right-click menu of
 an element.
@@ -753,39 +753,6 @@ line across the text with its name on it; every kind of document sets it.
 How many columns the text is set in, and the gap between them, is part of
 the look of the document: **Columns** and **Gap between columns**, in the
 *Page* part of Look (see *The look of a document*). One column is none.
-
-### Rich text
-
-**Rich text**, under *Insert*, puts a white sheet into the text, with its
-name at its head: a stretch of the text of its own. On an empty line the
-sheet takes the line's place; with paragraphs selected it is put around
-them; otherwise it is put after the paragraph the cursor is in. You write
-in it as anywhere else, with the same keys, kinds of paragraph, marks,
-citations, notes, figures and tables, and what it holds is counted, found,
-numbered and set in the document as the rest of the text is.
-
-- **Enter** in an empty paragraph at its end leaves the sheet, as an empty
-  point leaves a list. **Backspace** in a sheet that holds nothing takes it
-  away.
-- The head stays in view while a long sheet is scrolled through. The
-  **…** at its right has **Select**, which selects all the sheet holds;
-  **Make it ordinary text**, which takes the sheet away and leaves what it
-  holds where it stood; and **Delete**, which takes both away.
-- The sheet is white whatever the colours of the window, since it shows
-  the paper of the document.
-- A sheet stands in a text itself: not in a table, not in one of two texts
-  side by side, and not within another sheet.
-
-It is the place where the look of a text is to be set by hand, as in a
-word processor; the tools for that are not in it yet.
-
-A version of Glaukopis from before rich text does not know it. A project
-that holds rich text is not opened by such a version, which says that the
-project was written by a later one, and a project file of it is refused
-the same way. In a project that is shared, the first rich text is asked
-about before it is put in: those who share the project with an earlier
-version are kept out of it from then on, until they have updated (see
-*Working together*).
 
 ### Kinds of paragraph and of words
 
@@ -1574,8 +1541,8 @@ opened to be written and closed again by the **×** at its head, or by
 **Escape** where the cursor is not in its text. A note has a name, if you
 give it one, its tags under the name, and a text, written as every text in
 Glaukopis is: the kinds of paragraph, lists, the marks, the kinds of words
-and languages, citations with **@**, images, tables, mathematics and rich
-text, from the same tools at its head. What only a document has is not offered: notes
+and languages, citations with **@**, images, tables and mathematics, from
+the same tools at its head. What only a document has is not offered: notes
 at the foot, comments, pointers, breaks of the page, the look of a kind.
 
 **Delete** deletes the notes selected, more than one with Shift and Ctrl as
@@ -1776,8 +1743,8 @@ of the system itself.
 The window holds one text, written as the text of a note is: the same
 keys, the same marks, lists made by typing `- `, `1. ` or `[ ] ` at the
 start of a line, and undo. The row over it has buttons for bold, italic,
-underlined, struck through and code, for the three kinds of list, for
-**Rich text**, and **Add a file…** to choose files. A picture or a file can also be pasted, a
+underlined, struck through and code, for the three kinds of list, and
+**Add a file…** to choose files. A picture or a file can also be pasted, a
 screenshot or what you copied in a file manager, or dropped on the window:
 a picture stands in the note as a picture, any other file by its name. A
 file larger than 50 MB is not added, and the window says so.
@@ -3628,8 +3595,7 @@ Where someone has, the earlier version is kept out of the project by the
 server, and says that the project has been written in by a later version:
 update Glaukopis. What you wrote meanwhile is kept, and brought along when
 you have. A version up to 0.2.13 says only that the server is not within
-reach. Rich text is such a thing: before the first is put into a shared
-project, Glaukopis asks, and says who will be kept out.
+reach.
 
 The files of the library are not shared; the references themselves are.
 The images of the figures of the project are shared: they are sent to the
@@ -4075,8 +4041,7 @@ what Glaukopis works from:
 - `project.org`: the whole project in Org, the plain text form of Org mode.
   Each element is a headline at its depth in the tree, the project first;
   its text is under it, with its kinds of paragraph as Org's blocks
-  (`#+BEGIN_QUOTE`, `#+BEGIN_VERSE`, lists with `- `), rich text as a block
-  `#+BEGIN_rich` around what it holds, its marks as Org's
+  (`#+BEGIN_QUOTE`, `#+BEGIN_VERSE`, lists with `- `), its marks as Org's
   (`/italic/`, `*bold*`), its notes as `[fn::…]` and its citations as
   `[cite:@key]`. What is said of an element (its kind, how far it has come,
   when it is, its associations with their words, arrows and colours, its
