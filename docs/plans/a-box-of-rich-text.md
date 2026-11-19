@@ -14,7 +14,10 @@ It is wanted with reluctance. So the plan is judged by two things: that someone 
 2. **What for**: mostly "a simple text that they just want to make look this way or that, as they are used to in Word".
 3. **How it is shown**: the stretch is "a rich text editor in place, with all the formatting tools on the top of the stretch (but not scrolling off screen), where the writing surface is white if the background is white", "a real and clearly marked wysiwyg editor for the stretch".
 4. **The page** (its size and the like) is not set in the box; it stays in the Look.
-5. **The name**, for example: *rich text*.
+5. **The name**: *Rich text*, and in Bokmål *Formatert tekst* (answered on 2026-11-19, as the four that follow).
+6. **The guard goes out a release ahead of the box** ("what you say is best"): the fewer versions without it, the better.
+7. **Insert offers the box in a note** of the notebook, on the notebook's page and in the window of a note alone: "both".
+8. **Make it ordinary text warns** before it takes away what was set by hand.
 
 ## Proposed in the conversation, and not confirmed
 
@@ -31,7 +34,7 @@ The owner has read these and not objected; none is confirmed. They are the assis
 9. **An empty paragraph in a box is a blank line in the document**, since that is how space is made by those the box is for. Outside a box an empty paragraph is nothing, as now.
 10. **Notes and citations** (see below): a note's text and the bibliography follow the Look; a citation in the line takes the font, size and colour of the words around it.
 11. **A button in the row opens the Look at Type**, for the font and the size of the whole document: the remedy for the font set by hand on everything, which leaves the notes behind.
-12. **Never the usual way of writing.** A document brought in never makes a box. A kind of element cannot say that its text begins with one. *Make it ordinary text* takes the box away and what was set by hand with it.
+12. **Never the usual way of writing.** A document brought in never makes a box. A kind of element cannot say that its text begins with one. *Make it ordinary text* takes the box away and what was set by hand with it, after a warning (decided, number 8 above).
 13. **Left out** (see *Later, on the owner's word*).
 
 ## The rule that keeps it small
@@ -63,7 +66,7 @@ Read on 2026-11-19, each to be read again by whoever builds on it.
 - **Made** from *Insert → Rich text*: around the paragraphs selected, or empty where nothing is selected.
 - **Holds** what a text holds: paragraphs of every kind, figures, tables, formulas, breaks. Not another box, and not texts side by side; the sides of texts side by side hold no box.
 - **Left** by Enter on an empty paragraph of text at its end, as a list is left; by the arrows; a paragraph is made after it where nothing follows. Backspace in an empty box takes the box away.
-- **Its head**: the name at the left; the tools; at the right a menu with *Select*, *Make it ordinary text* and *Delete*.
+- **Its head**: the name at the left; the tools; at the right a menu with *Select*, *Make it ordinary text* and *Delete*. *Make it ordinary text* asks first where anything in the box is set by hand, saying that it will be taken away; where nothing is, it does not ask.
 - **In small places** (the box of an element in the diagram, a narrow side) the tools fold into a menu in the head, as the side's bar folds.
 - **In the code it is not called rich text**: `editor/RichText.svelte` is the editor of every text already. The part is *by hand* (`src/lib/byhand/`, `byhand.ftl`); only the words the user sees say *Rich text*.
 
@@ -166,13 +169,6 @@ Stages 2 and 3 are the main thread's with one agent at a time, since they settle
 - **A Word file brought in as a box**, with its look.
 - **A font and a colour in the look of a kind**, so that a layout and a kind of the writer's own can say them too.
 - **A heading made by hand turned into an element**: Alt+Enter does it today for any paragraph; whether it should be offered in the box's row.
-
-## The choices that are the owner's before stage 2
-
-1. **The name** in English and in Bokmål: *Rich text* and *Formatert tekst* are proposed (*rik tekst* is not what Word says in Norwegian).
-2. **The guard a release ahead of the box**, or with it.
-3. **Whether Insert offers the box in a note** of the notebook. Proposed: yes on the notebook's page, since a note goes into a text as it was; no in the window of a note alone.
-4. **Make it ordinary text takes what was set by hand away**, with undo as the way back, and no asking.
 
 ## What can go wrong
 

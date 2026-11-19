@@ -1740,3 +1740,17 @@ What this settles:
 - **Nothing is built yet.** The plan is `docs/plans/a-box-of-rich-text.md`,
   to be read by the owner first; what in it is the assistant's and not
   confirmed is listed there.
+
+Asked four things the plan left to the owner (the name, *Rich text* and in
+Bokmål *Formatert tekst*; whether the guard against older versions goes
+out a release ahead of the box or with it; whether the box is offered in a
+note, proposed for the notebook's page and not for the window of a note
+alone; whether *Make it ordinary text* takes away what was set by hand
+without asking):
+
+> 1. yes. 2. what you say is best. 3. both. 4. warn.
+
+So **the name is *Rich text* and *Formatert tekst***; **the guard goes out
+a release ahead of the box**; **the box is offered in a note, on the
+notebook's page and in the window of a note alone**; and ***Make it
+ordinary text* warns** before it takes away what was set by hand.
