@@ -62,3 +62,14 @@ Date: 2026-11-19. Status: the box itself built on 2026-11-19 (the second stage o
 - `e2e/rich-text.mjs`, in the running application: the box put in on an empty line and written in; a list in it; leaving it; its words counted; Find finding a word in it; white with dark words in the light scheme and the dark; the head in view while a long box is scrolled through; the menu, ordinary text and undo; around a selection; not offered within a box; Delete; Backspace in an empty one; the typesetting pane; the second form on disk; the block in the readable copy; opened again, shown as a sheet, and nothing moving when it is pressed; a box in a note.
 - `e2e/sharing.mjs`: with the real server and two applications, the first box asked about, not put in before the answer, with the other after it, both staying connected; a second not asked about. `e2e/note-window.mjs`: the button in the row, the box written in and left, and in the notebook after the note is sent.
 - Not tried by a script: comments and the review of changes on words in a box, spelling in a box, a box dragged or pasted. What is read of a text for each is the same with a box (3); how each is drawn on the sheet is for stage 5.
+
+## Addendum, 2026-11-19: offered, and nothing asked in a shared project
+
+At the release of 0.2.14 the owner was asked whether rich text should be offered in it, and answered "Offer it". Earlier the same day, of the highlight: "Do not worry about anyone using earlier versions. We are two-three test users, and nothing we have made must be kept yet."
+
+- **Rich text is offered in every build**: 16 above no longer holds. The switch is gone (`byhand/offered.ts`), with what the Arch recipe passed to the building of the interface for a package to try it in. *Insert › Rich text* is in every text, and the button in the row of the window of a note.
+- **The first rich text in a shared project is not asked about**: 14 above no longer holds. It is put in, the project comes to be of the second form, and those who share it with an earlier version are kept out until they have updated, as the guard has it (0111), which stays. The words of the question are gone from the Fluent files.
+- **The release with the guard alone, a release ahead of the box**, which the owner had chosen (0111), does not come: 0.2.14 has the guard and rich text together.
+- **The guide has its section**, *Rich text*, before *Kinds of paragraph and of words*, and names it among what Insert puts in and in the row of the window of a note; *Working together* names it among what an earlier version does not know.
+- **Checked**: `e2e/rich-text.mjs`, in a window as someone works in it, started without what the harness asks for: Insert has Rich text. `e2e/sharing.mjs`, with the real server and two applications: rich text put in without a question, with the other within a moment, both staying connected. `e2e/note-window.mjs`.
+

@@ -108,7 +108,6 @@
   import { editorUi, hooksOf } from './ui.svelte';
   import { askRefMark } from './refmarks';
   import { insertBox } from '$lib/byhand/box';
-  import { richTextOffered } from '$lib/byhand/offered';
   import { groundAt, groundItems, groundsOpenedIn, toggleGround } from './ground';
   import { putBox } from '$lib/byhand/put';
   import { insertParallel } from './parallel';
@@ -415,18 +414,14 @@
             action: () => run(insertBreak('column'), view),
           },
         ]),
-        // A box of rich text (ADR 0112): in a text of a project and in a note alike, where it is offered (`byhand/offered.ts`).
-        ...(richTextOffered
-          ? ([
-              { kind: 'separator' },
-              {
-                label: t('byhand-name'),
-                icon: ALargeSmall,
-                disabled: !body || !insertBox(view.state),
-                action: () => void putBox(view),
-              },
-            ] satisfies MenuItem[])
-          : []),
+        // A box of rich text (ADR 0112): in a text of a project and in a note alike.
+        { kind: 'separator' },
+        {
+          label: t('byhand-name'),
+          icon: ALargeSmall,
+          disabled: !body || !insertBox(view.state),
+          action: () => putBox(view),
+        },
       ],
       { align: 'start' },
     );

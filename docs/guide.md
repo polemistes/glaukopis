@@ -329,7 +329,8 @@ double-clicked in the diagram has the same three menus and **Insert**.
   **Comment**, an **Image**, a **Table**, a table from a file, a
   **Formula** in the line, an **Equation** on a line of its own, a
   **Cross-reference**, an **Inline number**, two texts side by side, a page
-  break and a column break.
+  break and a column break, and **Rich text**, a stretch in which the look
+  is set by hand as in a word processor (see *Rich text*).
 
 A new element is made from the keys, below, or from the right-click menu of
 an element.
@@ -760,6 +761,92 @@ line across the text with its name on it; every kind of document sets it.
 How many columns the text is set in, and the gap between them, is part of
 the look of the document: **Columns** and **Gap between columns**, in the
 *Page* part of Look (see *The look of a document*). One column is none.
+
+### Rich text
+
+**Rich text**, under *Insert*, puts a white sheet into the text, with its
+name at its head: a stretch of the text of its own. On an empty line the
+sheet takes the line's place; with paragraphs selected it is put around
+them; otherwise it is put after the paragraph the cursor is in. You write
+in it as anywhere else, with the same keys, kinds of paragraph, marks,
+citations, notes, figures and tables, and what it holds is counted, found,
+numbered and set in the document as the rest of the text is.
+
+- **Enter** in an empty paragraph at its end leaves the sheet, as an empty
+  point leaves a list. **Backspace** in a sheet that holds nothing takes it
+  away.
+- The head stays in view while a long sheet is scrolled through. Drag the
+  sheet by the name in its head, with the six dots before it, to move it
+  to another place in the text: a line shows where it goes. The
+  **…** at its right has **Select**, which selects all the sheet holds;
+  **Make it ordinary text**, which takes the sheet away and leaves what it
+  holds where it stood; and **Delete**, which takes both away.
+- The sheet is white whatever the colours of the window, since it shows
+  the paper of the document.
+- A sheet stands in a text itself: not in a table, not in one of two texts
+  side by side, and not within another sheet.
+
+In it the look is set by hand, as in a word processor, from the tools in
+its head, which show while the cursor is in the sheet:
+
+- **Text**, **Heading** or **Subheading**, the first tool, for the
+  paragraphs selected. A heading here looks as the headings of the
+  document do one level under the element you are writing in, and a
+  subheading as those a level further down; change them in the Look and
+  these follow. It is kept on the page with what comes after it. It is a
+  paragraph and no element: it has no number, and is not in the outline,
+  the diagram or the table of contents. For a heading that is, make an
+  element. **Enter** at the end of a heading goes on in ordinary text.
+- **The highlighter**, beside the colour of the words: the colour behind
+  the words selected, as the highlighter in the bar sets it in any text.
+- **The font**, **the size** in points, and **the colour** of the words
+  selected, or of what you write next where nothing is selected. *As the
+  document* in the list of fonts and in the menu of colours, and an empty
+  field for the size, take it away again. *Another…* in the menu of
+  colours opens the system's own chooser of colours.
+- **Bold**, **italic** and **underlined**, and the two lists, as
+  everywhere.
+- How the paragraphs selected stand across the line: **left**,
+  **centred**, **right** or **justified**. Pressed again, it is taken
+  away.
+- **Paragraph** opens a small panel with the line spacing, the space
+  before and after, the indents from the left and the right, and the
+  first line. A number alone is points for the space and centimetres for
+  the indents; an empty field is as the document has it.
+- **Clear formatting** takes away everything set by hand of what is
+  selected, or of the paragraph the cursor is in. Bold and italic stay.
+- Where the sheet is too narrow for all the tools, those that do not fit
+  are under **More tools**, the two arrowheads at the end of the row.
+
+What you do not set is as the Look sets it, and so are the page, the
+headings, the notes at the foot and the bibliography: **The look of the
+whole document…**, under the **…**, opens the Look where the font and the
+size of all of it are set. An empty paragraph in a sheet is a blank line
+in the document.
+
+What is set by hand lives only in the sheet. A paragraph dragged out of
+it, and what is pasted elsewhere, is ordinary text there; **Make it
+ordinary text** asks first where anything is set by hand, since it is
+taken away with the sheet.
+
+Every kind of document sets it: the typesetting pane and the PDF, LaTeX,
+a page of the web and a book for e-readers (whose reader may put its own
+font and colours over it), and Word and Writer, where each look set by
+hand is a style named *Rich text …* for what it sets. Markdown has the
+words alone. The sheet shows its paragraphs of text as the document sets
+them: its font, its line spacing, its alignment, the indent of first lines
+and the space between paragraphs, as the Look has them, with what you set
+by hand over it. A quotation, a list or another kind of paragraph is drawn
+there as everywhere in the text; how the document sets those, and where
+the lines and the pages break, is shown by the typesetting pane. In a note
+of the notebook, which is of no document, a sheet is drawn as the text
+around it.
+
+A version of Glaukopis from before rich text (0.2.13 and earlier) does not
+know it. A project that holds rich text is not opened by such a version,
+and a project file of it is refused the same way. In a project that is
+shared, those who have an earlier version are kept out of it from the
+first rich text on, until they have updated (see *Working together*).
 
 ### Kinds of paragraph and of words
 
@@ -1753,7 +1840,8 @@ The window holds one text, written as the text of a note is: the same
 keys, the same marks, lists made by typing `- `, `1. ` or `[ ] ` at the
 start of a line, and undo. The row over it has buttons for bold, italic,
 underlined, struck through and code, for the three kinds of list, the
-highlighter with its colours, and **Add a file…** to choose files. A picture or a file can also be pasted, a
+highlighter with its colours, **Rich text**, and **Add a file…** to
+choose files. A picture or a file can also be pasted, a
 screenshot or what you copied in a file manager, or dropped on the window:
 a picture stands in the note as a picture, any other file by its name. A
 file larger than 50 MB is not added, and the window says so.
@@ -3600,7 +3688,8 @@ From then on:
   sharing. Those who are removed keep the project as it was then.
 
 Those who share a project do best with the same version of Glaukopis. A
-later version may put into a text something an earlier one does not know.
+later version may put into a text something an earlier one does not know:
+rich text is such a thing, and a highlight.
 Where someone has, the earlier version is kept out of the project by the
 server, and says that the project has been written in by a later version:
 update Glaukopis. What you wrote meanwhile is kept, and brought along when

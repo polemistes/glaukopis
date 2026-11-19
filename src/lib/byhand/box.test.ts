@@ -2,7 +2,6 @@ import { EditorState, TextSelection, type Command } from 'prosemirror-state';
 import type { Node } from 'prosemirror-model';
 import { describe, expect, it } from 'vitest';
 import { bodySchema } from '$lib/editor/schema';
-import { RICH_TEXT_OFFERED, richTextOffered } from './offered';
 import {
   afterHeading,
   backOutOfBox,
@@ -42,14 +41,6 @@ const shape = (doc: Node): string => {
         : n.type.name;
   return Array.from({ length: doc.childCount }, (_, i) => one(doc.child(i))).join(' | ');
 };
-
-describe('rich text', () => {
-  it('is not offered yet, and is under the scripts of the running application', () => {
-    // The guard goes out a release ahead of the box: see `offered.ts`. Only a build that is told to offers it.
-    expect(RICH_TEXT_OFFERED).toBe(false);
-    expect(richTextOffered).toBe(false);
-  });
-});
 
 describe('putting a box in', () => {
   it('puts an empty one after the paragraph the cursor is in, with the cursor in it', () => {

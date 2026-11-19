@@ -45,10 +45,7 @@ prepare() {
 build() {
   cd "$srcdir/$pkgbase-$pkgver"
   export CARGO_TARGET_DIR="$srcdir/target"
-  # Rich text is not offered yet (src/lib/byhand/offered.ts). A package to
-  # try it in is built with GLAUKOPIS_OFFER_RICH_TEXT=1; the tests below run
-  # as they do for every package, with it not offered.
-  VITE_GLAUKOPIS_RICH_TEXT="${GLAUKOPIS_OFFER_RICH_TEXT:-}" pnpm build
+  pnpm build
   # Without the fonts that come with Typst: here they are packages, which
   # the application depends on (otf-libertinus) or may have (ttf-dejavu).
   cargo build --release --frozen -p glaukopis --no-default-features --features custom-protocol

@@ -21,10 +21,9 @@
 // Make it ordinary text asks first where something is set by hand, and
 // takes it away with the sheet. Where the head is narrow, beside the
 // typesetting pane, the tools that do not fit are folded into one menu,
-// from which they do what they do in the row. And, since rich
-// text is not offered yet (`src/lib/byhand/offered.ts`) but to the scripts:
-// in a window as someone works in it, started without what the harness
-// asks for, Insert has no Rich text.
+// from which they do what they do in the row. And in a window as someone
+// works in it, started without what the harness asks for, Insert has Rich
+// text as it has it under the scripts.
 // Screenshots in e2e/output/rich-text-<n>-<what>.png.
 
 import { existsSync, readFileSync } from 'node:fs';
@@ -544,7 +543,7 @@ try {
   await app.close().catch(() => {});
 }
 
-// ---- not offered where someone works ----
+// ---- offered where someone works ----
 // A window as it is outside the scripts: nothing tells the application that a script drives it.
 const working = await App.launch({ width: 1360, height: 880, env: { GLAUKOPIS_E2E: '' } });
 try {
@@ -553,7 +552,7 @@ try {
   await working.barMenu('data-insert');
   const offered = await working.exec(`return Array.from(document.querySelectorAll('.menu [role="menuitem"]')).map((e) => e.textContent.trim())`);
   check('Insert has what it had', offered.includes('Two texts side by side') && offered.includes('Page break'), offered.join(' | '));
-  check('and no Rich text, which is not offered yet', !offered.includes('Rich text'), offered.join(' | '));
+  check('and Rich text, which is offered in every window', offered.includes('Rich text'), offered.join(' | '));
   await working.press('Escape');
 } catch (error) {
   console.log('FAIL  the script stopped in the working window:', error?.message ?? error);

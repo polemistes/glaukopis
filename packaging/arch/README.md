@@ -18,13 +18,6 @@ makepkg -s
 sudo pacman -U glaukopis-0.1.0-17-x86_64.pkg.tar.zst
 ```
 
-Rich text is not offered yet (`src/lib/byhand/offered.ts`). A package to try
-it in is built with it offered:
-
-```
-GLAUKOPIS_OFFER_RICH_TEXT=1 makepkg -s
-```
-
 
 What the application needs on Arch comes from the repositories rather than
 with it: Pandoc (`pandoc-cli`) and Libertinus (`otf-libertinus`), the serif
