@@ -53,6 +53,7 @@ import { kindName } from './kinds';
 import { kindKeyOf } from '$lib/shell/keys.svelte';
 import { continuesPlugin } from './continues';
 import { movesDragged } from './dragged';
+import { toggleGround } from './ground';
 import { LAYOUT_NUMBERS, stretchNumbersPlugin, type NumbersLayout } from './numbers';
 import { afterHeading, backOutOfBox, leaveBox } from '$lib/byhand/box';
 import { showsTools } from '$lib/byhand/now.svelte';
@@ -317,6 +318,8 @@ export function bodyPlugins(schema: Schema, hooks: EditorHooks): Plugin[] {
     'Mod-,': toggle('sub'),
     'Shift-Mod-k': toggle('smallcaps'),
     'Shift-Mod-x': toggle('strike'),
+    // The highlight, in the colour last chosen: see `ground.ts`.
+    'Mod-Alt-h': toggleGround,
     'Shift-Mod-Space': insertHardSpace,
     "Mod-'": (state, dispatch, view) =>
       setKind(kindOf(state) === 'quote' ? 'text' : 'quote', own())(state, dispatch, view),

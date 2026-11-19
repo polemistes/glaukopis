@@ -92,6 +92,8 @@ keys-writing-bold = Bold
 keys-writing-underline = Underlined
 keys-writing-smallcaps = Small capitals
 keys-writing-strike = Struck through
+# Turns the highlight of the words selected on, in the colour last chosen, or off.
+keys-writing-highlight = Highlight
 keys-writing-raised = Raised
 keys-writing-lowered = Lowered
 keys-writing-quotation = Quotation

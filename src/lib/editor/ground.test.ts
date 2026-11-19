@@ -2,7 +2,8 @@ import { DOMParser, type Node } from 'prosemirror-model';
 import { EditorState, TextSelection, type Command } from 'prosemirror-state';
 import { describe, expect, it } from 'vitest';
 import { onlyInBoxes } from '$lib/byhand/rule';
-import { groundAt, GROUNDS, setGround } from './ground';
+import { EditorView } from 'prosemirror-view';
+import { groundAt, GROUNDS, lastGround, putGround, setGround, toggleGround } from './ground';
 import { bodySchema, MARKER } from './schema';
 
 const s = bodySchema;
@@ -87,6 +88,30 @@ describe('the ground of words', () => {
     expect(grounds(after.doc)).toBe('alpha (#fcc2d7)|beta(#fcc2d7){title}| gamma{highlight}');
     const none = run(setGround(null), state(doc, 1, 17))!;
     expect(grounds(none.doc)).toBe('alpha |beta{title}| gamma');
+  });
+
+  it('is turned on in the colour last chosen and off again, as bold is', () => {
+    const view = new EditorView(document.createElement('div'), {
+      state: state(text(p(s.text('alpha beta gamma'))), 7, 11),
+    });
+    // The yellow, until another colour is chosen from the tools.
+    expect(lastGround()).toBe(MARKER);
+    toggleGround(view.state, view.dispatch, view);
+    expect(grounds(view.state.doc)).toBe(`alpha |beta(${MARKER})| gamma`);
+    toggleGround(view.state, view.dispatch, view);
+    expect(grounds(view.state.doc)).toBe('alpha beta gamma');
+    putGround(view, '#A5D8FF');
+    expect(grounds(view.state.doc)).toBe('alpha |beta(#a5d8ff)| gamma');
+    expect(lastGround()).toBe('#a5d8ff');
+    putGround(view, null);
+    expect(lastGround()).toBe('#a5d8ff');
+    toggleGround(view.state, view.dispatch, view);
+    expect(grounds(view.state.doc)).toBe('alpha |beta(#a5d8ff)| gamma');
+    // Where only some of what is selected has one, it is taken away from all of it.
+    view.dispatch(view.state.tr.setSelection(TextSelection.create(view.state.doc, 1, 17)));
+    toggleGround(view.state, view.dispatch, view);
+    expect(grounds(view.state.doc)).toBe('alpha beta gamma');
+    view.destroy();
   });
 
   it('is offered in the colours of marker pens, the yellow first', () => {

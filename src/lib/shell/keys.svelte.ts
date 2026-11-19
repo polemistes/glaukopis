@@ -201,6 +201,7 @@ const ENTRIES = [
   { id: 'writing-underline', keys: 'Ctrl+U', place: 'writing' },
   { id: 'writing-smallcaps', keys: 'Ctrl+Shift+K', place: 'writing' },
   { id: 'writing-strike', keys: 'Ctrl+Shift+X', place: 'writing' },
+  { id: 'writing-highlight', keys: 'Ctrl+Alt+H', place: 'writing' },
   { id: 'writing-raised', keys: 'Ctrl+.', place: 'writing' },
   { id: 'writing-lowered', keys: 'Ctrl+,', place: 'writing', over: ['settings'] },
   { id: 'writing-quotation', keys: "Ctrl+'", place: 'writing' },

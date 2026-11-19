@@ -281,7 +281,7 @@ editor-line-annotation-placeholder = A metre, another edition's number
 # In the right-click menu of the text, with a check while the line the cursor is in does so.
 editor-line-continues = Begins where the line before ended
 
-## The ground of words, a highlight with a choice of colours (record 0116): under Marks in the bar of a text, and a tool in the head of rich text. The name of it is editor-highlight, above.
+## The ground of words, a highlight with a choice of colours (record 0116): a tool in the bar of a text and in the head of rich text, and under Marks. The name of it is editor-highlight, above. It goes into every document.
 
 # In the menu of colours for a highlight: takes the highlight away.
 editor-highlight-none = None
@@ -295,7 +295,5 @@ editor-highlight-purple = Purple
 editor-highlight-grey = Grey
 # The last entry of that menu: opens the system's own window for choosing any colour.
 editor-highlight-other = Another…
-# The title of the question asked before the first highlight with a colour is put into a project that is shared with others through a server.
-editor-highlight-shared-title = Highlighting in a shared project
-# The question itself. An earlier Glaukopis does not know these highlights and would delete the words, so the server keeps such a version out of the project from now on. "Then" is when they have updated.
-editor-highlight-shared = Highlighting in colours is new. Those who share this project with an earlier version of Glaukopis are kept out of it until they have updated. What they write meanwhile is kept, and brought along then.
+# The button in the bar of a text that opens that menu of colours.
+editor-highlight-colour = Highlight colour

@@ -1,23 +1,17 @@
 /**
- * The ground of words (ADR 0116): the colour behind them, a highlight. It
- * is set of the words selected, in any text, from the Marks menu of the
- * bar and from a tool in the head of a sheet of rich text. In a text it is
- * for the eye on the screen and goes into no document, as the highlight
- * there was before it, a kind of words of one colour; on a sheet of rich
- * text it is the look of the words, and every kind of document sets it.
- *
- * The mark is new to the form of the texts (`form.ts`): in a project that
- * is shared, the first is asked about, as the first sheet of rich text is.
+ * The ground of words (ADR 0116): the colour behind them, a highlight. A
+ * mark of words as bold and italic are, with the colour it holds. It is
+ * set of the words selected in any text, by a key, from the Marks menu and
+ * from a tool of its own with the colours, in the bar of a text and in the
+ * head of a sheet of rich text; and every kind of document sets it.
  */
 
 import type { Command, EditorState } from 'prosemirror-state';
 import type { EditorView } from 'prosemirror-view';
 import { colourOf, GROUND, handMarkAttrs } from '$lib/byhand/hand';
-import { asked } from '$lib/byhand/put';
 import { t } from '$lib/i18n';
 import { testHook } from '$lib/shell/testing';
 import type { MenuItem } from '$lib/ui/menu.svelte';
-import { formOfMark } from './form';
 import { MARKER } from './schema';
 
 /** The colours offered, those of marker pens, by their plain names. */
@@ -98,24 +92,25 @@ export function groundAt(state: EditorState): string | null | undefined {
   return any ? found : null;
 }
 
-/**
- * Sets the ground from the tools, asking first in a shared project that
- * has had nothing an earlier version does not know: those with such a
- * version are kept out of it from then on, until they have updated.
- */
-export async function putGround(view: EditorView, value: string | null): Promise<void> {
+/** The colour last chosen, which the key and the Marks menu set: the yellow until another is. */
+let lastChosen: string = MARKER;
+export const lastGround = () => lastChosen;
+
+/** Sets the ground from the tools: a colour, which is the one the key sets from then on, or none. */
+export function putGround(view: EditorView, value: string | null): void {
   if (view.isDestroyed) return;
-  if (value) {
-    const yes = await asked(view, formOfMark(GROUND), {
-      title: t('editor-highlight-shared-title'),
-      message: t('editor-highlight-shared'),
-      confirm: t('editor-highlight'),
-    });
-    if (!yes || view.isDestroyed) return;
-  }
-  setGround(value)(view.state, view.dispatch, view);
+  const colour = value ? colourOf(value) : null;
+  if (colour) lastChosen = colour;
+  setGround(colour)(view.state, view.dispatch, view);
   view.focus();
 }
+
+/**
+ * Highlights what is selected in the colour last chosen, or takes the
+ * highlight away where any of it has one: as bold is turned on and off.
+ */
+export const toggleGround: Command = (state, dispatch, view) =>
+  setGround(groundAt(state) === null ? lastChosen : null)(state, dispatch, view);
 
 /** Opens the system's own chooser of colours, and gives what was chosen. */
 function anyColour(from: string, chosen: (value: string) => void) {
@@ -139,7 +134,7 @@ function anyColour(from: string, chosen: (value: string) => void) {
 /** The menu of grounds for the words selected in a text: none, those of marker pens, and any other. */
 export function groundItems(view: EditorView): MenuItem[] {
   const now = groundAt(view.state);
-  const put = (value: string | null) => void putGround(view, value);
+  const put = (value: string | null) => putGround(view, value);
   return [
     { label: t('editor-highlight-none'), checked: now === null, action: () => put(null) },
     { kind: 'separator' },
@@ -164,5 +159,5 @@ export function groundsOpenedIn(view: EditorView) {
   last = view;
 }
 testHook('__glaukopisGround', (value: string | null) => {
-  if (last && !last.isDestroyed) void putGround(last, value);
+  if (last && !last.isDestroyed) putGround(last, value);
 });

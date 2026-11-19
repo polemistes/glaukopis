@@ -279,7 +279,7 @@ editor-line-annotation-placeholder = Et versemål, en annen utgaves nummer
 # I høyreklikkmenyen i teksten, med en hake mens linjen markøren står i, gjør det.
 editor-line-continues = Begynner der linjen før sluttet
 
-## The ground of words, a highlight with a choice of colours (record 0116): under Marks in the bar of a text, and a tool in the head of rich text. The name of it is editor-highlight, above.
+## The ground of words, a highlight with a choice of colours (record 0116): a tool in the bar of a text and in the head of rich text, and under Marks. The name of it is editor-highlight, above. It goes into every document.
 
 # In the menu of colours for a highlight: takes the highlight away.
 editor-highlight-none = Ingen
@@ -293,7 +293,5 @@ editor-highlight-purple = Lilla
 editor-highlight-grey = Grå
 # The last entry of that menu: opens the system's own window for choosing any colour.
 editor-highlight-other = En annen …
-# The title of the question asked before the first highlight with a colour is put into a project that is shared with others through a server.
-editor-highlight-shared-title = Utheving i et delt prosjekt
-# The question itself. An earlier Glaukopis does not know these highlights and would delete the words, so the server keeps such a version out of the project from now on. "Then" is when they have updated.
-editor-highlight-shared = Utheving i farger er nytt. De som deler dette prosjektet med en eldre versjon av Glaukopis, holdes ute av det til de har oppdatert. Det de skriver i mellomtiden, tas vare på og sendes med da.
+# The button in the bar of a text that opens that menu of colours.
+editor-highlight-colour = Uthevingsfarge

@@ -1791,19 +1791,19 @@ span.math.selected {
 }
 
 /* The ground of words, a highlight (ADR 0116): the colour its mark says,
-   behind the words. In a text it is for the eye on the screen and goes
-   into no document: drawn faint, so that the words are read on it in a
-   dark scheme as in a light one. On a sheet of rich text it is the look of
-   the words, set in the document: drawn as it is. */
+   behind the words, as every kind of document sets it. A highlight is made
+   to be read on with dark ink, so the words on it are dark whatever the
+   scheme of the window. On a sheet of rich text the words keep the colour
+   they are set in by hand there. */
 .prose mark[data-ground] {
-  background: color-mix(in srgb, var(--ground, #ffe066) 50%, transparent);
-  color: inherit;
+  background: var(--ground, #ffe066);
+  color: #1f2528;
   border-radius: 2px;
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
 }
 .prose .rich mark[data-ground] {
-  background: var(--ground, #ffe066);
+  color: inherit;
   border-radius: 0;
 }
 

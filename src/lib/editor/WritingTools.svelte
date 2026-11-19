@@ -109,7 +109,7 @@
   import { askRefMark } from './refmarks';
   import { insertBox } from '$lib/byhand/box';
   import { richTextOffered } from '$lib/byhand/offered';
-  import { groundItems, groundsOpenedIn } from './ground';
+  import { groundAt, groundItems, groundsOpenedIn, toggleGround } from './ground';
   import { putBox } from '$lib/byhand/put';
   import { insertParallel } from './parallel';
 
@@ -438,20 +438,18 @@
     const on = s?.marks;
     if (!view || !on) return;
     const schema = view.state.schema;
-    // The ground of words, a highlight (ADR 0116): offered with rich text, since both are new to the form of the texts.
-    const highlight: MenuItem[] =
-      richTextOffered && schema.marks.ground
-        ? [
-            { kind: 'separator' },
-            {
-              kind: 'submenu',
-              label: t('editor-highlight'),
-              icon: Highlighter,
-              items: groundItems(view),
-            },
-          ]
-        : [];
-    groundsOpenedIn(view);
+    // The highlight, turned on in the colour last chosen and off, as the marks above are (ADR 0116); its colours are beside the menu.
+    const highlight: MenuItem[] = schema.marks.ground
+      ? [
+          {
+            label: t('editor-highlight'),
+            icon: Highlighter,
+            shortcut: keysFor('writing-highlight'),
+            checked: groundAt(view.state) !== null,
+            action: () => run(toggleGround, view),
+          },
+        ]
+      : [];
     openMenu(
       event.currentTarget as HTMLElement,
       [
@@ -468,6 +466,16 @@
       { align: 'start' },
     );
   }
+
+  /** The colours of the highlight, for the words selected. */
+  function grounds(event: MouseEvent) {
+    const view = s?.view;
+    if (!view) return;
+    groundsOpenedIn(view);
+    openMenu(event.currentTarget as HTMLElement, groundItems(view), { align: 'start' });
+  }
+  /** The ground of what is selected, for the button to show: a colour, none, or several. */
+  const ground = $derived(s && s.kind !== 'title' ? groundAt(s.view.state) : null);
 
   /** Turns the checking of spelling off or on, for everything, as the settings do. */
   function turnSpelling() {
@@ -655,10 +663,10 @@
       [
         foreign,
         // The kinds of words, then a speaker and a direction within a line.
-        // The highlight that was a kind of words is under Marks, with colours, where that is offered (ADR 0116).
-        ...WORD_KINDS.filter(
-          (id) => id !== 'foreign' && !(id === 'highlight' && richTextOffered),
-        ).map((id) => ofWords(id)),
+        // The highlight that was a kind of words is a mark with a colour now (ADR 0116).
+        ...WORD_KINDS.filter((id) => id !== 'foreign' && id !== 'highlight').map((id) =>
+          ofWords(id),
+        ),
         ...ownWords.map((k) => ofWords(k.id)),
         { kind: 'separator' },
         ofPassage,
@@ -730,6 +738,29 @@
     <Italic size={15} />
     <ChevronDown size={12} />
   </button>
+  <!-- The highlight: the colour behind the words selected (ADR 0116). -->
+  <button
+    type="button"
+    class="opens"
+    class:on={typeof ground === 'string'}
+    disabled={!s || s.kind === 'title'}
+    data-highlight
+    data-ground={typeof ground === 'string' ? ground : ''}
+    aria-haspopup="menu"
+    aria-label={t('editor-highlight-colour')}
+    use:tooltip={{ text: t('editor-highlight-colour'), side: 'bottom' }}
+    onclick={grounds}
+  >
+    <span class="ground">
+      <Highlighter size={15} />
+      <span
+        class="swatch"
+        class:none={typeof ground !== 'string'}
+        style:background={typeof ground === 'string' ? ground : 'transparent'}
+      ></span>
+    </span>
+    <ChevronDown size={12} />
+  </button>
 
   {#if middle}
     <span class="rule" role="separator"></span>
@@ -798,6 +829,21 @@
 {/if}
 
 <style>
+  /* The highlighter, with a line under it in the colour of what is selected; an empty line where it has none. */
+  .ground {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .swatch {
+    width: 14px;
+    height: 3px;
+    margin-top: -2px;
+    border-radius: 1px;
+  }
+  .swatch.none {
+    box-shadow: inset 0 0 0 1px var(--line-strong);
+  }
   .tools {
     display: flex;
     flex-wrap: wrap;

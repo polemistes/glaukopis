@@ -1,16 +1,16 @@
-// The ground of words, a highlight with a choice of colours (record 0116).
-// In the text of a project, Marks › Highlight has None, the colours of
-// marker pens and Another…; a colour chosen there stands behind the words
-// selected, drawn faint, for the eye on the screen; another colour takes
-// its place, and None takes it away. The first highlight has the project
-// say the second form of its texts. The highlight that was a kind of words
-// is no longer under Words kind. On a sheet of rich text the highlighter in
-// the head sets the same of the words selected, shows what is set, and
-// takes any colour as from the system's chooser; there it is drawn as it
-// is, the look of the words. The typesetting pane sets the ground of the
-// words of the sheet, and not that of the words of the text. The readable
-// copy says both, and both are there, drawn the same, when the project is
-// opened again.
+// The ground of words, a highlight with a colour (record 0116). In the
+// text of a project the highlighter in the bar, beside Marks, has None, the
+// colours of marker pens and Another…; a colour chosen there stands behind
+// the words selected, drawn as it is with dark words on it; another colour
+// takes its place, and None takes it away. Ctrl+Alt+H highlights in the
+// colour chosen last and takes a highlight away, and Marks has Highlight
+// with that key. The first highlight has the project say the second form of
+// its texts. The highlight that was a kind of words is no longer under
+// Words kind. On a sheet of rich text the highlighter in the head sets the
+// same, shows what is set, and takes any colour as from the system's
+// chooser. The typesetting pane sets the ground of the words wherever they
+// stand, in the text and on the sheet. The readable copy says them, and
+// they are there, drawn the same, when the project is opened again.
 // Screenshots in e2e/output/highlight-<n>-<what>.png.
 
 import { execFileSync } from 'node:child_process';
@@ -61,11 +61,9 @@ const selectWord = (word) =>
     word,
   );
 
-/** Chooses in Marks › Highlight. */
+/** Chooses in the menu of the highlighter in the bar. */
 async function highlight(colour) {
-  await app.marks('Highlight');
-  await sleep(250);
-  await app.clickText('.menu [role="menuitem"]', colour);
+  await app.barMenu('data-highlight', colour);
   await sleep(300);
 }
 
@@ -101,15 +99,16 @@ try {
   // ---- in the text of a project ----
   await selectWord('beta');
   await sleep(250);
-  await app.marks('Highlight');
-  await sleep(250);
-  const offered = await app.exec(`const menus = document.querySelectorAll('.menu'); return Array.from(menus[menus.length - 1].querySelectorAll('[role="menuitem"]')).map((e) => e.textContent.trim())`);
-  check('Marks › Highlight has None, the colours of marker pens and Another…', offered[0] === 'None' && offered[1] === 'Yellow' && offered.includes('Green') && offered.includes('Pink') && offered.at(-1) === 'Another…', offered.join(' | '));
+  await app.barMenu('data-highlight');
+  const offered = await app.exec(`return Array.from(document.querySelectorAll('.menu [role="menuitem"]')).map((e) => e.textContent.trim())`);
+  check('the highlighter in the bar has None, the colours of marker pens and Another…', offered[0] === 'None' && offered[1] === 'Yellow' && offered.includes('Green') && offered.includes('Pink') && offered.at(-1) === 'Another…', offered.join(' | '));
   await app.screenshot('highlight-1-menu');
   await app.clickText('.menu [role="menuitem"]', 'Green');
   let now = await until(grounds, (g) => g.length === 1, 3000);
   check('a colour chosen there stands behind the words selected', now.length === 1 && now[0].words === 'beta' && now[0].colour === '#b7eb8f' && !now[0].sheet, JSON.stringify(now));
-  check('drawn faint in a text, where it is for the eye on the screen', /^rgba\(/.test(now[0]?.drawn ?? '') || /color\(srgb .* \/ 0\.5\)/.test(now[0]?.drawn ?? ''), now[0]?.drawn);
+  check('drawn in its colour, with dark words on it', now[0]?.drawn === 'rgb(183, 235, 143)' && (await app.exec(`return getComputedStyle(document.querySelector('${PROSE} mark[data-ground]')).color`)) === 'rgb(31, 37, 40)', now[0]?.drawn);
+  const button = await app.exec(`return document.querySelector('[data-highlight]')?.dataset.ground ?? null`);
+  check('the highlighter shows the colour of what is selected', (await selectWord('beta')) && (await until(() => app.exec(`return document.querySelector('[data-highlight]')?.dataset.ground ?? null`), (g) => g === '#b7eb8f', 3000)) === '#b7eb8f', String(button));
   await sleep(1500);
   check('the first highlight has the project say the second form of its texts', (await onDisk(id)).getMap('form').has('2'));
   await selectWord('beta');
@@ -125,6 +124,22 @@ try {
   await highlight('None');
   now = await grounds();
   check('None takes it away from what is selected, and from nothing else', now.length === 1 && now[0].words === 'delta' && now[0].colour === '#ffe066', JSON.stringify(now));
+  // The key: in the colour chosen last, which was the yellow; and off again.
+  await selectWord('gamma');
+  await sleep(200);
+  await app.keys(['Control', 'Alt', 'h']);
+  now = await until(grounds, (g) => g.some((m) => m.words === 'gamma'), 3000);
+  check('Ctrl+Alt+H highlights in the colour chosen last', now.find((m) => m.words === 'gamma')?.colour === '#ffe066', JSON.stringify(now));
+  await app.barMenu('data-marks');
+  const marks = await app.exec(`return Array.from(document.querySelectorAll('.menu [role="menuitem"]')).map((e) => ({ words: e.textContent.replace(/\s+/g, ' ').trim(), checked: !!e.querySelector('svg.lucide-check') || e.getAttribute('aria-checked') === 'true' }))`);
+  check('Marks has Highlight, with its key', marks.some((m) => /^Highlight\b.*Ctrl\+Alt\+H$/.test(m.words)), marks.map((m) => m.words).join(' | '));
+  await app.press('Escape');
+  await sleep(200);
+  await selectWord('gamma');
+  await sleep(200);
+  await app.keys(['Control', 'Alt', 'h']);
+  now = await until(grounds, (g) => !g.some((m) => m.words === 'gamma'), 3000);
+  check('and takes a highlight away', now.length === 1 && now[0].words === 'delta', JSON.stringify(now));
   await app.barMenu('data-words-kind');
   const kinds = await app.exec(`return Array.from(document.querySelectorAll('.menu [role="menuitem"]')).map((e) => e.textContent.trim())`);
   check('the highlight that was a kind of words is no longer under Words kind', kinds.length > 3 && !kinds.some((k) => /^Highlight/.test(k)), kinds.join(' | ').slice(0, 200));
@@ -148,8 +163,7 @@ try {
   await app.clickText('.menu [role="menuitem"]', 'Yellow');
   now = await until(grounds, (g) => g.some((m) => m.sheet), 3000);
   const two = now.find((m) => m.words === 'two');
-  check('the highlighter in the head of a sheet sets the ground of the words selected', two?.colour === '#ffe066' && two?.sheet === true, JSON.stringify(now));
-  check('drawn as it is on the sheet, where it is the look of the words', two?.drawn === 'rgb(255, 224, 102)', two?.drawn);
+  check('the highlighter in the head of a sheet sets the ground of the words selected', two?.colour === '#ffe066' && two?.sheet === true && two?.drawn === 'rgb(255, 224, 102)', JSON.stringify(now));
   const tool = await until(() => app.exec(`return document.querySelector('${PROSE} .rich [data-rich-ground]')?.dataset.richGround ?? null`), (v) => v === '#ffe066', 3000);
   check('and shows what is set of them', tool === '#ffe066', tool);
   // Any colour, as from the system's chooser, which no script can press.
@@ -170,7 +184,7 @@ try {
   await app.typeset();
   const set = await until(async () => typst(), (t) => t.includes('#highlight(fill: rgb("#ffe066"))['), 30000);
   check('the typesetting pane sets the ground of the words of the sheet', /#highlight\(fill: rgb\("#ffe066"\)\)\[two\];/.test(set) && /#highlight\(fill: rgb\("#3366cc"\)\)\[four\];/.test(set), (set.match(/[^\n]*two[^\n]*/) ?? [''])[0].slice(0, 200));
-  check('and not that of the words of the text, which is for the eye', (set.match(/#highlight\(/g) ?? []).length === 2 && /delta/.test(set), `${(set.match(/#highlight\(/g) ?? []).length}`);
+  check('and that of the words of the text', /#highlight\(fill: rgb\("#ffe066"\)\)\[delta\];/.test(set) && (set.match(/#highlight\(/g) ?? []).length === 3, `${(set.match(/#highlight\(/g) ?? []).length}`);
   const pages = await until(() => app.exec(`return document.querySelectorAll('.side.typesetting .preview img, .side.typesetting .preview canvas, .side.typesetting .preview .page').length`), (n) => n > 0, 30000);
   const failed = await app.exec(`return document.querySelector('.side.typesetting [role="alert"]')?.textContent.trim() ?? ''`);
   check('the pages are made', pages > 0 && !failed, `${pages} ${failed}`);

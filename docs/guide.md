@@ -313,13 +313,17 @@ double-clicked in the diagram has the same three menus and **Insert**.
   changes it: text, quotation, list, numbered list, verse, and the rest under
   **More…**, and kinds of your own (see *Kinds of paragraph and of words*).
 - **Words kind** says what some words are: foreign words, in a language; the
-  title of a work; a term; a mention of a word; a highlight; a speaker or a
+  title of a work; a term; a mention of a word; a speaker or a
   stage direction within a line; and kinds of your own. The format gives
   each kind its look, so a term is a term in every format. The language of
   a passage is set here too.
 - **Marks** set a look by hand, on any letters: italic, bold, small
-  capitals, underline, superscript, subscript, struck, and code. Italic and
-  bold have **Ctrl+I** and **Ctrl+B**.
+  capitals, underline, superscript, subscript, struck, code, and a
+  highlight. Italic and bold have **Ctrl+I** and **Ctrl+B**.
+- **The highlighter**, beside Marks, puts a colour behind the words
+  selected: **None**, seven colours of marker pens, and **Another…** for
+  any colour. **Ctrl+Alt+H** highlights in the colour you chose last, and
+  takes a highlight away. A highlight goes into every document.
 - **Insert** puts in what is not typed: a **Citation**, a **Note**, a
   **Comment**, an **Image**, a **Table**, a table from a file, a
   **Formula** in the line, an **Equation** on a line of its own, a
@@ -341,6 +345,7 @@ Everything the tools do can be done from the keys, and much of it by typing:
 | Write an equation on a line of its own | **Insert**, or **Ctrl+Alt+E** |
 | Set words in italics or bold | **Marks**, or **Ctrl+I**, **Ctrl+B** |
 | Underline words | **Marks**, or **Ctrl+U** |
+| Highlight words | The highlighter beside **Marks**, for a colour; or **Ctrl+Alt+H**, for the colour chosen last |
 | Write a space no line breaks at | **Ctrl+Shift+Space** |
 | Move words to another place | Select them and drag them there; with **Ctrl** held when you let go, a copy is put there |
 | Choose the kind of a paragraph, or make a kind of your own | **Paragraph kind**; **Make a kind…** under **More…** in its menu |
@@ -862,8 +867,8 @@ are, and whose look the layout gives: **Foreign words**, with their language,
 which the spelling follows and which goes into every document; the
 **Title of a work**; a **Term** where it is first used; a **Mention** of a
 word spoken of as a word, which stands in the quotation marks of the
-language of the text, « » in Norwegian, “ ” in English, „ “ in German; a
-**Highlight**, for the eye on the screen; and a **Speaker** or a **Stage
+language of the text, « » in Norwegian, “ ” in English, „ “ in German;
+and a **Speaker** or a **Stage
 direction** within a line, as an edition sets *Me.* before the words of
 Medea or *aside* among them. Select the words first; with nothing selected,
 what you type next is of the kind.
@@ -902,8 +907,8 @@ The foot of the kind menu says where the looks come from: **Set as
 “Manuscript” has them**, naming the layout of the document, and under it
 **How “Quotation” looks…**, named for the kind the cursor is in, which
 opens Look in the typesetting pane at the look of that kind, where it is
-changed; see *The look of a document*. A draft note and a highlight are for
-the screen alone, and go into no document.
+changed; see *The look of a document*. A draft note is for
+the screen alone, and goes into no document.
 
 ### Mathematics
 
@@ -3262,8 +3267,8 @@ abstract or an appendix, a paragraph style of its name as well. In every
 document that is made, foreign words and a passage in another language
 carry their language, a mention stands
 in the quotation marks of the language of the text, code is kept letter for
-letter, and a break prints the sign the layout gives it; a draft note and a
-highlight go into none of them.
+letter, a highlight has its colour behind the words, and a break prints
+the sign the layout gives it; a draft note goes into none of them.
 The numbers of the lines you number do not stand in the margin of Word,
 which numbers lines only by the section: they stand at the head of their
 lines, small, and the annotation of a line at its other end, or beside the

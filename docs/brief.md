@@ -1801,3 +1801,23 @@ other kinds of paragraph left as they are on the sheet.
 - **And in the ordinary editor.**
 - **Highlighting is possible everywhere.**
 
+## 2026-11-19 — the highlight goes into the document; earlier versions are no worry
+
+Of the highlight as it was first built (in the document only from rich
+text, and a question in a shared project for the sake of earlier versions):
+
+> Do not worry about anyone using earlier versions. We are two-three test
+> users, and nothing we have made must be kept yet. The point of the
+> highlight is for it to go into the document too. What is the best way to
+> implement it? To me it seems strange for it to be treated differently
+> than bold and italics, but perhaps you see a reason for it to be a kind
+> with a look. But it should be easy to set a highlight in any colour from
+> the text editor.
+
+- **Earlier versions are no worry**, for now: there are two or three test
+  users, and nothing made so far must be kept.
+- **A highlight goes into the document.**
+- **It is to be as bold and italics are**, unless there is a reason for a
+  kind with a look. (There is none: it is a mark.)
+- **Easy to set in any colour from the text editor.**
+

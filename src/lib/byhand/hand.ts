@@ -19,8 +19,8 @@ export const isHandMark = (name: string): name is HandMark =>
 /**
  * The ground of words (ADR 0116): the colour behind them, a highlight. A
  * mark with one value as those set by hand are, but of every text and not
- * of a box alone: it is not among `HAND_MARKS`, which are taken away
- * outside a box.
+ * of a box alone, as bold and italic are: it is not among `HAND_MARKS`,
+ * which are taken away outside a box.
  */
 export const GROUND = 'ground';
 
@@ -189,7 +189,7 @@ export const fontStyle = (family: string) => `font-family: "${family}"`;
 export const sizeStyle = (pt: number) =>
   `font-size: calc(var(--text-size, 17px) * ${pt} / var(--hand-base, 11))`;
 export const colourStyle = (value: string) => `color: ${value}`;
-/** The ground of words: the colour is said, and the style sheet draws it (`app.css`), fainter where it is only for the eye. */
+/** The ground of words: the colour is said, and the style sheet draws it (`app.css`). */
 export const groundStyle = (value: string) => `--ground: ${value}`;
 
 /**

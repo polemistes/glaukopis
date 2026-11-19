@@ -900,8 +900,9 @@ pub(super) fn looked(mut current: Vec<Value>, look: &Resolved) -> Vec<Value> {
     current
 }
 
-/// What is set by hand of words, in a box of rich text (ADR 0113): each
-/// only where it is said and is one. A name of a font without what could
+/// What is set by hand of words, in a box of rich text (ADR 0113), and
+/// the ground of words, in any text (ADR 0116): each only where it is said
+/// and is one. A name of a font without what could
 /// end what it is written in, in any kind of document; a size letters can
 /// have, to the half point; a colour of six digits.
 #[derive(Debug, Clone, PartialEq)]
@@ -911,8 +912,8 @@ pub struct HandWords {
     /// The six digits, in small letters, without the sign before them.
     pub colour: Option<String>,
     /// The colour behind the words, their ground (ADR 0116), as the colour
-    /// is kept: only where it is said to be set in the document, which it
-    /// is on a sheet of rich text (`grounds.rs`).
+    /// is kept. Of the words of any text, and not of a box of rich text
+    /// alone, as the rest here is.
     pub ground: Option<String>,
 }
 
@@ -941,7 +942,6 @@ impl HandWords {
             .map(|c| c[1..].to_ascii_lowercase());
         let ground = marks
             .get(super::grounds::GROUND)
-            .filter(|v| v.get(super::grounds::SET) == Some(&Value::Bool(true)))
             .and_then(|v| v.get("value"))
             .and_then(Value::as_str)
             .filter(|c| c.len() == 7 && c.starts_with('#') && c[1..].chars().all(|d| d.is_ascii_hexdigit()))
@@ -992,6 +992,10 @@ impl HandWords {
     /// wherever it stands, and of letters, digits and spaces alone, which
     /// both keep in a name as they are. `Rich text 20pt A02020 EB Garamond`.
     pub fn style_name(&self) -> String {
+        // A ground alone is a highlight, in any text.
+        if let (Some(hex), None, None, None) = (&self.ground, &self.font, self.size, &self.colour) {
+            return format!("Highlight {}", hex.to_ascii_uppercase());
+        }
         let mut name = String::from("Rich text");
         if let Some(pt) = self.size {
             let _ = write!(name, " {}pt", plain_number(pt));
