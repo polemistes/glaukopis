@@ -70,3 +70,16 @@ The ways out:
 ## Checked
 
 `pnpm check`, `pnpm test`, `cargo test --workspace`, `cargo clippy --workspace --all-targets -- -D warnings`. Against the built application: `e2e/notebook.mjs` (38 checks: the place and its key, the empty page, notes written and found, a paste from outside and its source given by hand, My own words, files dropped, the hook for Add files, delete and undo, a second window, and the notes there after the application is closed and opened) and `e2e/notebook-out.mjs` (22 checks: the list in the pane, own words, a passage and an image dragged into a text, the reference made once, the file in the library's list, Used in, and the same by copy and paste); the commands of the shell by a script of their own; and the scripts of the parts it touches: the editor's twenty, `window-row`, `languages`, `pane-adding`, `picture-panel`, `files`, `library`, `file-view`, `image-editing`, `documents`, `associations`, `maps`, `tree-keys`, `ordering`, `as-left`, `windows`, `data-folder`.
+
+## Addendum, 2026-11-19: the notebook stands in the library's place
+
+On the owner's word: "Could you move the notebook from the main screen to inside Library, between References and Files?"
+
+- **The notebook has no place of its own in the row at the top of the window any more.** It is in the library: *Notebook*, between *References* and *Files*, in the switch that stands in the row over the library (0097), which stands over the notebook's page as well. The row at the top has the house, the library and the list's button at its start.
+- **The library's place is lit** while the notebook is shown, and goes back to whichever of the three was shown last: the references, the notebook or the files, each as it was left.
+- **Ctrl+2 goes to the references**, as they were left, and no longer to whichever of the library's was shown last: with three in the library and a key for each of the other two, it would have done nothing in the notebook, as it did nothing in the files. **Ctrl+3 goes to the notebook** as before, from anywhere, and Ctrl+4 to the files; and everything that goes to a note (a note that has arrived, *Show*, what is found by the search, the list of notes in the document pane) goes there as before. The address is the same, `#/notebook`.
+- **The page itself is as it was.**
+- **Words**: the switch is named *References, the notebook or files*; its middle choice is *Notebook*, *Notatblokk*.
+- **Choices not asked about**: that Ctrl+3 stays, with Ctrl+4 for the files, and what Ctrl+2 now does; that the library's place remembers the notebook as it remembers the files.
+- **Checked**: `e2e/notebook.mjs` (no place of its own in the row; the switch with Notebook between References and Files, which goes there; Ctrl+3; the library's place lit and Notebook chosen in the switch; the library's place going back to the notebook) and `e2e/window-row.mjs` (the places of the row and their order in every view); `e2e/files.mjs`, which uses the switch. The guide says where it is.
+

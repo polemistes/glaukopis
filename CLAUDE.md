@@ -38,7 +38,9 @@ window at both ends, `lib/shell/RowStart.svelte` and `RowEnd.svelte`, which
 stand in the list's head and the project's top row, and in
 `lib/shell/TopRow.svelte` over the other views), the settings window, and
 the hosts of menus, dialogs, toasts and drags. The routes are start, project,
-library, files, notebook and a file in a side. One folder per part under
+library, files, notebook and a file in a side. The notebook stands in the
+library's place, between its references and its files
+(`files/LibrarySwitch.svelte`). One folder per part under
 `src/lib/`:
 
 | Folder | What it is |

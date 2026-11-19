@@ -121,15 +121,31 @@ try {
   await app.installErrorHook();
   await app.waitForText('h2', 'Welcome to Glaukopis');
 
-  // The place in the row, and Ctrl+3.
-  check('the notebook has its place in the row at the top', await app.exists('[data-place="notebook"]'));
+  // Its place is in the library, between the references and the files; and Ctrl+3.
+  check('the notebook has no place of its own in the row at the top', !(await app.exists('[data-place="notebook"]')));
+  await app.click('[data-place="library"]');
+  await app.waitFor('[data-top-row] [data-library-switch]', 8000);
+  const switched = await app.exec(`return Array.from(document.querySelectorAll('[data-library-switch] [role="radio"]')).map((b) => b.textContent.trim())`);
+  check('the switch of the library has Notebook between References and Files', switched.join(' | ') === 'References | Notebook | Files', switched.join(' | '));
+  await app.clickText('[data-library-switch] [role="radio"]', 'Notebook');
+  await app.waitFor('[data-notebook]', 8000);
+  check('which goes to the notebook', (await app.exec('return location.hash')).startsWith('#/notebook'));
+  await app.click('[data-place="projects"]');
+  await sleep(300);
   await app.keys(['Control', '3']);
   await app.waitFor('[data-notebook]', 8000);
   check('Ctrl+3 goes to the notebook', (await app.exec('return location.hash')).startsWith('#/notebook'));
   check(
-    'its place in the row is lit',
-    await app.exec(`return document.querySelector('[data-place="notebook"]').classList.contains('current')`),
+    'the place of the library is lit in the row, and Notebook in its switch',
+    (await app.exists('[data-place="library"].current')) &&
+      (await app.exec(`return document.querySelector('[data-library-switch] [role="radio"][aria-checked="true"]')?.textContent.trim() ?? ''`)) === 'Notebook',
   );
+  // The book goes back to the notebook, which was shown last of the three.
+  await app.click('[data-place="projects"]');
+  await sleep(300);
+  await app.click('[data-place="library"]');
+  await app.waitFor('[data-notebook]', 8000);
+  check('from elsewhere, the library\'s place goes back to the notebook where it was shown last', (await app.exec('return location.hash')).startsWith('#/notebook'));
 
   // The empty page.
   await app.waitFor('[data-notebook-empty]', 8000);

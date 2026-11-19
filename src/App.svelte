@@ -291,8 +291,9 @@
     shortcuts.bind({
       // To the projects: the one shown last, where it was; else the start screen.
       projects: () => go(router.lastProject ?? { view: 'home' }),
-      // To the library as it was left; to its files, at the folder and file they showed.
-      library: () => go(router.lastLibrary ?? { view: 'library' }),
+      // To the references of the library as they were left; to its files, at the folder and file they showed.
+      // (The book in the row goes to whichever of the library's three was shown last.)
+      library: () => go(router.lastReferences ?? { view: 'library' }),
       files: () => go(router.lastFiles ?? { view: 'files' }),
       // To the notebook, at the note chosen in it when it was left.
       notebook: () => go(router.lastNotebook ?? { view: 'notebook' }),
@@ -344,7 +345,8 @@
           {/if}
         </div>
       {:else if route.view === 'notebook'}
-        <TopRow />
+        <!-- The notebook stands in the library's place, between its references and its files. -->
+        <TopRow><LibrarySwitch current="notebook" /></TopRow>
         <div class="under-row">
           <NotebookView />
         </div>

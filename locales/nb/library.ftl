@@ -496,8 +496,9 @@ library-notes-unsaved = Notatet ditt kunne ikke lagres
 
 ## Bryteren øverst i biblioteket.
 
-library-switch = Referanser eller filer
+library-switch = Referanser, notatblokk eller filer
 library-switch-references = Referanser
+library-switch-notebook = Notatblokk
 library-switch-files = Filer
 
 ## The columns of the library, which can be dragged wider or narrower.

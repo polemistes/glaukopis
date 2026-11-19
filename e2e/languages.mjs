@@ -105,7 +105,7 @@ try {
     );
   check(
     'the interface is in the language of the system',
-    (await places()).join(' ') === `Prosjekter Bibliotek Notatblokk Prosjektlisten ${helpOffered ? 'Hjelp ' : ''}Taster Innstillinger`,
+    (await places()).join(' ') === `Prosjekter Bibliotek Prosjektlisten ${helpOffered ? 'Hjelp ' : ''}Taster Innstillinger`,
     (await places()).join(' '),
   );
   check('and the page says so', (await app.exec(`return document.documentElement.lang`)) === 'nb');
@@ -504,7 +504,7 @@ try {
   await sleep(300);
   check(
     'English is chosen, and the interface changes at once',
-    (await places()).join(' ') === `Projects Library Notebook The list of projects ${helpOffered ? 'Help ' : ''}Keys Settings`,
+    (await places()).join(' ') === `Projects Library The list of projects ${helpOffered ? 'Help ' : ''}Keys Settings`,
     (await places()).join(' '),
   );
   check('the page says so', (await app.exec(`return document.documentElement.lang`)) === 'en');

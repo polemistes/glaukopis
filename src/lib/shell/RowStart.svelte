@@ -1,13 +1,13 @@
 <script lang="ts">
   /**
    * The start of the row at the top of the window (ADR 0096): the house, the
-   * library, the notebook (record 0101), then the list's button. It stands in the head of the list of
+   * library, in whose place the notebook stands too (record 0101, its
+   * addendum), then the list's button. It stands in the head of the list of
    * projects while the list is shown, else at the left end of the row over
    * the view.
    */
   import House from '@lucide/svelte/icons/house';
   import LibraryBig from '@lucide/svelte/icons/library-big';
-  import Notebook from '@lucide/svelte/icons/notebook';
   import PanelLeft from '@lucide/svelte/icons/panel-left';
   import { listPane, toggleProjectsPane } from '$lib/home/list.svelte';
   import { t } from '$lib/i18n';
@@ -30,20 +30,12 @@
     router.go(router.lastProject ?? { view: 'home' });
   }
 
-  /** The book goes back to the library as it was left: its references or its files, where one was. */
+  /** The book goes back to the library as it was left: its references, the notebook or its files, where one was. */
   function toLibrary(event: MouseEvent) {
     if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey) return;
     event.preventDefault();
     settingsUi.hide();
     router.go(router.lastLibrary ?? { view: 'library' });
-  }
-
-  /** The notebook opens at the note that was chosen in it when it was left. */
-  function toNotebook(event: MouseEvent) {
-    if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey) return;
-    event.preventDefault();
-    settingsUi.hide();
-    router.go(router.lastNotebook ?? { view: 'notebook' });
   }
 </script>
 
@@ -62,24 +54,13 @@
   <a
     href="#/library"
     class="place"
-    class:current={view === 'library' || view === 'files'}
+    class:current={view === 'library' || view === 'files' || view === 'notebook'}
     aria-label={t('shell-library')}
     data-place="library"
     onclick={toLibrary}
     use:tooltip={{ text: t('shell-library'), shortcut: keysFor('library') }}
   >
     <LibraryBig size={17} strokeWidth={1.7} />
-  </a>
-  <a
-    href="#/notebook"
-    class="place"
-    class:current={view === 'notebook'}
-    aria-label={t('shell-notebook')}
-    data-place="notebook"
-    onclick={toNotebook}
-    use:tooltip={{ text: t('shell-notebook'), shortcut: keysFor('notebook') }}
-  >
-    <Notebook size={17} strokeWidth={1.7} />
   </a>
   <!-- Where there is no list, its button is shown disabled, so that the row does not change. -->
   <button

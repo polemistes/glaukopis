@@ -138,15 +138,21 @@ class Router {
   lastProject = $state<Extract<Route, { view: 'project' } | { view: 'file' }> | null>(null);
   /**
    * The library as it was left while the application has run: its references
-   * at their collection and entry, its files at their folder and file, and
-   * which of the two was shown last. The book in the row at the top goes
+   * at their collection and entry, its files at their folder and file, the
+   * notebook, which stands in its place too, at the note chosen in it, and
+   * which of the three was shown last. The book in the row at the top goes
    * back to the last of them; the switch in the row over the library to each.
    */
   lastReferences = $state<Extract<Route, { view: 'library' }> | null>(null);
   lastFiles = $state<Extract<Route, { view: 'files' }> | null>(null);
-  #lastShelf = $state<'library' | 'files' | null>(null);
-  get lastLibrary(): Extract<Route, { view: 'library' } | { view: 'files' }> | null {
-    return this.#lastShelf === 'files' ? this.lastFiles : this.lastReferences;
+  #lastShelf = $state<'library' | 'files' | 'notebook' | null>(null);
+  get lastLibrary(): Extract<
+    Route,
+    { view: 'library' } | { view: 'files' } | { view: 'notebook' }
+  > | null {
+    if (this.#lastShelf === 'files') return this.lastFiles;
+    if (this.#lastShelf === 'notebook') return this.lastNotebook;
+    return this.lastReferences;
   }
   /** The notebook as it was left while the application has run: at the note chosen in it. */
   lastNotebook = $state<Extract<Route, { view: 'notebook' }> | null>(null);
@@ -169,7 +175,10 @@ class Router {
     } else if (route.view === 'files') {
       this.lastFiles = route;
       this.#lastShelf = 'files';
-    } else if (route.view === 'notebook') this.lastNotebook = route;
+    } else if (route.view === 'notebook') {
+      this.lastNotebook = route;
+      this.#lastShelf = 'notebook';
+    }
   }
 
   /** The project shown last was closed: the house goes to the start screen. */

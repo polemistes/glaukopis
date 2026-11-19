@@ -44,16 +44,10 @@ afterEach(() => {
 });
 
 describe('the row at the top of the window', () => {
-  it('has the places of the window in their order: the house, the library, the notebook and the list at its start, the keys and the settings at its end, with Help before them where it is offered', () => {
+  it('has the places of the window in their order: the house, the library (in whose place the notebook stands) and the list at its start, the keys and the settings at its end, with Help before them where it is offered', () => {
     router.replace({ view: 'library' });
     const { target, places } = setUp();
-    expect(places().map((p) => p.place)).toEqual([
-      'projects',
-      'library',
-      'notebook',
-      'list',
-      ...END,
-    ]);
+    expect(places().map((p) => p.place)).toEqual(['projects', 'library', 'list', ...END]);
     expect(target.querySelector('[data-row-start] [data-projects-button]')).not.toBeNull();
     expect(target.querySelectorAll('[data-row-end] .place')).toHaveLength(END.length);
   });

@@ -5,10 +5,11 @@ a thesis, a novel, a play, a report, a letter. The work is done in one place:
 working out what you think, collecting what you have read, writing, and
 producing the finished text in the form it is to be published in.
 
-It has three places, reached from the row at the top of the window: the **projects**,
-one for each piece of writing, the **library**, which holds your
-references and is the same for all projects, and the **notebook**, where
-anything that turns up is collected before it has a place in any project.
+It has two places, reached from the row at the top of the window: the **projects**,
+one for each piece of writing, and the **library**, which is the same for
+all projects and holds your references, your files, and the **notebook**,
+where anything that turns up is collected before it has a place in any
+project.
 
 Every window that opens over the others, such as the settings or the window
 that reads a PDF, can be moved by dragging its title, to see what lies under
@@ -1523,9 +1524,11 @@ it goes into a project as what it then is: text, a quotation with its
 citation, an image, a reference. Through all of it the notebook keeps where
 each thing came from.
 
-The notebook is the third place in the row at the top of the window, after
-the house and the library, and **Ctrl+3**. It opens at the note you had
-chosen when you left it.
+The notebook is in the library: **Notebook**, between **References** and
+**Files** in the switch at the top of the library, and **Ctrl+3** from
+anywhere. It opens at the note you had chosen when you left it, and the
+library's button in the row at the top goes back to whichever of the three
+you were in last.
 
 ### The page
 
@@ -4138,12 +4141,12 @@ what is to be done by its name, and does it.
 | --- | --- |
 | **Ctrl+/** | All the keys, by where they hold; also the keyboard in the row at the top |
 | **Ctrl+K** | What is to be done: anything that has a key, and some that have none, found by its name |
-| **Ctrl+1**, **Ctrl+2**, **Ctrl+3**, **Ctrl+4** | The projects, the library, the notebook, the files of the library |
+| **Ctrl+1**, **Ctrl+2**, **Ctrl+3**, **Ctrl+4** | The projects; and the three of the library: its references, the notebook, its files |
 | **Ctrl+,** | Settings, in a window over what is open; closing it leaves you where you were |
 | **Ctrl+D** | Diagram or text |
 | **Alt+Shift+Up** | Up to the element over this one, in the diagram and in the text; from the top of a project, to its row in the list of projects |
 | **Ctrl+Shift+O** | The outline beside the text |
-| **Ctrl+Shift+L** | The list of projects at the left: hide it, or show it again; also the button after the house, the library and the notebook in the row at the top |
+| **Ctrl+Shift+L** | The list of projects at the left: hide it, or show it again; also the button after the house and the library in the row at the top |
 | **Ctrl+P** | Print: the document of the side you are in, or the file shown in it |
 | **Ctrl+E** | Export: the document of the side you are in, as a file |
 | **Ctrl+T** | Typesetting: the pages of the side you are in, beside the sides |
