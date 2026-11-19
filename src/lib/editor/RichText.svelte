@@ -191,6 +191,17 @@
     };
   });
   /**
+   * The size of type of the document, in points: what is set by hand in a
+   * box of rich text is drawn in proportion to it, the document's size of
+   * type at the editor's own size of text (ADR 0113). Eleven where the text
+   * is of no document, as a note of the notebook.
+   */
+  const typeSize = $derived.by(() => {
+    if (kind !== 'body' || !owner || !holder.has(owner)) return 11;
+    const size = holder.formatOf(owner)?.font.size;
+    return typeof size === 'number' && size > 0 ? size : 11;
+  });
+  /**
    * How far the numbers and the annotations stand from the text, as the
    * layout in force puts them on the page (ADR 0076): the annotations as
    * they stand across from the numbers, and on their side.
@@ -754,6 +765,7 @@
   bind:this={host}
   class="rich-text {className}"
   style:--step="{numbersLayout.step}pt"
+  style:--hand-base={typeSize}
   style:--numbers-gap={gaps.numbers}
   style:--annotations-gap-across={gaps.across}
   style:--annotations-gap-beside={gaps.beside}

@@ -16,3 +16,36 @@ byhand-shared-title = Formatert tekst i et delt prosjekt
 byhand-shared = Formatert tekst er nytt. De som deler dette prosjektet med en eldre versjon av Glaukopis, holdes ute av det til de har oppdatert. Det de skriver i mellomtiden, tas vare på og sendes med da.
 # The button that goes on and puts the stretch in.
 byhand-shared-put = Sett inn
+
+## The tools at the head of rich text, which set the look by hand (record 0113). They show while the cursor is in it. The names of bold, of the alignments and of the measures of a paragraph are those the rest of the application has.
+
+# In the list of fonts, the list of sizes and the menu of colours: what takes the font, the size or the colour away, so that the words are as the document sets them.
+byhand-as-document = Som dokumentet
+# Shown in the place of a font, a size or a colour where the words selected have several.
+byhand-several = Flere
+# In the list of fonts: the group of those already used in this text.
+byhand-fonts-here = I denne teksten
+# The button that opens the menu of colours for the words selected.
+byhand-colour = Farge
+# The colours of that menu, by their plain names.
+byhand-colour-black = Svart
+byhand-colour-grey = Grå
+byhand-colour-red = Rød
+byhand-colour-orange = Oransje
+byhand-colour-green = Grønn
+byhand-colour-blue = Blå
+byhand-colour-purple = Lilla
+byhand-colour-brown = Brun
+# The last entry of the menu of colours: opens the system's own window for choosing any colour.
+byhand-colour-other = En annen …
+# The button that opens a small panel with the line spacing, the space before and after, and the indents of the paragraphs selected.
+byhand-paragraph = Avsnitt
+# In that panel, under each field: what an empty field means.
+byhand-paragraph-empty = Tomt er som dokumentet har det.
+# The button that takes away everything set by hand of what is selected: fonts, sizes, colours, and how the paragraphs stand. Bold and italic stay.
+byhand-clear = Fjern formatering
+# In the menu of the three dots: opens the Look, where the font and the size of the whole document are set, with its notes and headings.
+byhand-whole = Utseendet til hele dokumentet …
+# The question asked before rich text that has something set by hand is made ordinary text.
+byhand-to-text-title = Gjøre til vanlig tekst?
+byhand-to-text-warning = Det som er satt for hånd i den, tas bort: skrifter, størrelser og farger, og hvordan avsnittene står. Ordene blir stående.

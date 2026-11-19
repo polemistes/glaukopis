@@ -11,7 +11,15 @@
 // with the box as it sets it without. The project says the second form of
 // its texts from the first box on, its readable copy has the box as a
 // block of Org, and the box is there when the project is opened again. In
-// a note of the notebook, Insert puts a box in as well. And, since rich
+// a note of the notebook, Insert puts a box in as well. The look is set by
+// hand from the tools in the head (record 0113), which show while the
+// cursor is in the box and leave the head as high as it was: a size, a
+// colour, a font and bold on the words selected, the paragraph centred and
+// given room after it; the tools show what is set; any colour is set as
+// from the system's chooser; the typesetting pane sets it; the readable
+// copy says it in Org; Clear formatting takes it away and leaves bold; and
+// Make it ordinary text asks first where something is set by hand, and
+// takes it away with the sheet. And, since rich
 // text is not offered yet (`src/lib/byhand/offered.ts`) but to the scripts:
 // in a window as someone works in it, started without what the harness
 // asks for, Insert has no Rich text.
@@ -65,7 +73,7 @@ const sheet = (app) =>
      return {
        ground: getComputedStyle(box).backgroundColor,
        ink: getComputedStyle(p).color,
-       head: box.querySelector('.rich-head')?.textContent.trim() ?? null,
+       head: box.querySelector('.rich-head .name')?.textContent.trim() ?? null,
      };`,
   );
 
@@ -193,7 +201,11 @@ try {
   await app.click(`${PROSE} .rich [data-rich-menu]`);
   await app.waitFor('.menu');
   const entries = await app.exec(`return Array.from(document.querySelectorAll('.menu [role="menuitem"]')).map((e) => e.textContent.trim())`);
-  check('the menu of the box has Select, Make it ordinary text and Delete', JSON.stringify(entries) === JSON.stringify(['Select', 'Make it ordinary text', 'Delete']), entries.join(' | '));
+  check(
+    'the menu of the box has Select, Make it ordinary text and Delete, and the way to the look of the whole document',
+    JSON.stringify(entries) === JSON.stringify(['Select', 'Make it ordinary text', 'Delete', 'The look of the whole document…']),
+    entries.join(' | '),
+  );
   await app.clickText('.menu [role="menuitem"]', 'Make it ordinary text');
   await app.waitGone(`${PROSE} .rich`, 5000);
   const plain = await shape(app);
@@ -286,6 +298,159 @@ try {
   await app.waitGone(`${PROSE} .rich`, 5000);
   check('Backspace takes an empty box away', (await shape(app)) === 'One | ', await shape(app));
 
+  // ---- the look set by hand ----
+  await app.home();
+  await begin(app, 'Set by hand');
+  const handId = await idOf(app, 'Set by hand');
+  await app.click('.text-view .section .body');
+  await app.keys('Before.');
+  await app.press('Enter');
+  await app.insert('Rich text');
+  await app.waitFor(`${PROSE} .rich`, 5000);
+  await app.keys('Dear all,');
+  await app.press('Enter');
+  await app.keys('welcome');
+  await sleep(300);
+  const headHeight = () => app.exec(`return Math.round(document.querySelector('${PROSE} .rich .rich-head').getBoundingClientRect().height)`);
+  const withTools = await headHeight();
+  check('the tools show in the head while the cursor is in the box', await app.exists(`${PROSE} .rich [data-rich-tools]`));
+  // What is set of the word "welcome", as the editor draws it.
+  const welcome = () =>
+    app.exec(
+      `const p = Array.from(document.querySelectorAll('${PROSE} .rich .rich-body p')).find((p) => p.textContent.includes('welcome'));
+       const in_ = (sel) => p?.querySelector(sel);
+       return p ? {
+         size: in_('[data-size]')?.dataset.size ?? null,
+         colour: in_('[data-colour]')?.dataset.colour ?? null,
+         font: in_('[data-font]')?.dataset.font ?? null,
+         bold: !!in_('strong'),
+         hand: p.dataset.hand ? JSON.parse(p.dataset.hand) : null,
+         align: getComputedStyle(p).textAlign,
+         larger: parseFloat(getComputedStyle(in_('[data-size]') ?? p).fontSize) > parseFloat(getComputedStyle(document.querySelector('${PROSE} > p')).fontSize) * 1.5,
+       } : null;`,
+    );
+  await app.keys(['Shift', 'Home']);
+  await app.click('[data-rich-size]');
+  await app.keys('20');
+  await app.press('Enter');
+  await sleep(250);
+  await app.click('[data-rich-colour]');
+  await app.waitFor('.menu');
+  const colours = await app.exec(`return Array.from(document.querySelectorAll('.menu [role="menuitem"]')).map((e) => e.textContent.trim())`);
+  check('the menu of colours has As the document, the plain colours and Another…', colours[0] === 'As the document' && colours.includes('Red') && colours.includes('Blue') && colours.at(-1) === 'Another…', colours.join(' | '));
+  await app.screenshot('rich-text-7-colours');
+  await app.clickText('.menu [role="menuitem"]', 'Red');
+  await sleep(250);
+  // The list of fonts is the system's own: chosen as it gives it.
+  await app.exec(`const s = document.querySelector('[data-rich-font]'); s.value = 'Libertinus Serif'; s.dispatchEvent(new Event('change', { bubbles: true }));`);
+  await sleep(250);
+  await app.click('[data-rich-mark="strong"]');
+  await app.click('[data-rich-align="center"]');
+  await sleep(250);
+  let set = await welcome();
+  check(
+    'a size, a colour, a font and bold are set of the words selected',
+    set?.size === '20' && set?.colour === '#b0322a' && set?.font === 'Libertinus Serif' && set?.bold === true,
+    JSON.stringify(set),
+  );
+  check('the words are drawn larger, in proportion', set?.larger === true, JSON.stringify(set));
+  check('the paragraph is centred by hand, and drawn so', set?.hand?.align === 'center' && set?.align === 'center', JSON.stringify(set));
+  await app.click('[data-rich-paragraph]');
+  await app.waitFor('[data-rich-paragraph-panel]', 3000);
+  await app.click('[data-rich-length="spaceAfter"]');
+  await app.keys('12');
+  await app.press('Enter');
+  await sleep(250);
+  check('the panel of the paragraph is open still after Enter in a field', await app.exists('[data-rich-paragraph-panel]'));
+  await app.screenshot('rich-text-8-paragraph');
+  await app.press('Escape');
+  await sleep(300);
+  set = await welcome();
+  check('room after the paragraph is set from its panel, a number alone taken as points', set?.hand?.spaceAfter === '12pt', JSON.stringify(set));
+  // The words are selected still: the tools show what is set of them.
+  const toolsSay = await until(
+    () =>
+      app.exec(
+        `const t = document.querySelector('${PROSE} .rich [data-rich-tools]');
+         return t ? { font: t.querySelector('[data-rich-font]').value, size: t.querySelector('[data-rich-size]').value, colour: t.querySelector('[data-rich-colour]').dataset.richColour, centre: t.querySelector('[data-rich-align="center"]').getAttribute('aria-pressed'), bold: t.querySelector('[data-rich-mark="strong"]').getAttribute('aria-pressed') } : null;`,
+      ),
+    (t) => !!t,
+    4000,
+  );
+  check(
+    'the tools show what is set of what is selected',
+    toolsSay?.font === 'Libertinus Serif' && toolsSay?.size === '20' && toolsSay?.colour === '#b0322a' && toolsSay?.centre === 'true' && toolsSay?.bold === 'true',
+    JSON.stringify(toolsSay),
+  );
+  await app.screenshot('rich-text-9-set-by-hand');
+  // Any colour, as from the system's chooser, which a script cannot press.
+  await app.exec(`window.__glaukopisRichColour('#123456')`);
+  await sleep(250);
+  check('any colour is set as from the system’s chooser', (await welcome())?.colour === '#123456', JSON.stringify(await welcome()));
+  // Outside the box: no tools, and the head as high as with them.
+  await app.click(`${PROSE} > p`);
+  await until(() => app.exists(`${PROSE} .rich [data-rich-tools]`), (shown) => !shown, 3000);
+  check('outside the box the tools are gone, and the head is as high as it was', !(await app.exists(`${PROSE} .rich [data-rich-tools]`)) && (await headHeight()) === withTools, `${withTools} ${await headHeight()}`);
+
+  // The typesetting pane sets what is set by hand.
+  const handOpen = await app.typeset();
+  const handPages = await until(
+    () => app.exec(`return document.querySelectorAll('.side.typesetting .preview img, .side.typesetting .preview canvas, .side.typesetting .preview .page').length`),
+    (n) => n > 0,
+    30000,
+  );
+  const handFailed = await app.exec(`return document.querySelector('.side.typesetting [role="alert"]')?.textContent.trim() ?? ''`);
+  check('the typesetting pane sets the text with what is set by hand', handOpen && handPages > 0 && !handFailed, `pages ${handPages} ${handFailed}`);
+  await sleep(1500);
+  await app.screenshot('rich-text-10-typeset-by-hand');
+  await app.typeset();
+
+  // Clear formatting takes it from what is selected, and leaves bold.
+  await app.click(`${PROSE} .rich .rich-body p:nth-child(2)`);
+  await app.press('End');
+  await app.keys(['Shift', 'Home']);
+  await until(() => app.exists(`${PROSE} .rich [data-rich-clear]`), (shown) => shown, 3000);
+  await app.click('[data-rich-clear]');
+  await sleep(300);
+  set = await welcome();
+  check('Clear formatting takes away what is set by hand, and leaves bold', set?.size === null && set?.colour === null && set?.font === null && set?.hand === null && set?.bold === true, JSON.stringify(set));
+  await app.keys(['Control', 'z']);
+  await until(welcome, (w) => w?.size === '20', 4000);
+
+  // On disk, in Org.
+  await app.home();
+  const handOrgPath = join(app.dataDir, 'projects', handId, 'project.org');
+  const handOrg = await until(
+    () => (existsSync(handOrgPath) ? readFileSync(handOrgPath, 'utf8') : ''),
+    (text) => text.includes('size=20'),
+    20000,
+  );
+  check(
+    'the readable copy says what is set by hand: of the words in a bracket, of the paragraph on the line before it',
+    handOrg.includes('#+ATTR_GLAUKOPIS: :align center :space-after 12pt\n[*welcome*]{font="Libertinus Serif" size=20 colour=#123456}\n#+END_rich'),
+    handOrg.slice(handOrg.indexOf('#+BEGIN_rich'), handOrg.indexOf('#+BEGIN_rich') + 220),
+  );
+
+  // Made ordinary text, it is asked first, and what was set by hand goes with the sheet.
+  await app.go(`#/project/${encodeURIComponent(handId)}`);
+  await app.waitFor(`${PROSE} .rich`, 10000);
+  await app.click(`${PROSE} .rich p`);
+  await app.waitFor(`${PROSE} .rich [data-rich-menu]`, 5000);
+  await app.click(`${PROSE} .rich [data-rich-menu]`);
+  await app.waitFor('.menu');
+  await app.clickText('.menu [role="menuitem"]', 'Make it ordinary text');
+  await app.waitForText('dialog h2', 'Make it ordinary text?', 5000);
+  // The dialog that asks, whatever else is open or closing.
+  const warned = (
+    await app.exec(`return Array.from(document.querySelectorAll('dialog[open]')).find((d) => d.textContent.includes('Make it ordinary text?'))?.textContent ?? ''`)
+  ).replace(/\s+/g, ' ');
+  check('made ordinary text, it is asked first where something is set by hand', warned.includes('What is set by hand in it is taken away') && (await app.exists(`${PROSE} .rich`)), warned.slice(0, 160));
+  await app.screenshot('rich-text-11-asked');
+  await app.clickText('dialog footer button', 'Make it ordinary text');
+  await app.waitGone(`${PROSE} .rich`, 5000);
+  const left = await app.exec(`return { words: Array.from(document.querySelectorAll('${PROSE} > p')).map((p) => p.textContent.replace(/\u200b/g, '')).join(' | '), byHand: document.querySelectorAll('${PROSE} [data-size], ${PROSE} [data-colour], ${PROSE} [data-font], ${PROSE} [data-hand]').length, bold: !!document.querySelector('${PROSE} strong') }`);
+  check('the words stay, bold stays, and nothing is set by hand outside a sheet', left.words === 'Before. | Dear all, | welcome' && left.byHand === 0 && left.bold, JSON.stringify(left));
+
   // ---- in a note of the notebook ----
   await app.home();
   await app.go('#/notebook');
@@ -301,7 +466,7 @@ try {
   await app.waitFor('[data-note-text] .rich', 5000);
   await app.keys('In a box, in a note.');
   check('in a note of the notebook, Insert puts a box in as well', (await shape(app, '[data-note-text] .prose')) === 'A note. | [In a box, in a note.]', await shape(app, '[data-note-text] .prose'));
-  await app.screenshot('rich-text-6-note');
+  await app.screenshot('rich-text-12-note');
 
   const errors = await app.pageErrors();
   check('no errors in the page', errors.length === 0, errors.join(' | '));

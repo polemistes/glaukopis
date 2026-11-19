@@ -44,9 +44,9 @@ use serde_json::{Value, json};
 
 use super::numbers::{Shown, lines_of, stretch_numbers, stretches};
 use super::pandoc::{Converter, Flavour, attr, label, looked, tokens, upper};
-use super::{Block, BreakKind, Inline, Numbering, Side};
-use crate::formats::Case;
-use crate::formats::typst::string;
+use super::{Block, BreakKind, Hand, Inline, Numbering, Side};
+use crate::formats::typst::{leading, string};
+use crate::formats::{Align, Case, Length};
 
 fn raw(format: &str, text: impl Into<String>) -> Value {
     json!({"t": "RawBlock", "c": [format, text.into()]})
@@ -54,6 +54,12 @@ fn raw(format: &str, text: impl Into<String>) -> Value {
 
 fn raw_inline(format: &str, text: impl Into<String>) -> Value {
     json!({"t": "RawInline", "c": [format, text.into()]})
+}
+
+/// A line with nothing on it: a paragraph that holds a space that is not
+/// broken at, which every kind of document sets as an empty line.
+fn blank_line() -> Value {
+    json!({"t": "Para", "c": [{"t": "Str", "c": "\u{a0}"}]})
 }
 
 /// Text as Pandoc's tokens.
@@ -72,6 +78,10 @@ struct Para<'a> {
     new: bool,
     /// A point to tick that is ticked.
     done: bool,
+    /// Whether it stands in a box of rich text.
+    boxed: bool,
+    /// How it stands by hand, in a box of rich text.
+    hand: Option<&'a Hand>,
     content: &'a [Inline],
     shown: &'a [Option<Shown>],
 }
@@ -242,9 +252,16 @@ impl Converter<'_> {
                 .iter()
                 .zip(&shown)
                 .filter_map(|(b, shown)| match b {
-                    Block::Paragraph { name, indent, new, done, content, .. } => {
-                        Some(Para { name, indent: *indent, new: *new, done: *done, content, shown })
-                    }
+                    Block::Paragraph { name, indent, new, done, rich, hand, content, .. } => Some(Para {
+                        name,
+                        indent: *indent,
+                        new: *new,
+                        done: *done,
+                        boxed: rich.is_some(),
+                        hand: hand.as_deref().filter(|h| rich.is_some() && !h.is_empty()),
+                        content,
+                        shown,
+                    }),
                     _ => None,
                 })
                 .collect();
@@ -258,7 +275,9 @@ impl Converter<'_> {
                 {
                     let inner = self.lined(run[0].content, Numbers { shown: run[0].shown, side });
                     if !inner.is_empty() {
-                        out.push(self.paragraph_after(inner));
+                        self.handed(run[0].hand, vec![self.paragraph_after(inner)], out);
+                    } else if run[0].boxed {
+                        out.push(blank_line());
                     }
                     continue;
                 }
@@ -332,7 +351,9 @@ impl Converter<'_> {
             "quote" => {
                 let mut inner = Vec::new();
                 for p in run {
-                    self.kind_paragraph(p.name, p.content, Numbers { shown: p.shown, side }, p.indent, &mut inner);
+                    let mut own = Vec::new();
+                    self.kind_paragraph(p.name, p.content, Numbers { shown: p.shown, side }, p.indent, &mut own);
+                    self.handed(p.hand, own, &mut inner);
                 }
                 if !inner.is_empty() {
                     out.push(json!({"t": "BlockQuote", "c": inner}));
@@ -349,10 +370,77 @@ impl Converter<'_> {
             "glossary" => self.glossary(run, side, out),
             _ => {
                 for p in run {
-                    self.kind_paragraph(p.name, p.content, Numbers { shown: p.shown, side }, p.indent, out);
+                    let mut own = Vec::new();
+                    self.kind_paragraph(p.name, p.content, Numbers { shown: p.shown, side }, p.indent, &mut own);
+                    // In a box of rich text an empty paragraph is a blank line, as those it is for make room.
+                    if own.is_empty() && p.boxed && p.name == "text" {
+                        own.push(blank_line());
+                    }
+                    self.handed(p.hand, own, out);
                 }
             }
         }
+    }
+
+    /// What a paragraph was written as, standing as its writer set it by
+    /// hand (ADR 0113), where anything is: laid over what the layout gives
+    /// its kind, each measure only where it is said. In Typst, which sets
+    /// the pages of the typesetting and of the PDF; the other kinds of
+    /// document set the paragraph as the layout has it, until each is
+    /// taught.
+    ///
+    /// How it stands across the line, its line spacing and its first line
+    /// are said for the paragraph alone, with nothing set about it, so that
+    /// it stands among the paragraphs beside it as before. The space before
+    /// and after it is room added there. Set in from the left or the right,
+    /// it stands in a block of its own, where its first line begins as the
+    /// writer said, or with the rest.
+    fn handed(&self, hand: Option<&Hand>, own: Vec<Value>, out: &mut Vec<Value>) {
+        let Some(hand) = hand.filter(|_| self.extras.flavour == Flavour::Typst && !own.is_empty()) else {
+            out.extend(own);
+            return;
+        };
+        let mut said = Vec::new();
+        match hand.align() {
+            Some(Align::Justified) => said.push("#set align(left); #set par(justify: true)".to_owned()),
+            Some(to) => said.push(format!(
+                "#set align({}); #set par(justify: false)",
+                match to {
+                    Align::Center => "center",
+                    Align::Right => "right",
+                    _ => "left",
+                }
+            )),
+            None => {}
+        }
+        if let Some(spacing) = hand.line_spacing() {
+            said.push(format!("#set par(leading: {})", leading(spacing)));
+        }
+        let (left, right) = (hand.indent_left(), hand.indent_right());
+        let set_in = left.is_some() || right.is_some();
+        // Within a block of its own a paragraph is the first, and would begin with the rest whatever the layout says.
+        if let Some(first) = hand.first_line().or(set_in.then(|| Length::pt(0.0))) {
+            said.push(format!("#set par(first-line-indent: (amount: {first}, all: true))"));
+        }
+        let mut open = format!("#[{}", said.join("; "));
+        if let Some(before) = hand.space_before() {
+            let _ = write!(open, "\n#v({before})");
+        }
+        if set_in {
+            let zero = Length::pt(0.0);
+            let _ = write!(open, "\n#pad(left: {}, right: {})[", left.unwrap_or(zero), right.unwrap_or(zero));
+        }
+        out.push(raw("typst", open));
+        out.extend(own);
+        let mut close = String::new();
+        if set_in {
+            close.push_str("]\n");
+        }
+        if let Some(after) = hand.space_after() {
+            let _ = writeln!(close, "#v({after})");
+        }
+        close.push(']');
+        out.push(raw("typst", close));
     }
 
     /// The inlines of a paragraph, line by line, each with what stands
@@ -1126,6 +1214,114 @@ mod tests {
         .into_iter()
         .map(|b| b.counting_from("1"))
         .collect()
+    }
+
+    /// A text as the interface hands it over: a paragraph before a box of
+    /// rich text, and in the box words set by hand, an empty paragraph, and
+    /// paragraphs that stand by hand.
+    fn by_hand() -> Vec<Block> {
+        serde_json::from_value(json!([
+            { "kind": "paragraph", "name": "text", "content": [{ "kind": "text", "text": "Before.", "marks": {} }] },
+            { "kind": "paragraph", "name": "text", "rich": "first", "content": [
+                { "kind": "text", "text": "Dear ", "marks": {} },
+                { "kind": "text", "text": "all", "marks": {
+                    "strong": true,
+                    "font": { "family": "EB Garamond" }, "size": { "pt": 20 }, "colour": { "value": "#A02020" }
+                } },
+                { "kind": "text", "text": ", welcome.", "marks": { "size": { "pt": 10.5 } } }
+            ] },
+            { "kind": "paragraph", "name": "text", "rich": "in", "content": [] },
+            { "kind": "paragraph", "name": "text", "rich": "in",
+              "hand": { "align": "center", "lineSpacing": 1.5, "spaceBefore": "6pt", "spaceAfter": "12pt" },
+              "content": [{ "kind": "text", "text": "Centred.", "marks": {} }] },
+            { "kind": "paragraph", "name": "quote", "rich": "in",
+              "hand": { "align": "justified", "indentLeft": "1cm", "firstLine": "0.5cm" },
+              "content": [{ "kind": "text", "text": "Set in.", "marks": {} }] },
+            { "kind": "paragraph", "name": "text", "rich": "in",
+              "hand": { "align": "sideways", "lineSpacing": 90, "indentRight": "wide" },
+              "content": [{ "kind": "text", "text": "Nothing said well.", "marks": {} }] },
+            { "kind": "paragraph", "name": "text", "content": [] },
+            { "kind": "paragraph", "name": "text", "hand": { "align": "right" },
+              "content": [{ "kind": "text", "text": "Outside a box.", "marks": { "colour": { "value": "#a02020" } } }] }
+        ]))
+        .unwrap()
+    }
+
+    #[test]
+    fn what_is_set_by_hand_of_words_is_set_in_typst() {
+        let keys = HashMap::new();
+        let c = converter(&keys, Flavour::Typst);
+        let typst = flat(&Value::Array(written(&c, &by_hand())));
+        // The font, the size and the colour about the words, and bold within them.
+        assert!(
+            typst.contains(
+                "Dear #text(font: (\"EB Garamond\",), size: 20pt, fill: rgb(\"#a02020\"))[all];#text(size: 10.5pt)[, welcome.];"
+            ),
+            "{typst}"
+        );
+        // Another kind of document sets the words without it, for now.
+        let plain = flat(&Value::Array(written(&converter(&keys, Flavour::Plain), &by_hand())));
+        assert!(plain.contains("Dear all, welcome."), "{plain}");
+        assert!(!plain.contains("#text"), "{plain}");
+    }
+
+    #[test]
+    fn what_is_no_font_no_size_and_no_colour_is_not_set() {
+        use super::super::pandoc::hand_text;
+        let marks = |v: Value| serde_json::from_value::<std::collections::BTreeMap<String, Value>>(v).unwrap();
+        assert_eq!(hand_text(&marks(json!({ "strong": true }))), None);
+        assert_eq!(
+            hand_text(&marks(json!({
+                "font": { "family": "Bad\"]; #panic()" }, "size": { "pt": 9000 }, "colour": { "value": "red" }
+            }))),
+            None
+        );
+        assert_eq!(hand_text(&marks(json!({ "size": { "pt": 12.26 } }))).as_deref(), Some("size: 12.5pt"));
+        assert_eq!(
+            hand_text(&marks(json!({ "font": { "family": " Noto Serif " } }))).as_deref(),
+            Some("font: (\"Noto Serif\",)")
+        );
+    }
+
+    #[test]
+    fn a_paragraph_stands_as_it_was_set_by_hand_in_typst() {
+        let keys = HashMap::new();
+        let c = converter(&keys, Flavour::Typst);
+        let out = written(&c, &by_hand());
+        let said = raws(&out);
+        // Across the line, its line spacing, and room before and after it, with nothing set about it.
+        assert!(
+            said.contains(&"#[#set align(center); #set par(justify: false); #set par(leading: 0.8em)\n#v(6pt)"),
+            "{said:?}"
+        );
+        assert!(said.contains(&"#v(12pt)\n]"), "{said:?}");
+        // Set in, within a quotation, it stands in a block of its own, its first line as far in as was said.
+        let typst = flat(&Value::Array(out));
+        assert!(
+            typst.contains(
+                "#[#set align(left); #set par(justify: true); #set par(first-line-indent: (amount: 0.5cm, all: true))\n#pad(left: 1cm, right: 0pt)[\nSet in.\n]\n]\n"
+            ),
+            "{typst}"
+        );
+        // What is said and is no measure is as if it were not said: nothing is set about that paragraph.
+        assert_eq!(typst.matches("#[").count(), 2, "{typst}");
+        assert!(typst.contains("\nNothing said well.\n"), "{typst}");
+        // Outside a box nothing stands by hand, whatever the paragraph says.
+        assert!(!typst.contains("align(right)"), "{typst}");
+        // Another kind of document sets the paragraphs as the layout has them, for now.
+        let plain = written(&converter(&keys, Flavour::Plain), &by_hand());
+        assert!(raws(&plain).iter().all(|r| !r.starts_with("#[")), "{plain:?}");
+    }
+
+    #[test]
+    fn an_empty_paragraph_is_a_blank_line_in_a_box_of_rich_text_and_nothing_outside_one() {
+        let keys = HashMap::new();
+        for flavour in [Flavour::Typst, Flavour::Latex, Flavour::Docx, Flavour::Plain] {
+            let out = written(&converter(&keys, flavour), &by_hand());
+            let blank =
+                out.iter().filter(|v| v["t"] == "Para" && v["c"] == json!([{ "t": "Str", "c": "\u{a0}" }])).count();
+            assert_eq!(blank, 1, "{flavour:?}: {out:?}");
+        }
     }
 
     #[test]

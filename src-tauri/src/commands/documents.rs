@@ -36,9 +36,11 @@ pub fn tools_info(state: State<'_, AppState>, again: Option<bool>) -> CommandRes
     Ok(ToolsInfo { tools, resources: state.resources.display().to_string() })
 }
 
+/// The families of the fonts Typst sets with. It asks nothing of the
+/// application's state: the window of a note alone lists them too.
 #[tauri::command(async)]
-pub fn fonts_list(state: State<'_, AppState>) -> CommandResult<Vec<String>> {
-    Ok(state.fonts())
+pub fn fonts_list() -> CommandResult<Vec<String>> {
+    Ok(glaukopis_core::export::typeset::families())
 }
 
 // ---- reference styles ----

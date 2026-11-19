@@ -5,16 +5,21 @@
  */
 
 import BoxSelect from '@lucide/svelte/icons/box-select';
+import Palette from '@lucide/svelte/icons/palette';
 import Pilcrow from '@lucide/svelte/icons/pilcrow';
 import Trash2 from '@lucide/svelte/icons/trash-2';
 import type { Node } from 'prosemirror-model';
 import type { Command } from 'prosemirror-state';
 import type { EditorView, NodeView } from 'prosemirror-view';
 import { mount, unmount } from 'svelte';
+import { hooksOf } from '$lib/editor/ui.svelte';
 import { t } from '$lib/i18n';
+import { lookUi } from '$lib/look/look.svelte';
+import { confirm } from '$lib/ui/confirm.svelte';
 import { openMenu, type MenuItem } from '$lib/ui/menu.svelte';
 import { BOX, deleteBox, selectBox, unwrapBox } from './box';
 import BoxHead from './BoxHead.svelte';
+import { holdsHand } from './rule';
 
 export class BoxView implements NodeView {
   dom: HTMLElement;
@@ -38,7 +43,7 @@ export class BoxView implements NodeView {
     this.dom.append(this.#head, this.contentDOM);
     this.#mounted = mount(BoxHead, {
       target: this.#head,
-      props: { menu: this.#menu, editable: view.editable },
+      props: { view, getPos, menu: this.#menu },
     });
   }
 
@@ -51,14 +56,49 @@ export class BoxView implements NodeView {
       command(pos)(view.state, view.dispatch, view);
       view.focus();
     };
+    // Where the text is of a document, its look is set in the Look: the font and the size of all of it, with its notes and headings.
+    const ofDocument = !!hooksOf.get(view)?.element;
     const items: MenuItem[] = [
       { label: t('byhand-select'), icon: BoxSelect, action: () => exec(selectBox) },
-      { label: t('byhand-to-text'), icon: Pilcrow, action: () => exec(unwrapBox) },
+      { label: t('byhand-to-text'), icon: Pilcrow, action: () => void this.#toText() },
       { kind: 'separator' },
       { label: t('byhand-delete'), icon: Trash2, action: () => exec(deleteBox) },
+      ...(ofDocument
+        ? ([
+            { kind: 'separator' },
+            {
+              label: t('byhand-whole'),
+              icon: Palette,
+              action: () => lookUi.open({ section: 'type' }),
+            },
+          ] satisfies MenuItem[])
+        : []),
     ];
     openMenu(anchor, items, { align: 'end', onclose: () => view.focus() });
   };
+
+  /**
+   * Makes the box ordinary text. Where anything in it is set by hand, that
+   * is taken away with the box (`rule.ts`), and it is asked first.
+   */
+  async #toText() {
+    const view = this.#view;
+    const pos = this.#getPos();
+    const box = pos === undefined ? null : view.state.doc.nodeAt(pos);
+    if (view.isDestroyed || pos === undefined || !box) return;
+    if (holdsHand(box)) {
+      const yes = await confirm({
+        title: t('byhand-to-text-title'),
+        message: t('byhand-to-text-warning'),
+        confirm: t('byhand-to-text'),
+      });
+      if (!yes || view.isDestroyed) return;
+    }
+    const at = this.#getPos();
+    if (at === undefined) return;
+    unwrapBox(at)(view.state, view.dispatch, view);
+    view.focus();
+  }
 
   update(node: Node): boolean {
     return node.type.name === BOX;

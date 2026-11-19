@@ -54,6 +54,7 @@ import { kindKeyOf } from '$lib/shell/keys.svelte';
 import { continuesPlugin } from './continues';
 import { LAYOUT_NUMBERS, stretchNumbersPlugin, type NumbersLayout } from './numbers';
 import { backOutOfBox, leaveBox } from '$lib/byhand/box';
+import { showsTools } from '$lib/byhand/now.svelte';
 import { onlyInBoxes } from '$lib/byhand/rule';
 import { acrossParallel, backOutOfParallel } from './parallel';
 import { refMarkKey } from './refmarks';
@@ -420,6 +421,8 @@ export function bodyPlugins(schema: Schema, hooks: EditorHooks): Plugin[] {
     passes(),
     // What is set by hand lives only in a box of rich text: see `byhand/rule.ts`.
     onlyInBoxes(),
+    // What the tools in the head of a box show: see `byhand/now.svelte.ts`.
+    showsTools(),
     inputRules({ rules: [...dashes, ...blockRules(schema)] }),
     kindKeys,
     cite,

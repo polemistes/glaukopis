@@ -897,6 +897,33 @@ pub(super) fn looked(mut current: Vec<Value>, look: &Resolved) -> Vec<Value> {
     current
 }
 
+/// What is set by hand of words, as Typst's `text` takes it: `font: ("EB
+/// Garamond",), size: 20pt, fill: rgb("#a02020")`. Each only where it is
+/// said and is one: a name of a font without what could end the string it
+/// is written in, a size letters can have, a colour of six digits. Nothing
+/// where none is.
+pub(super) fn hand_text(marks: &std::collections::BTreeMap<String, Value>) -> Option<String> {
+    let mut said = Vec::new();
+    let family = marks.get("font").and_then(|v| v.get("family")).and_then(Value::as_str).map(str::trim);
+    if let Some(family) = family.filter(|f| {
+        !f.is_empty() && f.chars().count() <= 100 && !f.chars().any(|c| c.is_control() || "\"\\{}<>;".contains(c))
+    }) {
+        // One font is named: where it is not there, Typst sets the words in the document's.
+        said.push(format!("font: ({},)", crate::formats::typst::string(family)));
+    }
+    let size = marks.get("size").and_then(|v| v.get("pt")).and_then(Value::as_f64);
+    if let Some(pt) = size.filter(|pt| pt.is_finite() && (4.0..=400.0).contains(pt)) {
+        said.push(format!("size: {}pt", (pt * 2.0).round() / 2.0));
+    }
+    let colour = marks.get("colour").and_then(|v| v.get("value")).and_then(Value::as_str);
+    if let Some(hex) =
+        colour.filter(|c| c.len() == 7 && c.starts_with('#') && c[1..].chars().all(|d| d.is_ascii_hexdigit()))
+    {
+        said.push(format!("fill: rgb(\"{}\")", hex.to_ascii_lowercase()));
+    }
+    if said.is_empty() { None } else { Some(said.join(", ")) }
+}
+
 /// The words of inlines as one string: for code, which holds its text as it stands.
 fn plain_of(inlines: &[Value]) -> String {
     let mut out = String::new();
@@ -1008,7 +1035,25 @@ impl Converter<'_> {
             };
             current = vec![node];
         }
-        current
+        self.by_hand(current, marks)
+    }
+
+    /// Words as they are set by hand, in a box of rich text (ADR 0113):
+    /// their font, their size, their colour, about everything else that is
+    /// said of them. In Typst, which sets the pages of the typesetting and
+    /// of the PDF; the other kinds of document set the words without it,
+    /// until each is taught.
+    fn by_hand(&self, current: Vec<Value>, marks: &std::collections::BTreeMap<String, Value>) -> Vec<Value> {
+        if self.extras.flavour != Flavour::Typst || current.is_empty() {
+            return current;
+        }
+        let Some(said) = hand_text(marks) else { return current };
+        let mut out = Vec::with_capacity(current.len() + 2);
+        out.push(json!({"t": "RawInline", "c": ["typst", format!("#text({said})[")]}));
+        out.extend(current);
+        // Ended, so that what follows is not read as more of it.
+        out.push(json!({"t": "RawInline", "c": ["typst", "];"]}));
+        out
     }
 }
 

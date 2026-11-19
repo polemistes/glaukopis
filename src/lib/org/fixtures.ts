@@ -736,6 +736,8 @@ export function everything(): OrgProject {
               { kind: 'footnote', content: [t('A note written in a box.')] },
             ]),
           ),
+          // An empty paragraph, which is a blank line in a box.
+          within(p([])),
           within(p([t('A quotation, still a quotation.')], 'quote')),
           within(p([t('A point')], 'item')),
           within(p([t('under it')], 'item', { indent: 1 })),

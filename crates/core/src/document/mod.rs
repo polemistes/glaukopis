@@ -185,6 +185,17 @@ pub enum Block {
         /// A point to tick that is ticked.
         #[serde(default, skip_serializing_if = "std::ops::Not::not")]
         done: bool,
+        /// Stands in a box of rich text (ADR 0112), the first of it or one
+        /// after: `first`, `in`. What stands in one is set as any text is;
+        /// only an empty paragraph there is a blank line, where anywhere
+        /// else it is nothing.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        rich: Option<String>,
+        /// How it stands by hand, in a box of rich text and nowhere else
+        /// (ADR 0113): laid over what the layout gives its kind. Kept apart
+        /// from the paragraph, which few have it and all would carry.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        hand: Option<Box<Hand>>,
         content: Vec<Inline>,
     },
     /// A break of the page or of the column: what follows stands at the top
@@ -416,6 +427,87 @@ fn text_kind() -> String {
     "text".to_owned()
 }
 
+/// How a paragraph stands by hand, in a box of rich text (ADR 0113): what
+/// the writer said of this paragraph alone, each measure there only where
+/// it was said. As the interface keeps it (`byhand/hand.ts`): the lengths
+/// with their unit, the line spacing as a number, 1 for single. What is not
+/// said is the layout's; what is said and is no such measure is as if it
+/// were not said.
+#[derive(Debug, Clone, Default, PartialEq, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct Hand {
+    /// `left`, `center`, `right` or `justified`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub align: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub line_spacing: Option<f32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub space_before: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub space_after: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub indent_left: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub indent_right: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub first_line: Option<String>,
+}
+
+impl Hand {
+    /// A length said by hand, where it is one.
+    fn length(said: &Option<String>) -> Option<crate::formats::Length> {
+        said.as_deref().and_then(crate::formats::Length::parse)
+    }
+
+    pub fn space_before(&self) -> Option<crate::formats::Length> {
+        Self::length(&self.space_before)
+    }
+
+    pub fn space_after(&self) -> Option<crate::formats::Length> {
+        Self::length(&self.space_after)
+    }
+
+    pub fn indent_left(&self) -> Option<crate::formats::Length> {
+        Self::length(&self.indent_left)
+    }
+
+    pub fn indent_right(&self) -> Option<crate::formats::Length> {
+        Self::length(&self.indent_right)
+    }
+
+    pub fn first_line(&self) -> Option<crate::formats::Length> {
+        Self::length(&self.first_line)
+    }
+
+    /// How it stands across the line, where that is said.
+    pub fn align(&self) -> Option<crate::formats::Align> {
+        use crate::formats::Align;
+        match self.align.as_deref()? {
+            "left" => Some(Align::Left),
+            "center" => Some(Align::Center),
+            "right" => Some(Align::Right),
+            "justified" => Some(Align::Justified),
+            _ => None,
+        }
+    }
+
+    /// The line spacing, where one is said that lines can have.
+    pub fn line_spacing(&self) -> Option<f32> {
+        self.line_spacing.filter(|s| s.is_finite() && (0.5..=5.0).contains(s))
+    }
+
+    /// Whether nothing is said.
+    pub fn is_empty(&self) -> bool {
+        self.align().is_none()
+            && self.line_spacing().is_none()
+            && self.space_before().is_none()
+            && self.space_after().is_none()
+            && self.indent_left().is_none()
+            && self.indent_right().is_none()
+            && self.first_line().is_none()
+    }
+}
+
 impl Block {
     /// A paragraph of text.
     pub fn paragraph(content: Vec<Inline>) -> Block {
@@ -434,8 +526,20 @@ impl Block {
             from: None,
             new: false,
             done: false,
+            rich: None,
+            hand: None,
             content,
         }
+    }
+
+    /// The same paragraph as one that stands in a box of rich text, and as
+    /// it stands there by hand; any other block as it is.
+    pub fn in_a_box(mut self, by_hand: Option<Hand>) -> Block {
+        if let Block::Paragraph { rich, hand, .. } = &mut self {
+            *rich = Some("in".to_owned());
+            *hand = by_hand.map(Box::new);
+        }
+        self
     }
 
     /// The same paragraph, numbered as said; any other block as it is.

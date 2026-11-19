@@ -134,7 +134,7 @@ fn pt(value: f32) -> String {
 /// The space between lines, for a line spacing as word processors count it.
 /// Lines are set one em high (see the edges of `text` below), and single
 /// spacing is 1.2 em from baseline to baseline.
-fn leading(spacing: f32) -> String {
+pub(crate) fn leading(spacing: f32) -> String {
     let em = (spacing * 1.2 - 1.0).max(0.0);
     format!("{}em", (em * 1000.0).round() / 1000.0)
 }

@@ -789,6 +789,53 @@ function boxed(block: Block, rich: Boxed | null): Block {
   return (rich ? { ...plain, rich } : plain) as Block;
 }
 
+/**
+ * An empty paragraph in a box of rich text, as it is written: Org's own
+ * sign for a break of the line, alone on its line. In a box an empty
+ * paragraph is a blank line of the document (ADR 0113); anywhere else it is
+ * nothing, and is not written.
+ */
+const BLANK = '\\\\';
+
+/** Whether a block is an empty paragraph of text. */
+const isBlank = (b: Block): b is ParagraphBlock =>
+  b.kind === 'paragraph' && b.name === 'text' && !b.content.length;
+
+/** Whether a paragraph that was read is the sign of an empty one: a break of the line and nothing else. */
+const readsBlank = (b: Block): b is ParagraphBlock =>
+  b.kind === 'paragraph' &&
+  b.name === 'text' &&
+  b.content.length === 1 &&
+  b.content[0].kind === 'break';
+
+/**
+ * The lines of what a box of rich text holds: its blocks as they are
+ * written anywhere, and each empty paragraph among them as the sign of
+ * one, with how it stands by hand before it where it says so. One that
+ * holds empty paragraphs and nothing else is not written.
+ */
+function boxLines(held: Block[], ctx: TextContext): string[] {
+  if (held.every(isBlank)) return [];
+  const out: string[] = [];
+  const add = (lines: string[]) => {
+    if (!lines.length) return;
+    if (out.length) out.push('');
+    out.push(...lines);
+  };
+  let run: Block[] = [];
+  for (const b of held) {
+    if (!isBlank(b)) {
+      run.push(b);
+      continue;
+    }
+    add(bodyLines(run, ctx));
+    run = [];
+    add([...attrLine(handSaid(b)), BLANK]);
+  }
+  add(bodyLines(run, ctx));
+  return out;
+}
+
 /** The lines of a text: its blocks, parted by blank lines. */
 export function bodyLines(blocks: readonly Block[], ctx: TextContext): string[] {
   const items: string[][] = [];
@@ -801,8 +848,7 @@ export function bodyLines(blocks: readonly Block[], ctx: TextContext): string[] 
       let end = k + 1;
       while (end < blocks.length && richOf(blocks[end]) === 'in') end++;
       const held = blocks.slice(k, end).map((held) => boxed(held, null));
-      // One that holds nothing Org keeps, as an empty paragraph alone, is not written.
-      const lines = bodyLines(held, ctx);
+      const lines = boxLines(held, ctx);
       if (lines.length) items.push(['#+BEGIN_rich', ...lines, '#+END_rich']);
       before = null;
       k = end;
@@ -1377,8 +1423,12 @@ export function readBody(lines: readonly string[], ctx: TextContext): Block[] {
           const items = readBody(inner, ctx);
           push(items.length ? [{ kind: 'row', items }] : []);
         } else if (lower === 'rich') {
-          // A box of rich text: what it holds, each block saying that it stands in it.
-          push(readBody(inner, ctx).map((held, n) => boxed(held, n ? 'in' : 'first')));
+          // A box of rich text: what it holds, each block saying that it stands in it; a break of the line alone is an empty paragraph there.
+          push(
+            readBody(inner, ctx)
+              .map((held) => (readsBlank(held) ? { ...held, content: [] } : held))
+              .map((held, n) => boxed(held, n ? 'in' : 'first')),
+          );
         } else if (lower === 'parallel') {
           const sides: Block[][] = [[], []];
           for (let k = 0; k < inner.length; k++) {

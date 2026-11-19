@@ -15,7 +15,8 @@ function normal(blocks: readonly Block[]): Block[] {
   for (const b of blocks) {
     if (b.kind === 'paragraph') {
       const content = normalInlines(b.content);
-      if (content.length || b.name === 'break') out.push({ ...b, content });
+      // In a box of rich text an empty paragraph is a blank line, and is kept.
+      if (content.length || b.name === 'break' || b.rich) out.push({ ...b, content });
     } else if (b.kind === 'table')
       out.push({
         ...b,
@@ -867,8 +868,68 @@ describe('a box of rich text in Org', () => {
     expect(text).not.toMatch(/^#\+BEGIN_rich$/im);
   });
 
-  it('that holds nothing that Org keeps is not written', () => {
-    expect(writeBlocks([first(p([])), p([t('After.')])])).toBe(lines('After.'));
+  it('that holds nothing but empty paragraphs is not written', () => {
+    expect(writeBlocks([first(p([])), within(p([])), p([t('After.')])])).toBe(lines('After.'));
+  });
+
+  it('keeps an empty paragraph as a blank line, written as a break of the line alone', () => {
+    const blocks: Block[] = [
+      first(p([t('One.')])),
+      within(p([])),
+      within({ ...p([]), hand: { spaceAfter: '12pt' } }),
+      within(p([t('Two.')])),
+    ];
+    expect(written(blocks)).toBe(
+      lines(
+        '#+BEGIN_rich',
+        'One.',
+        '',
+        '\\\\',
+        '',
+        '#+ATTR_GLAUKOPIS: :space-after 12pt',
+        '\\\\',
+        '',
+        'Two.',
+        '#+END_rich',
+      ),
+    );
+    // Outside a box an empty paragraph is nothing, as before.
+    expect(writeBlocks([p([t('One.')]), p([]), p([t('Two.')])])).toBe(lines('One.', '', 'Two.'));
+  });
+
+  it('says what is set by hand: of words in the bracket, of a paragraph on the line before it', () => {
+    const blocks: Block[] = [
+      first({
+        ...p([
+          t('Dear all, '),
+          t('welcome', { size: { pt: 20 }, colour: { value: '#a02020' } }),
+          t(' to the '),
+          t('opening', { font: { family: 'EB Garamond' } }),
+          t('.'),
+        ]),
+        hand: { align: 'center', spaceAfter: '12pt' },
+      }),
+      within({ ...p([t('A point')], 'item'), hand: { indentLeft: '1cm' } }),
+    ];
+    expect(written(blocks)).toBe(
+      lines(
+        '#+BEGIN_rich',
+        '#+ATTR_GLAUKOPIS: :align center :space-after 12pt',
+        'Dear all, [welcome]{size=20 colour=#a02020} to the [opening]{font="EB Garamond"}.',
+        '',
+        '#+ATTR_GLAUKOPIS: :indent-left 1cm',
+        '- A point',
+        '#+END_rich',
+      ),
+    );
+    // Where a list cannot say how one of its points stands, it is written so that it reads back: `written` holds it to that.
+    written([
+      first(p([t('One')], 'item')),
+      within({ ...p([t('Two')], 'item'), hand: { align: 'right' } }),
+      within({ ...p([t('Three')], 'item', { indent: 1 }), hand: { spaceAfter: '6pt' } }),
+      within({ ...p([t('A line')], 'line'), hand: { align: 'center' } }),
+      within({ ...p([t('and another')], 'line'), hand: { lineSpacing: 2 } }),
+    ]);
   });
 });
 

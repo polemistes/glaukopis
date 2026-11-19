@@ -24,7 +24,6 @@
   import Search from '@lucide/svelte/icons/search';
   import X from '@lucide/svelte/icons/x';
   import {
-    fontsList,
     formatKindLooks,
     formatsDelete,
     formatsSave,
@@ -75,6 +74,7 @@
     type LookPath,
   } from './changes';
   import { formatGroups, layoutName, styleGroups, styleName } from './choosing.svelte';
+  import { fonts } from './fonts.svelte';
   import { LOOK_SECTIONS, lookUi, type LookRequest, type LookSection } from './look.svelte';
   import ContentsSection from './ContentsSection.svelte';
   import { Composition } from './composition.svelte';
@@ -591,24 +591,8 @@
 
   // ---- the rows ----
 
-  let fonts = $state.raw<string[]>([]);
-  $effect(() => {
-    fontsList()
-      .then((list) => (fonts = list))
-      // The usual fonts are still offered; the log says why the others are not.
-      .catch((error) => console.error('the fonts of this computer could not be listed', error));
-  });
-  const usual = [
-    'Times New Roman',
-    'Arial',
-    'Calibri',
-    'Garamond',
-    'Georgia',
-    'Palatino',
-    'Libertinus Serif',
-    'Gentium Plus',
-    'New Athena Unicode',
-  ];
+  // The fonts to choose among are listed once for every chooser of them: see `fonts.svelte.ts`.
+  $effect(() => fonts.ask());
   /**
    * The fonts to choose from, in groups: those this document uses, its
    * layout's and those its elements and the elements over it set; those set
@@ -636,9 +620,7 @@
     }
     for (const n of here) elsewhere.delete(n);
     const by = (a: string, b: string) => a.localeCompare(b, languages.current);
-    const rest = [...new Set([...usual, ...fonts])].filter(
-      (n) => !here.has(n) && !elsewhere.has(n),
-    );
+    const rest = fonts.all.filter((n) => !here.has(n) && !elsewhere.has(n));
     return [
       { label: t('look-fonts-document'), fonts: [...here].sort(by) },
       { label: t('look-fonts-project'), fonts: [...elsewhere].sort(by) },

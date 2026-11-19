@@ -1,6 +1,6 @@
 # A box of rich text — the build plan
 
-From the owner's words of 2026-11-19 (the last section of `docs/brief.md`: read it first). This is the plan of the whole, written to be read by the owner before anything is built. **Built**: stage 1, the guard (record 0111, on 2026-11-19), and stage 2, the box with nothing set by hand (record 0112, the same day). **Rich text is not offered yet**: one switch, `RICH_TEXT_OFFERED` in `src/lib/byhand/offered.ts`, keeps it out of the Insert menu and the row of the note window, while everything of it is built in, kept and tried by the scripts (see *Not offered yet* below). Each stage is given its detailed part here (the files, the words, the checks) when it is begun, after the code it touches has been read, and its record when it is built, as the notebook's stages were.
+From the owner's words of 2026-11-19 (the last section of `docs/brief.md`: read it first). This is the plan of the whole, written to be read by the owner before anything is built. **Built**: stage 1, the guard (record 0111, on 2026-11-19), stage 2, the box (record 0112, the same day), and stage 3, the look set by hand, with Typst (record 0113, the same day). **Rich text is not offered yet**: one switch, `RICH_TEXT_OFFERED` in `src/lib/byhand/offered.ts`, keeps it out of the Insert menu and the row of the note window, while everything of it is built in, kept and tried by the scripts (see *Not offered yet* below). Each stage is given its detailed part here (the files, the words, the checks) when it is begun, after the code it touches has been read, and its record when it is built, as the notebook's stages were.
 
 ## What it is
 
@@ -42,13 +42,13 @@ The owner has read these and not objected; none is confirmed. They are the assis
 The owner chose that the guard goes out a release ahead of the box. The box is built on the same branch as the guard, so a release cut now would have both. One switch settles it: `RICH_TEXT_OFFERED` (`src/lib/byhand/offered.ts`), false.
 
 - **A version built with it false is the release that goes ahead**, and more than a guard: it knows the box, shows one it is given, keeps it and writes in it, and is not kept out of a project when someone with a later version puts a box in. It offers no way of making one.
-- **It stays false until what a box is for is built** (stages 3 to 5): a white sheet that does nothing is not to be offered.
+- **It stays false until the owner says otherwise.** With stage 3 the sheet does what it is for where the page is set by Typst: the typesetting pane and the PDF. Word, Writer, LaTeX, HTML and EPUB set the text without what was set by hand until stage 4.
 - **The scripts that drive the running application are offered it** whatever the switch says, so that all of it stays tried.
 - **To offer it**: set the switch to true, bring the section below into the guide, and release; the release before must have been one with the guard.
 
 ### What the guide says when Rich text is offered
 
-Written with stage 2, and to be added to with each stage. In the guide's part on writing, before *Kinds of paragraph and of words*; *Rich text* is also named among what Insert puts in, among what a note holds, in the row of the window of a note, and, in *Your project as Org*, as the block `#+BEGIN_rich` around what it holds. In *Working together*, after what is said of versions: *Rich text is such a thing: before the first is put into a shared project, Glaukopis asks, and says who will be kept out.*
+Written with stage 2, and to be added to with each stage. In the guide's part on writing, before *Kinds of paragraph and of words*; *Rich text* is also named among what Insert puts in, among what a note holds, in the row of the window of a note, and, in *Your project as Org*, as the block `#+BEGIN_rich` around what it holds, with what is set by hand of words in a bracket after them (`[welcome]{size=20 colour=#a02020}`) and of a paragraph on a line before it (`#+ATTR_GLAUKOPIS: :align center`). In *Working together*, after what is said of versions: *Rich text is such a thing: before the first is put into a shared project, Glaukopis asks, and says who will be kept out.*
 
 #### Rich text
 
@@ -72,8 +72,40 @@ numbered and set in the document as the rest of the text is.
 - A sheet stands in a text itself: not in a table, not in one of two texts
   side by side, and not within another sheet.
 
-It is the place where the look of a text is to be set by hand, as in a
-word processor; the tools for that are not in it yet.
+In it the look is set by hand, as in a word processor, from the tools in
+its head, which show while the cursor is in the sheet:
+
+- **The font**, **the size** in points, and **the colour** of the words
+  selected, or of what you write next where nothing is selected. *As the
+  document* in the list of fonts and in the menu of colours, and an empty
+  field for the size, take it away again. *Another…* in the menu of
+  colours opens the system's own chooser of colours.
+- **Bold**, **italic** and **underlined**, and the two lists, as
+  everywhere.
+- How the paragraphs selected stand across the line: **left**,
+  **centred**, **right** or **justified**. Pressed again, it is taken
+  away.
+- **Paragraph** opens a small panel with the line spacing, the space
+  before and after, the indents from the left and the right, and the
+  first line. A number alone is points for the space and centimetres for
+  the indents; an empty field is as the document has it.
+- **Clear formatting** takes away everything set by hand of what is
+  selected, or of the paragraph the cursor is in. Bold and italic stay.
+
+What you do not set is as the Look sets it, and so are the page, the
+headings, the notes at the foot and the bibliography: **The look of the
+whole document…**, under the **…**, opens the Look where the font and the
+size of all of it are set. An empty paragraph in a sheet is a blank line
+in the document.
+
+What is set by hand lives only in the sheet. A paragraph dragged out of
+it, and what is pasted elsewhere, is ordinary text there; **Make it
+ordinary text** asks first where anything is set by hand, since it is
+taken away with the sheet.
+
+The typesetting pane and the PDF set all of it. The sheet shows the font,
+the sizes, the colours and how the paragraphs stand; where the lines and
+the pages break is shown by the typesetting pane.
 
 A version of Glaukopis from before rich text does not know it. A project
 that holds rich text is not opened by such a version, which says that the
@@ -208,7 +240,7 @@ All four are built with stage 2 (record 0112).
 
 1. **The guard. Built** (record 0111): the form of the texts in a project's document and the notebook's, asked before either is opened and of everything the others send; the server keeping out those who do not know a project's form; the words; the tests, one of them binding an editor to a document that holds a block and a mark its schema does not know, which it deletes; `e2e/later-form.mjs`, and `e2e/later-form-shared.mjs` with the real server, two applications and the script as a later version. Nothing of the box. It goes out a release ahead of the box, and the server is updated with it.
 2. **The box, with nothing set by hand. Built** (record 0112), and smaller than this stage feared: the box is a block of its own in the editor only, and everything else reads a text as a run of blocks that each say they stand in a box, as paragraphs say how they are numbered; so the rule below holds by how a text is read, the core is not told of the box, and the places that had to learn of it are the editor, the reading and writing of a text, Org and the drawn text. As it was planned: The block and its place in the schema; *Insert → Rich text*, the keys in and out, the head and its menu, the white surface; every walk of a text's paragraphs going into the box, held by the test of the rule; the Org block; the core setting what is in a box as it sets any text. What one sees: a white sheet in the text that changes nothing in the document. This is the stage that touches the most places, and it is checked before any tool is added.
-3. **Set by hand, and seen.** The three marks and the paragraph's measures; the row of tools with the chooser of fonts lifted out; *Clear formatting*; the rule that nothing by hand lives outside a box; the Org forms; Typst, so that the typesetting pane and the PDF show it; the empty paragraph as a blank line. From here the box does what it is for.
+3. **Set by hand, and seen. Built** (record 0113). As it was planned: The three marks and the paragraph's measures; the row of tools with the chooser of fonts lifted out; *Clear formatting*; the rule that nothing by hand lives outside a box; the Org forms; Typst, so that the typesetting pane and the PDF show it; the empty paragraph as a blank line. From here the box does what it is for.
 4. **The other forms of a document.** LaTeX; Word and Writer with their made styles; HTML and EPUB; Markdown. Four parts that do not touch each other, for four agents.
 5. **Around it.** The colours on the white surface in a dark scheme; the tools folded in small places; the history and the review; Find and Replace; copying between boxes; the notebook; the mind maps; the guide; Bokmål with the English, the other languages in a round. Separable parts again.
 

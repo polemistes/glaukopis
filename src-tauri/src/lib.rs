@@ -479,6 +479,8 @@ pub fn run_note_window() {
             commands::notewindow::note_window_add_files,
             commands::notewindow::note_window_add_bytes,
             commands::notewindow::note_window_file_path,
+            // The fonts of this computer, for the list of fonts in the head of rich text (ADR 0113).
+            commands::documents::fonts_list,
             commands::system::languages,
             commands::system::log_page,
             commands::system::file_read,
