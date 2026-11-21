@@ -6,6 +6,9 @@
  *   a kind it makes the paragraph text instead, which is how one leaves a
  *   list, a verse or a dialogue.
  * - Shift+Enter begins a new line within the paragraph.
+ * - Where the writer has Enter make the line break (`lineEnterKey`), the
+ *   two change places, and Enter where a line break stands makes the
+ *   paragraph break of the two.
  * - Backspace at the start of a line joins it to the line before; at the
  *   start of a paragraph, to the paragraph before, whose kind holds.
  * - Tab and Shift+Tab indent and outdent: a line of verse by itself, any
@@ -158,6 +161,36 @@ export const breakKey: Command = (state, dispatch) => {
     } else dispatch(state.tr.replaceSelectionWith(br.create()).scrollIntoView());
   }
   return true;
+};
+
+/**
+ * Enter, where the writer has it make a line break (the owner's word,
+ * 2026-11-21): a new line within the paragraph; and where a line break
+ * stands at the cursor already, before it or after, the paragraph is parted
+ * there and that break goes, as `enterKey` does it: two line breaks make
+ * one paragraph break, and no empty line is left. In an empty paragraph
+ * Enter is what it always is, so that a list, a verse or a dialogue is left
+ * by it, and a new paragraph follows an empty one.
+ */
+export const lineEnterKey: Command = (state, dispatch, view) => {
+  const { selection } = state;
+  if (!(selection instanceof TextSelection)) return false;
+  const { $from, $to } = selection;
+  if (!$from.sameParent($to) || $from.parent.type.name !== 'paragraph') return false;
+  if (selection.empty) {
+    if (emptyParagraph($from.parent)) return enterKey(state, dispatch, view);
+    const found = cursorLine(state);
+    const at = selection.head;
+    if (found) {
+      const { line } = found;
+      const after =
+        onlyMarksBefore(state.doc, line, at) &&
+        state.doc.resolve(line.start).nodeBefore?.type.name === 'hard_break';
+      const before = at === line.end && $from.nodeAfter?.type.name === 'hard_break';
+      if (after || before) return enterKey(state, dispatch, view);
+    }
+  }
+  return breakKey(state, dispatch, view);
 };
 
 /**

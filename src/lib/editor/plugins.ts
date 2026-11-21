@@ -48,9 +48,10 @@ import {
 } from './commands';
 import { boxRule, ticking } from './ticking';
 import { runBrackets } from './brackets';
-import { breakKey, enterKey, indentKey, joinLineKey, lineMarks } from './keys';
+import { breakKey, enterKey, indentKey, joinLineKey, lineEnterKey, lineMarks } from './keys';
 import { kindName } from './kinds';
 import { kindKeyOf } from '$lib/shell/keys.svelte';
+import { settings } from '$lib/state/settings.svelte';
 import { continuesPlugin } from './continues';
 import { movesDragged } from './dragged';
 import { toggleGround } from './ground';
@@ -368,19 +369,22 @@ export function bodyPlugins(schema: Schema, hooks: EditorHooks): Plugin[] {
       act(hooks, 'delete-at-end', (state) => isAtEnd(state) && state.selection.$from.depth === 1),
     ),
   };
-  // The same in every kind of paragraph: see `keys.ts`.
-  keys.Enter = chainCommands(
+  // The same in every kind of paragraph: see `keys.ts`. What comes before the
+  // break itself is the same whichever break the key makes.
+  const before: Command[] = [
     openSelected,
     leaveCaption,
     // After a heading in a box of rich text the text goes on.
     afterHeading,
     // An empty paragraph at the end of a box of rich text leaves the box, as an empty point leaves a list.
     leaveBox,
-    enterKey,
-    createParagraphNear,
-    liftEmptyBlock,
-    splitBlock,
-  );
+  ];
+  /** The break between paragraphs. */
+  const parts = chainCommands(...before, enterKey, createParagraphNear, liftEmptyBlock, splitBlock);
+  /** Whether the writer has Enter make the line break, and Shift+Enter the paragraph's: read as the key is pressed. */
+  const lines = () => !!br && settings.value.enterBreaks === 'line';
+  const linesFirst = chainCommands(...before, lineEnterKey, parts);
+  keys.Enter = (state, dispatch, view) => (lines() ? linesFirst : parts)(state, dispatch, view);
   // In a table, the table's own Tab comes first (its plugins stand before the keys); across texts side by side next.
   keys.Tab = chainCommands(acrossParallel(false), indentKey(1, own), act(hooks, 'tab'));
   keys['Shift-Tab'] = chainCommands(
@@ -390,8 +394,10 @@ export function bodyPlugins(schema: Schema, hooks: EditorHooks): Plugin[] {
   );
   if (br) {
     const hardBreak: Command = chainCommands(exitCode, breakKey);
-    // Shift+Enter is the one line break: Ctrl+Enter is not a second.
-    keys['Shift-Enter'] = hardBreak;
+    // Shift+Enter is the one line break: Ctrl+Enter is not a second. Where
+    // Enter makes the line break, Shift+Enter makes the other.
+    keys['Shift-Enter'] = (state, dispatch, view) =>
+      (lines() ? parts : hardBreak)(state, dispatch, view);
   }
 
   // Ctrl+Alt with a digit: the paragraphs selected, or the one the cursor is

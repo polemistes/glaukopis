@@ -251,6 +251,11 @@ editor-words-kind = Ordtype
 editor-words-kind-now = Ordtype: { $kind }
 editor-marks = Markeringer
 editor-marks-shown = Tegn for mellomrom og avsnitt
+editor-breaks = Skift og mellomrom
+# The heading over the two choices of what the Enter key makes in a text: a break between paragraphs, or a break of the line within the paragraph.
+editor-enter-key = Enter-tasten
+editor-enter-paragraph = Avsnittsskift
+editor-enter-line = Linjeskift
 editor-image = Bilde
 editor-inline-number = Tall i linjen …
 

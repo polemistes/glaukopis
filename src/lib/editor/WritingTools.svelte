@@ -472,6 +472,35 @@
   /** The ground of what is selected, for the button to show: a colour, none, or several. */
   const ground = $derived(s && s.kind !== 'title' ? groundAt(s.view.state) : null);
 
+  /** The menu of the breaks: the marks of whitespace shown or not, and what the Enter key makes. */
+  function breaks(event: MouseEvent) {
+    const lines = settings.value.enterBreaks === 'line';
+    openMenu(
+      event.currentTarget as HTMLElement,
+      [
+        {
+          label: t('editor-marks-shown'),
+          shortcut: keysFor('writing-marks'),
+          checked: panes.marks,
+          action: () => (panes.marks = !panes.marks),
+        },
+        { kind: 'separator' },
+        { kind: 'heading', label: t('editor-enter-key') },
+        {
+          label: t('editor-enter-paragraph'),
+          checked: !lines,
+          action: () => settings.set('enterBreaks', 'paragraph'),
+        },
+        {
+          label: t('editor-enter-line'),
+          checked: lines,
+          action: () => settings.set('enterBreaks', 'line'),
+        },
+      ],
+      { align: 'start' },
+    );
+  }
+
   /** Turns the checking of spelling off or on, for everything, as the settings do. */
   function turnSpelling() {
     settings.set('spelling', !spelling.on);
@@ -779,23 +808,21 @@
   >
     <SpellCheck size={15} />
   </button>
-  <!-- The marks of whitespace, ¶ ↵ and the ring of a hard space, shown or not: in every text of the window. -->
+  <!-- The breaks of a text: the marks of whitespace, ¶ ↵ and the ring of a hard space, shown or not in
+       every text of the window; and which of the two breaks the Enter key makes. -->
   <button
     type="button"
-    class="always"
+    class="always opens"
     class:on={panes.marks}
-    aria-pressed={panes.marks}
-    aria-label={t('editor-marks-shown')}
+    aria-label={t('editor-breaks')}
+    aria-haspopup="menu"
     data-whitespace
     {disabled}
-    use:tooltip={{
-      text: t('editor-marks-shown'),
-      shortcut: keysFor('writing-marks'),
-      side: 'bottom',
-    }}
-    onclick={() => (panes.marks = !panes.marks)}
+    use:tooltip={{ text: t('editor-breaks'), side: 'bottom' }}
+    onclick={breaks}
   >
     <Pilcrow size={15} />
+    <ChevronDown size={12} />
   </button>
 
   <span class="rule" role="separator"></span>

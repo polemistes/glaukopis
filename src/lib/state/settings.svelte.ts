@@ -181,6 +181,13 @@ export interface MoreSettings {
    * out of a project when its chat is next shown.
    */
   chatReadShown: boolean;
+  /**
+   * What the Enter key makes in a text: a paragraph break, unless the
+   * writer chose a line break, and then one more Enter where a line break
+   * stands makes the paragraph break of the two (`editor/keys.ts`).
+   * Shift+Enter makes the other.
+   */
+  enterBreaks: 'paragraph' | 'line';
 }
 
 export type AllSettings = Settings & MoreSettings;
@@ -222,6 +229,7 @@ const more = (kept: Partial<AllSettings> = {}): MoreSettings => ({
   ),
   recentEmojis: recentEmojisOf(kept.recentEmojis),
   chatReadShown: typeof kept.chatReadShown === 'boolean' ? kept.chatReadShown : true,
+  enterBreaks: kept.enterBreaks === 'line' ? 'line' : 'paragraph',
 });
 
 /**

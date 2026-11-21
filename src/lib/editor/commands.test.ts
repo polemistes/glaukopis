@@ -13,6 +13,7 @@ import {
   splitCitation,
   toggleKind,
 } from './commands';
+import { settings } from '$lib/state/settings.svelte';
 import { bodyPlugins } from './plugins';
 import { bodySchema } from './schema';
 import { editorOf, press, shapeOf, type } from './testing';
@@ -236,6 +237,56 @@ describe('the keys, the same in every kind', () => {
     expect(shapeOf(v)).toEqual(['text: Sing,  / |goddess']);
     press(v, 'Backspace');
     expect(shapeOf(v)).toEqual(['text: Sing, |goddess']);
+  });
+
+  it('where Enter makes the line break, a second Enter makes the paragraph break of the two, and Shift+Enter makes the other', () => {
+    settings.value.enterBreaks = 'line';
+    try {
+      const v = at(['text: Sing, |goddess']);
+      expect(press(v, 'Enter')).toBe(true);
+      expect(shapeOf(v)).toEqual(['text: Sing,  / |goddess']);
+      // Again, where the line break stands: the paragraph is parted there, and no empty line is left.
+      press(v, 'Enter');
+      expect(shapeOf(v)).toEqual(['text: Sing, ', 'text: |goddess']);
+      // At the end of a paragraph: a new line, and then a new paragraph.
+      v.dispatch(v.state.tr.setSelection(TextSelection.atEnd(v.state.doc)));
+      press(v, 'Enter');
+      expect(shapeOf(v)).toEqual(['text: Sing, ', 'text: goddess / |']);
+      press(v, 'Enter');
+      expect(shapeOf(v)).toEqual(['text: Sing, ', 'text: goddess', 'text: |']);
+      // In an empty paragraph Enter is what it always is: a paragraph after it.
+      press(v, 'Enter');
+      expect(shapeOf(v)).toEqual(['text: Sing, ', 'text: goddess', 'text: ', 'text: |']);
+      // Shift+Enter is the paragraph break at once.
+      const w = at(['text: Sing, |goddess']);
+      press(w, 'Enter', { shiftKey: true });
+      expect(shapeOf(w)).toEqual(['text: Sing, ', 'text: |goddess']);
+      // Before a line break that is there, Enter makes it the paragraph break too.
+      const x = at(['text: Sing,| / goddess']);
+      press(x, 'Enter');
+      expect(shapeOf(x)).toEqual(['text: Sing,', 'text: |goddess']);
+    } finally {
+      settings.value.enterBreaks = 'paragraph';
+    }
+  });
+
+  it('where Enter makes the line break, verse is written with it, and an empty line of a kind is still left by it', () => {
+    settings.value.enterBreaks = 'line';
+    try {
+      const v = at(['line: Sing, goddess|']);
+      press(v, 'Enter');
+      type(v, 'the wrath');
+      expect(shapeOf(v)).toEqual(['line: Sing, goddess / the wrath|']);
+      // Twice: a new stanza, of the same kind.
+      press(v, 'Enter');
+      press(v, 'Enter');
+      expect(shapeOf(v)).toEqual(['line: Sing, goddess / the wrath', 'line: |']);
+      // On the empty stanza, the verse is left, as ever.
+      press(v, 'Enter');
+      expect(shapeOf(v)).toEqual(['line: Sing, goddess / the wrath', 'text: |']);
+    } finally {
+      settings.value.enterBreaks = 'paragraph';
+    }
   });
 
   it('Enter in verse makes a new stanza of the same kind, indent and numbering, the mark staying with its line', () => {

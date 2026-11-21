@@ -286,3 +286,18 @@ Small things the owner may want otherwise: the signs `@ ` and `> ` for a speaker
 ## Addendum, 2026-11-06: spaces at the ends of lines, on the clipboard
 
 The owner copied a text from an element's editor and found `\ {}` at its end. That is the Org form of a space at the end of a line, written so by *Text that looks like a sign*: Org and the editors of Org files trim the ends of lines, and the empty braces keep the space from being trimmed, the backslash before it saying that it is text. The text copied ended with a space, and the clipboard carries the Org form of what is copied. On the clipboard the escape is noise: nothing trims there, and what other programs are given must read as words. From now on, the text put on the clipboard writes a space at the end or the start of a line as it is, with no backslash and no braces; the Org files keep the escape, so that they still read back as they were. The HTML put on the clipboard beside the text is as it was.
+
+## Addendum, 2026-11-21: what the Enter key makes is the writer's choice
+
+The owner asked that the button with ¶ in the bar open a menu, with the marks of whitespace and, under *Enter key*, *Paragraph break* and *Line break*; and that where Enter makes a line break, two line breaks make one paragraph break. The keys stay the same in every kind of paragraph; which of the two breaks the plain key makes is now chosen.
+
+- **The button with ¶ opens a menu**: *Marks of whitespace*, ticked while they are shown (it was the button's one act; its place in the palette and its key, where one is given, stay), and under the heading *Enter key* the two, the one in use ticked. The button is called *Breaks and whitespace*, and is lit while the marks are shown, as it was.
+- **With *Line break*, Enter begins a new line within the paragraph.** Where a line break stands at the cursor, before it or after, Enter parts the paragraph there and that break goes: what `enterKey` already did with a line break at the cursor. So Enter twice is a new paragraph, and no empty line is left in a paragraph, which the text never had.
+- **In an empty paragraph Enter is what it always is**: a paragraph of a kind becomes text, so that a list, a verse or a dialogue is left as before, and a new paragraph follows an empty one. A line break in an empty paragraph would be nothing to see.
+- **Shift+Enter makes the other break**: the paragraph break at once, where Enter makes the line break. One key for each break in both, and nothing to learn but which is which.
+- **What comes before the break is as it was**, whichever break the key makes: opening what is selected, leaving a caption, going on after a heading in rich text, leaving rich text from its empty last paragraph.
+- **It is the writer's, for every text on this computer**, kept in the settings (`enterBreaks`), read as the key is pressed: the notes of the notebook and the window of a note too. It is not the project's: two who write in one project each press the key they are used to, and what is written is the same two breaks.
+
+Why not otherwise: *an empty line made by Enter twice, joined to a paragraph break afterwards* would have the text hold, for a moment, what it never holds; *the choice in the settings window alone* hides it from where one writes, and the owner asked for it at the button.
+
+`lineEnterKey` in `editor/keys.ts`, bound in `editor/plugins.ts`; the menu in `editor/WritingTools.svelte`; `e2e/enter-key.mjs`.

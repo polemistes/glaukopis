@@ -1851,3 +1851,14 @@ Of the menus of projects, and of the list:
   something else: that the file is the project.
 - **Nothing in the list unfolds by itself**, the top elements of a project
   that is opened neither; what is unfolded can be folded.
+
+## 2026-11-21 — what the Enter key makes
+
+> Could the paragraph icon in the text editor open a menu with "Marks of
+> whitespace", "Enter key:", "Paragraph break", "Line break"? Or something
+> like that? When enter makes a line break, two line breaks make one
+> paragraph break.
+
+- **The button with ¶ opens a menu**: the marks of whitespace, and what the
+  Enter key makes, a paragraph break or a line break.
+- **Where Enter makes a line break, two of them make one paragraph break.**

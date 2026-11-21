@@ -405,8 +405,16 @@ under the one the cursor is in. **Ctrl+Z** takes the whole step back.
 
 A text has two breaks: **Enter** begins a new paragraph, and
 **Shift+Enter** breaks the line within the paragraph, as in an address or a
-title of two lines. **The marks of whitespace**, the button with **¶** in
-the bar, show a faint **¶** at the end of every paragraph, **↵** at a break
+title of two lines. The button with **¶** in the bar opens a menu about
+them. Under **Enter key** you choose what the key makes: **Paragraph
+break**, as above, or **Line break**. With **Line break**, Enter begins a
+new line within the paragraph, and Enter once more, where a line break
+stands, makes a new paragraph of it: two line breaks make one paragraph
+break, and no empty line is left. Shift+Enter then begins the new paragraph
+at once. It is so in every text, and stays as you choose it.
+
+**Marks of whitespace**, in the same menu, show a faint **¶** at the end of
+every paragraph, **↵** at a break
 within a paragraph, and a small ring over a **hard space**, a space that no
 line is broken at, as between a number and its unit, written with
 **Ctrl+Shift+Space**. The marks are on the screen only: they are not
@@ -617,6 +625,7 @@ every kind of text:
 | --- | --- |
 | **Enter** | A new paragraph of the same kind, with the same indent and numbering. On an empty paragraph of a kind, the paragraph becomes text: so one leaves a list, a verse or a dialogue. |
 | **Shift+Enter** | A new line within the paragraph. |
+| **Enter**, where it is chosen to make a **Line break** (the button with **¶**) | A new line within the paragraph; once more, a new paragraph. Shift+Enter is then the new paragraph at once. |
 | **Backspace** at the start of a line | Joins it to the line before; at the start of a paragraph, to the paragraph before, whose kind holds. |
 | **Tab**, **Shift+Tab** | Sets a line of verse, or any other paragraph, in a step more, or back a step. |
 
@@ -624,7 +633,8 @@ Nothing else changes lines or paragraphs: changing the kind of a paragraph
 changes its kind and nothing more.
 
 A poem is written as it is written on paper: a line of verse ends with
-**Shift+Enter**, and a stanza with **Enter**. Choose **Verse** as the kind of
+**Shift+Enter**, and a stanza with **Enter**; or, with Enter chosen to make
+a line break, a line with **Enter** and a stanza with Enter twice. Choose **Verse** as the kind of
 its paragraphs, and each paragraph is a stanza and each of its lines a line.
 Enter within a line parts the stanza there, the line break becoming the break
 between the two. Tab sets the line the cursor is in in a step, for the

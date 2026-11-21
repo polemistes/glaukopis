@@ -253,6 +253,11 @@ editor-words-kind = Words kind
 editor-words-kind-now = Words kind: { $kind }
 editor-marks = Marks
 editor-marks-shown = Marks of whitespace
+editor-breaks = Breaks and whitespace
+# The heading over the two choices of what the Enter key makes in a text: a break between paragraphs, or a break of the line within the paragraph.
+editor-enter-key = Enter key
+editor-enter-paragraph = Paragraph break
+editor-enter-line = Line break
 editor-image = Image
 editor-inline-number = Inline number…
 
