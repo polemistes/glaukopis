@@ -23,7 +23,8 @@
   import { number, statusWords } from '../status';
   import type { Other, Project } from '../model/project.svelte';
   import type { NodeRecord } from '../model/types';
-  import type { Placed, Size } from './layout';
+  import type { Placed } from './layout';
+  import type { Measuring } from './measuring';
 
   interface Props {
     project: Project;
@@ -44,7 +45,8 @@
     isDocument?: boolean;
     /** Those of the others who are at this element. */
     others?: Other[];
-    onsize: (id: string, size: Size | null) => void;
+    /** What measures it, with the others of its diagram. */
+    measuring: Measuring;
     onrenamed: (id: string, action: KeyAction | 'blur') => void;
     /** The id of the element in the page, for those who hear it read: unique to its diagram. */
     domId?: string;
@@ -73,7 +75,7 @@
     excluded,
     isDocument = false,
     others = [],
-    onsize,
+    measuring,
     domId,
     typedAhead,
     onrenamed,
@@ -86,26 +88,12 @@
 
   let el = $state<HTMLDivElement>();
 
-  // Depends on the element alone: the size is reported for as long as it is
-  // there, and withdrawn only when it goes.
+  // Depends on the element alone: it is measured for as long as it is
+  // there, with the others of its diagram, and no longer when it goes.
   $effect(() => {
     if (!el) return;
     const target = el;
-    const id = untrack(() => node.id);
-    const report = (size: Size | null) => untrack(() => onsize(id, size));
-    const measure = () => report({ w: target.offsetWidth, h: target.offsetHeight });
-    let frame = 0;
-    const observer = new ResizeObserver(() => {
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(measure);
-    });
-    observer.observe(target);
-    measure();
-    return () => {
-      cancelAnimationFrame(frame);
-      observer.disconnect();
-      report(null);
-    };
+    return untrack(() => measuring.watch(node.id, target));
   });
 
   const title = $derived(project.fragment(node.id, 'title'));

@@ -158,7 +158,14 @@ Firefox helper and the reading of a PDF, are taken in `main.rs`. A command that 
   hook through `shell/testing.ts` (`window.__glaukopis…`), never a stub.
 - **WebKitGTK.** Identical `innerHTML` strings come back with the nodes of the
   last rendering, marks and all: strip foreign marks before marking. Paste goes
-  through GTK; Skia composition is off on Linux (records 0048, 0049).
+  through GTK; Skia composition is off on Linux (records 0048, 0049). Never
+  `display: contents` on what there may be thousands of: WebKit goes through
+  all of them for each one under which something moves.
+- **Many of a thing.** What is drawn once for each element of a project is
+  measured together after it is drawn, never as each is put on the page
+  (`project/diagram/measuring.ts`): a size told in the middle makes what
+  the next one reads stale, and it is worked out anew for each.
+  `e2e/huge-shared.mjs` measures a project of thousands of elements.
 - **Rust.** The core knows nothing of Tauri; commands are thin; what can
   crash or hang runs in a child with limits; `clippy` is clean.
 - **Never** read or write `~/.local/share/glaukopis` (the owner's real data)

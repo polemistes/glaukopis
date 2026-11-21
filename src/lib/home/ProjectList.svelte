@@ -2,15 +2,18 @@
   import { SvelteSet } from 'svelte/reactivity';
 
   /**
-   * How the tree of the open project is folded in the pane, kept while the
-   * application runs: the elements unfolded by hand, and those folded by
-   * hand though they lie on the way to the element in view. Keyed by
-   * project and element.
+   * How the trees of the projects are folded in the list, kept while the
+   * application runs: what was unfolded by hand, and what was folded by hand
+   * though it lies on the way to a place the list was opened at. Keyed by
+   * project and element; the tree of a project itself by its top element.
+   *
+   * Nothing unfolds of itself (the owner's word, 2026-11-21): not the tree
+   * of a project when the project is opened, nor the way to the element in
+   * view. Only a list opened at a place, as the dropdown of a path is,
+   * shows the way to that place.
    */
   const unfoldedByHand = new SvelteSet<string>();
   const foldedByHand = new SvelteSet<string>();
-  /** The projects that are not open whose trees are shown under their rows in the pane, by id. */
-  const closedUnfolded = new SvelteSet<string>();
 </script>
 
 <script lang="ts">
@@ -148,10 +151,10 @@
         const p = projects.list.find((x) => x.id === place.project);
         if (p) {
           reveal(folderOf(projects.folders, p));
-          if (!shownIds.includes(p.id)) {
-            closedUnfolded.add(p.id);
-            closedTrees.want(p);
-          }
+          // The way to the place is shown, whatever of it was folded by hand before.
+          for (const key of [...foldedByHand])
+            if (key.startsWith(`${p.id}:`)) foldedByHand.delete(key);
+          if (!shownIds.includes(p.id)) closedTrees.want(p);
         }
         key =
           place.element === PROJECT ? `p:${place.project}` : `e:${place.project}/${place.element}`;
@@ -219,10 +222,9 @@
           actions.open(p);
         }
       },
-      fold:
-        inTree && unfoldable(p)
-          ? { folded: !closedUnfolded.has(p.id), toggle: () => toggleClosed(p) }
-          : undefined,
+      fold: inTree
+        ? { folded: !projectUnfolded(p.id), toggle: () => toggleProject(p.id) }
+        : undefined,
     });
   }
 
@@ -253,7 +255,7 @@
     project: string;
     tree: Tree;
     name: (id: string) => string;
-    /** The way down to the element in view: unfolded, unless folded by hand. */
+    /** The way down to the place the list was opened at, where it is in this project: unfolded, unless folded by hand. */
     way: Set<string>;
     /** The element in view, marked; none in a project that is not shown. */
     at: string | null;
@@ -264,6 +266,8 @@
     document: string | null;
   }
 
+  const nowhere = new Set<string>();
+
   /** The trees of the projects shown in the sides, by project: live, as the sides show them. */
   const liveShown = $derived.by(() => {
     const out = new Map<string, Shown>();
@@ -271,12 +275,13 @@
       const pr = side.project;
       if (!pr || out.has(side.id)) continue;
       // Where the list is opened at an element of this project, that one is marked and its way unfolded.
-      const at = revealed?.project === side.id ? revealed.element : side.at;
+      const opened = revealed?.project === side.id ? revealed.element : null;
+      const at = opened ?? side.at;
       out.set(side.id, {
         project: side.id,
         tree: pr.tree(),
         name: (id) => pr.node(id)?.title || '',
-        way: new Set(pr.pathTo(at)),
+        way: opened ? new Set(pr.pathTo(opened)) : nowhere,
         at,
         enter: (id) => (choose ? choose(side.id, id) : onenter?.(side.id, id)),
         live: pr,
@@ -285,8 +290,6 @@
     }
     return out;
   });
-
-  const nowhere = new Set<string>();
 
   /** The elements from the top of a tree read from disk down to one, that one too. */
   function wayIn(tree: Tree, id: string): Set<string> {
@@ -312,32 +315,14 @@
     };
   }
 
-  /** Whether the tree of a project that is not shown can be unfolded under its row: that of one shown always stands. */
-  const unfoldable = (p: ProjectInfo) => !shownIds.includes(p.id);
-
-  function toggleClosed(p: ProjectInfo) {
-    if (closedUnfolded.has(p.id)) closedUnfolded.delete(p.id);
-    else closedUnfolded.add(p.id);
-  }
-
-  // What is unfolded is read from disk, and again when the project has changed.
-  $effect(() => {
-    for (const p of projects.list) {
-      if (!shownIds.includes(p.id) && closedUnfolded.has(p.id)) closedTrees.want(p);
-    }
-  });
-
-  const foldKey = (src: Shown, id: string) => `${src.project}:${id}`;
-
-  function isUnfolded(src: Shown, id: string): boolean {
-    const key = foldKey(src, id);
+  /** Whether something is unfolded: by hand, or as it lies on the way to the place the list was opened at and was not folded by hand. */
+  function unfoldedAt(key: string, onTheWay: boolean): boolean {
     if (foldedByHand.has(key)) return false;
-    return unfoldedByHand.has(key) || src.way.has(id);
+    return unfoldedByHand.has(key) || onTheWay;
   }
 
-  function toggleFold(src: Shown, id: string) {
-    const key = foldKey(src, id);
-    if (isUnfolded(src, id)) {
+  function toggleAt(key: string, onTheWay: boolean) {
+    if (unfoldedAt(key, onTheWay)) {
       unfoldedByHand.delete(key);
       foldedByHand.add(key);
     } else {
@@ -345,6 +330,25 @@
       unfoldedByHand.add(key);
     }
   }
+
+  /**
+   * Whether the tree of a project stands under its row: where it was
+   * unfolded by hand, whether the project is shown in a side or not, and
+   * where the list was opened at a place in it.
+   */
+  const projectUnfolded = (id: string) => unfoldedAt(`${id}:${PROJECT}`, revealed?.project === id);
+  const toggleProject = (id: string) => toggleAt(`${id}:${PROJECT}`, revealed?.project === id);
+
+  // The tree of a project that is not shown is read from disk where it is unfolded, and again when the project has changed.
+  $effect(() => {
+    for (const p of projects.list) {
+      if (!shownIds.includes(p.id) && projectUnfolded(p.id)) closedTrees.want(p);
+    }
+  });
+
+  const foldKey = (src: Shown, id: string) => `${src.project}:${id}`;
+  const isUnfolded = (src: Shown, id: string) => unfoldedAt(foldKey(src, id), src.way.has(id));
+  const toggleFold = (src: Shown, id: string) => toggleAt(foldKey(src, id), src.way.has(id));
 
   /** The menu of an element of a project that is not open: enter it, beside, fold it. */
   function elementItems(src: Shown, id: string): MenuItem[] {
@@ -355,16 +359,6 @@
       fold: holds ? { folded: !isUnfolded(src, id), toggle: () => toggleFold(src, id) } : undefined,
     });
   }
-
-  // Entering an element unfolds the way to it, whatever was folded by hand
-  // before. It depends on the element in view in each side.
-  $effect(() => {
-    const ways = [...liveShown.values()].map((src) => ({ id: src.project, way: [...src.way] }));
-    untrack(() => {
-      for (const { id, way } of ways)
-        for (const element of way) foldedByHand.delete(`${id}:${element}`);
-    });
-  });
 
   // ---- the keys of the tree, in the list (ADR 0062): see `list-keys` ----
 
@@ -451,17 +445,18 @@
       const p = projectOf(key);
       const e = elementOf(key);
       if (f) toggle(f.id);
-      else if (p && unfoldable(p)) toggleClosed(p);
+      else if (p) toggleProject(p.id);
       else if (e) toggleFold(e.src, e.id);
     },
     foldAll() {
       const anyOpen =
         projects.folders.some((f) => !listUi.collapsed.has(f.id)) ||
         (projects.favourites.length > 0 && !listUi.collapsed.has(FAVOURITES)) ||
-        closedUnfolded.size > 0;
+        unfoldedByHand.size > 0;
       if (anyOpen) {
         listUi.collapsed = new Set([FAVOURITES, ...projects.folders.map((f) => f.id)]);
-        closedUnfolded.clear();
+        unfoldedByHand.clear();
+        foldedByHand.clear();
       } else listUi.collapsed = new Set();
     },
     make(kind) {
@@ -748,7 +743,7 @@
         {@const pf = folderOf(projects.folders, p)}
         {@const isShown = shownIds.includes(p.id)}
         {@const live = liveShown.get(p.id)}
-        {@const unfolded = unfoldable(p) && closedUnfolded.has(p.id)}
+        {@const unfolded = projectUnfolded(p.id)}
         <!-- svelte-ignore a11y_click_events_have_key_events -->
         <div
           class="row project"
@@ -763,8 +758,8 @@
           data-row={pk}
           data-row-kind="project"
           data-row-parent={pf ? `f:${pf}` : undefined}
-          data-row-holds={unfoldable(p) || live ? '' : undefined}
-          data-row-open={live || closedUnfolded.has(p.id) ? '' : undefined}
+          data-row-holds
+          data-row-open={unfolded ? '' : undefined}
           data-row-changeable={!choose ? '' : undefined}
           aria-current={p.id === current ? 'page' : undefined}
           data-depth={row.depth}
@@ -786,13 +781,12 @@
             type="button"
             class="fold"
             class:open={unfolded}
-            class:hidden={!unfoldable(p)}
             tabindex="-1"
             aria-label={unfolded ? t('home-fold') : t('home-unfold')}
-            aria-expanded={unfoldable(p) ? unfolded : undefined}
+            aria-expanded={unfolded}
             onclick={(e) => {
               e.stopPropagation();
-              toggleClosed(p);
+              toggleProject(p.id);
             }}
             onpointerdown={(e) => e.stopPropagation()}
           >
@@ -823,16 +817,17 @@
             </button>
           {/if}
         </div>
-        {#if live && (live.tree.children.get(PROJECT)?.length ?? 0) > 0}
+        {#if unfolded && live}
+          {@const top = live.tree.children.get(PROJECT) ?? []}
+          {@const indent = left + row.depth * step + 22}
           <div class="tree" data-project-tree={p.id}>
-            {@render branch(
-              live,
-              live.tree.children.get(PROJECT) ?? [],
-              0,
-              left + row.depth * step + 22,
-            )}
+            {#if top.length}
+              {@render branch(live, top, 0, indent)}
+            {:else}
+              <p class="say" style:padding-left="{indent + 18}px">{t('home-tree-empty')}</p>
+            {/if}
           </div>
-        {:else if unfoldable(p) && closedUnfolded.has(p.id)}
+        {:else if unfolded}
           {@const reading = closedTrees.get(p.id)}
           {@const indent = left + row.depth * step + 22}
           <div class="tree closed" data-closed-tree={p.id}>

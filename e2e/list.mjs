@@ -76,7 +76,7 @@ try {
   const plus = await menuLabels(app);
   check(
     'the plus of the head makes, joins and opens projects',
-    ['New project…', 'New folder', 'Join a shared project…', 'A project from a document…', 'Open a project file…', 'Open an Org file…'].every((l) => plus.includes(l)),
+    ['New project…', 'New folder', 'Join a shared project…', 'A project from a document…', 'Import a project file…', 'Import an Org file…'].every((l) => plus.includes(l)),
     JSON.stringify(plus),
   );
   await app.press('Escape');

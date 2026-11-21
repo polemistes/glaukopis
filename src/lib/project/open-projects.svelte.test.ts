@@ -131,6 +131,35 @@ describe('the projects the sides show', () => {
     expect(one.toStore()).not.toHaveProperty('commenting');
   });
 
+  it('are there when they are open with what they hold, or known not to open', async () => {
+    const { o } = opener();
+    const all = new OpenProjects(o);
+    expect(all.there('a')).toBe(false);
+    all.acquire('a');
+    // Being opened, it is not there yet.
+    expect(all.there('a')).toBe(false);
+    await settle();
+    expect(all.there('a')).toBe(true);
+
+    // One that was joined and has not been fetched is open, with nothing in it: not there.
+    o.open.mockImplementationOnce(async (id: string) => ({
+      project: { nodes: new Map(), node: () => undefined, comments: new Map() } as never,
+      info: { id, view: null } as never,
+    }));
+    all.acquire('joined');
+    await settle();
+    expect(all.get('joined')!.state).toBe('open');
+    expect(all.there('joined')).toBe(false);
+
+    // One that cannot be opened is as much there as it will be.
+    o.open.mockImplementationOnce(async () => {
+      throw new Error('unreadable');
+    });
+    all.acquire('broken');
+    await settle();
+    expect(all.there('broken')).toBe(true);
+  });
+
   it('let go at once of a project let go while it was being opened', async () => {
     const { o, calls } = opener();
     const open = new OpenProjects(o);

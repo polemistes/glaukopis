@@ -168,6 +168,10 @@ try {
   await sleep(800);
   // An element in it, so that it has a tree to show.
   await app.newElementUnder();
+  await sleep(500);
+  // Nothing unfolds by itself: the tree is unfolded by the chevron of the project's own row.
+  check('opened, the project is not unfolded in the list', !(await app.exists(`${LIST} [data-project-tree="${iliad}"]`)));
+  await app.exec(`${treeRow('Iliad')}?.querySelector('.fold')?.click()`);
   await until(() => app.exists(`${LIST} [data-project-tree="${iliad}"]`), 5000);
   await sleep(500);
   check('a click on a favourite opens the project', (await app.exec('return location.hash')).includes(iliad));
@@ -178,6 +182,12 @@ try {
   );
   check('the project’s row is marked as open, the favourite’s is not', (await app.exec(`return ${treeRow('Iliad')}?.hasAttribute('data-current')`)) === true && (await app.exec(`return ${favRow('Iliad')}?.classList.contains('current')`)) === false);
   await app.screenshot('favourites-2-open');
+  // And it folds again, open as the project is.
+  await app.exec(`${treeRow('Iliad')}?.querySelector('.fold')?.click()`);
+  await until(async () => !(await app.exists(`${LIST} [data-project-tree="${iliad}"]`)), 5000);
+  check('the tree of the open project is folded again by its chevron', (await app.exec(`return ${treeRow('Iliad')}?.querySelector('.fold')?.getAttribute('aria-expanded')`)) === 'false');
+  await app.exec(`${treeRow('Iliad')}?.querySelector('.fold')?.click()`);
+  await until(() => app.exists(`${LIST} [data-project-tree="${iliad}"]`), 5000);
 
   // ---- the start screen ----
   await app.openProject('Odyssey');

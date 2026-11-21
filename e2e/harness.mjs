@@ -652,9 +652,38 @@ export class App {
   }
 
   /**
+   * Unfolds, in the list, the project of the side that has the focus and the
+   * way down to the element in view, that element too, so that the elements
+   * beside the way and under it stand there: nothing in the list unfolds of
+   * itself.
+   */
+  async unfoldWay() {
+    await this.execAsync(
+      `const p = ${this.path}; const id = p?.dataset.project;
+       const pane = document.querySelector('[data-projects-pane]');
+       if (!p || !pane) return;
+       const drawn = () => new Promise((done) => setTimeout(done, 80));
+       const unfold = async (row) => {
+         if (!row || !row.hasAttribute('data-row-holds') || row.hasAttribute('data-row-open')) return;
+         row.querySelector('.fold')?.click();
+         await drawn();
+       };
+       await unfold(pane.querySelector('.row.project[data-row="p:' + id + '"]'));
+       for (const crumb of p.querySelectorAll('[data-crumb="element"]')) {
+         const name = crumb.querySelector('.name')?.textContent.trim();
+         await unfold(
+           Array.from(pane.querySelectorAll('.row.element')).find(
+             (r) => r.dataset.row.startsWith('e:' + id + '/') && r.querySelector('.name')?.textContent.trim() === name,
+           ),
+         );
+       }`,
+    );
+  }
+
+  /**
    * Enters the element of this name: by its row in the list, under the
-   * project of the side, which shows the elements beside the way down to
-   * the one in view; else by a crumb of the path.
+   * project of the side, unfolded down to the element in view; else by a
+   * crumb of the path.
    */
   async openMap(name) {
     const find = `const p = ${this.path}; const id = p?.dataset.project;
@@ -662,13 +691,13 @@ export class App {
        return rows.find((r) => r.querySelector('.name')?.textContent.trim() === arguments[0])
          ?? Array.from(p?.querySelectorAll('[data-crumb="element"]') ?? []).find((c) => c.querySelector('.name')?.textContent.trim() === arguments[0])
          ?? null;`;
-    let target = await this.exec(find, name);
-    if (!target && !(await this.exists('[data-projects-pane]'))) {
+    if (!(await this.exists('[data-projects-pane]'))) {
       await this.click('[data-projects-button]');
       await this.waitFor('[data-projects-pane] .row', 5000);
       await sleep(200);
-      target = await this.exec(find, name);
     }
+    await this.unfoldWay();
+    const target = await this.exec(find, name);
     if (!target) throw new Error(`no element named ${name} in the list or the path`);
     await this.click(target);
     await this.waitUntil(`return ${this.path}?.querySelector('[data-crumb-last] .name')?.textContent.trim() === ${JSON.stringify(name)}`, 5000, `${name} in view`).catch(() => {});

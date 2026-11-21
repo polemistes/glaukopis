@@ -5,7 +5,6 @@
   import { fileWrite } from '$lib/api/system';
   import { safeFileName } from '$lib/util/file-name';
   import { testHook } from '$lib/shell/testing';
-  import { SvelteMap } from 'svelte/reactivity';
   import Minimize2 from '@lucide/svelte/icons/minimize-2';
   import MessageSquare from '@lucide/svelte/icons/message-square';
   import { commentsUi } from '$lib/comments/ui.svelte';
@@ -55,6 +54,7 @@
   import { progressOf, progressWords } from '../status';
   import { associationsOf, drawing, linesOf } from './lines';
   import { layout, type Layout, type Size } from './layout';
+  import { Measuring } from './measuring';
   import { slotAt } from './slots';
   import { fontsOf, imageScale, pictureOf, toPng, toSvg } from './picture';
 
@@ -137,7 +137,26 @@
     },
   });
 
-  const sizes = new SvelteMap<string, Size>();
+  /**
+   * The sizes of the elements as they are drawn: a new map whenever any has
+   * changed, so that all that were measured together lay the diagram out
+   * once. Told of one at a time, each told every element drawn that the
+   * layout was no longer good.
+   */
+  let sizes = $state.raw<ReadonlyMap<string, Size>>(new Map());
+  /** What measures the elements as they are drawn, all that changed size at once. */
+  const measuring = new Measuring((measured) => {
+    let next: Map<string, Size> | null = null;
+    for (const [id, size] of measured) {
+      const old = sizes.get(id);
+      if (size ? old?.w === size.w && old.h === size.h : !old) continue;
+      next ??= new Map(sizes);
+      if (size) next.set(id, size);
+      else next.delete(id);
+    }
+    if (next) sizes = next;
+  });
+  onDestroy(() => measuring.stop());
   let selection = $state<string[]>([]);
   let selectedLink = $state<string | null>(null);
   let renaming = $state<string | null>(null);
@@ -1335,13 +1354,7 @@
             excluded={node.excluded}
             isDocument={marking?.marked === id}
             others={project.othersAt(id)}
-            onsize={(nodeId, size) => {
-              if (!size) sizes.delete(nodeId);
-              else {
-                const old = sizes.get(nodeId);
-                if (!old || old.w !== size.w || old.h !== size.h) sizes.set(nodeId, size);
-              }
-            }}
+            {measuring}
             onrenamed={finishRename}
             typedAhead={renaming === id ? takeTyped : undefined}
             domId={domPrefix + id}
@@ -1490,8 +1503,11 @@
     stroke: var(--accent);
     stroke-width: 1;
   }
+  /* What holds an element is a box of its own, with nothing in it but what is placed out of it. Never
+     `display: contents`: WebKit then goes through every one of them for each element that moves, and
+     a diagram of thousands stands still for minutes when it is laid out. */
   .hold {
-    display: contents;
+    display: block;
   }
   /* A comment beside its element: never in the tree, moved where it is wanted. */
   .card {

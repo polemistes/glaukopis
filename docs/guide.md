@@ -59,10 +59,13 @@ printed as a document of its own (see *One tree, entered anywhere*).
 
 Everything is saved as you work. There is nothing to press.
 
-**The list of projects** stands at the left: the folders, the projects in
-them, and under the project you are in its whole tree, folded but for the
-way down to the element in view, which is marked. A click on a project opens
-it, and a click on an element enters it (see *One tree, entered anywhere*).
+**The list of projects** stands at the left: the folders and the projects in
+them. The chevron before a project unfolds its tree under it, and the
+chevron before an element what is under that; nothing unfolds by itself,
+not when a project is opened either, and what you unfold stays so until you
+fold it. The element in view is marked where it is in sight. A click on a
+project opens it, and a click on an element enters it (see *One tree,
+entered anywhere*).
 **Ctrl+Shift+L**, or the button after the house, the library and the notebook at the left
 of the row at the top of the window, hides it and shows it again; its edge can be dragged to make it
 wider. It stays as you leave it.
@@ -71,7 +74,7 @@ wider. It stays as you leave it.
 
 The list is where projects are kept, opened and closed. At its head, the
 **+** has **New project…**, **New folder**, **Join a shared project…**, **A
-project from a document…**, **Open a project file…** and **Open an Org
+project from a document…**, **Import a project file…** and **Import an Org
 file…**; the **⋯** beside it has the deleted projects, with their number,
 and **A project of all the projects…**. Under the head, a field searches
 what is written in the projects, or, chosen in the menu of its glass, finds a
@@ -101,7 +104,7 @@ A project and a folder have one menu each. A project's begins with
 the second side (see *Another project beside*); **Close**, for a project
 that is shown, which closes its side; and **Fold** or **Unfold**, which
 shows its tree under it, read from the disk for a project that is not open.
-Then come renaming, copying, its earlier versions and saving it as a file;
+Then come renaming, copying, its earlier versions and exporting it as a file;
 moving it among the folders; and deleting it. A project that is open is
 renamed and deleted from here too: the name goes into its own element, as its
 views show at once, and its sides close before it goes to the trash. A folder's menu has **Fold**, then what is
@@ -169,7 +172,10 @@ heading that stood at its top and the diagram where it was looked at, the
 side you were in, and the sides switched if they were; or in the library or
 its files, if that is where you were. The window has
 the size and the place it had, where your screen allows. A project that has
-been deleted since gives the start screen.
+been deleted since gives the start screen. So does a start after one that
+never got to where you were, as when Glaukopis had to be ended while a
+project was opening: the project is in the list, to be opened when you
+choose.
 
 **A project of all the projects…**, in the **⋯** at the head of the list,
 makes a new project of the projects themselves: the folders as elements,
@@ -3786,7 +3792,7 @@ The chat is never part of the text: it is not typeset or exported, not in
 the Org copy of the project, not found by the search, and not copied with
 elements into another project; the history does not count a message, a
 reaction or who has read as a change. A duplicate of the project, and the
-project saved as a file, carry it.
+project exported as a file, carry it.
 
 When the project is no longer shared, a chat that holds messages stays in
 the pane, to be read, without the field; **Delete the conversation**, at
@@ -4089,9 +4095,9 @@ on a desk of another shade, so that where the text goes is seen.
   and when: see *The history of a project*.
 - **Deleted projects** can be brought back, from the **⋯** at the head of the list of projects.
 - **A project as one file.** Right-click a project in the list of projects,
-  and choose **Save as a file…**: a `.glaukopis` file holds
+  and choose **Export as a file…**: a `.glaukopis` file holds
   the project, its comments, the images its figures show and the works it
-  cites, to keep, to move to another computer, or to send. **Open a project
+  cites, to keep, to move to another computer, or to send. **Import a project
   file…**, in the **+** at the head of the list of projects, makes a
   new project of one, never in the place of one you have. The works it cites
   are compared with your library: those that are the same need nothing, new
@@ -4153,10 +4159,10 @@ what Glaukopis works from:
 It is written anew a few seconds after the project is saved, and Glaukopis
 never reads it back: it cannot get your project wrong, and nothing is lost
 if you change it or delete it. To have it somewhere else, right-click a
-project in the list of projects, and choose **Save as
+project in the list of projects, and choose **Export as
 Org…**, and choose a folder: the same three are written into it.
 
-**Open an Org file…**, in the **+** at the head of the list of projects, makes a new project of an Org file,
+**Import an Org file…**, in the **+** at the head of the list of projects, makes a new project of an Org file,
 or of a folder that holds `project.org`, as a project file does: its works
 are compared with your library, and you choose where they differ. A file
 written by Glaukopis comes back as the project it was; one you wrote
@@ -4181,7 +4187,7 @@ plain text shows it as it is.
 ### Your project as a mind map
 
 A project can go to a program of mind maps, and a mind map can become a
-project. Right-click a project in the list of projects and choose **Save as
+project. Right-click a project in the list of projects and choose **Export as
 a mind map…**; the kind of file is chosen in the save dialog, or by the
 ending of the name:
 
@@ -4210,7 +4216,7 @@ comments, that a clone is a clone, the look of documents, and the records
 of the works cited. Where something of the project has no place in the
 file, Glaukopis says what and how much.
 
-**Open a mind map…**, in the **+** at the head of the list of projects, or
+**Import a mind map…**, in the **+** at the head of the list of projects, or
 a map dropped on the start screen, makes a new project of a file of
 Freeplane, FreeMind or XMind: named after the topic in the middle, the
 topics under it its elements, read as above. A file of XMind with several

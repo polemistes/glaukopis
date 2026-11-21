@@ -1821,3 +1821,33 @@ text, and a question in a shared project for the sake of earlier versions):
   kind with a look. (There is none: it is a mark.)
 - **Easy to set in any colour from the text editor.**
 
+
+## 2026-11-21 — a huge project joined; export and import; nothing unfolds by itself
+
+Of a shared project of thousands of elements:
+
+> I have joined a project which is really huge. When I was opening the
+> project, Glaukopis just hang and became unresponsive. I had to kill the
+> process, but now it tries to open the same project no matter what I do,
+> and just hangs again. (I tried a wait for a long long time, and it did
+> eventually become resonsive again, but this is not exactly how it should
+> work, right?)
+
+- **A huge project must not make the window stand still.**
+- **A project that does must not be walked into again at every start.**
+
+Of the menus of projects, and of the list:
+
+> Some small details in the projects menu: Save as should perhaps be called
+> export to, since what is "saved" is exported outside the program, and must
+> be imported back. So also the "Open" in the add project menu should be
+> renambed "Import", do you not agree? Another detail: When opening a
+> project, the top elements are automatically unfolded in the project pane,
+> and it is not possible to fold them. That is not what we want. Unfolding
+> should be done manually, also for the top elements.
+
+- **What leaves the program is exported, and what comes back is imported**:
+  a project as a file, as Org, as a mind map. *Save* and *Open* said
+  something else: that the file is the project.
+- **Nothing in the list unfolds by itself**, the top elements of a project
+  that is opened neither; what is unfolded can be folded.

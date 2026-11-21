@@ -33,7 +33,7 @@ try {
   );
   check(
     'with no project, the start screen welcomes, with the ways to begin',
-    ['Begin a project', 'Join a shared project', 'A project from a document…', 'Open a project file…', 'Open an Org file…'].every((w) => welcome.includes(w)),
+    ['Begin a project', 'Join a shared project', 'A project from a document…', 'Import a project file…', 'Import an Org file…'].every((w) => welcome.includes(w)),
     JSON.stringify(welcome),
   );
   check('and there is no page of projects', !(await app.exists('.home')));
@@ -68,7 +68,7 @@ try {
   );
   check(
     'the plus makes a project or a folder, and joins and opens them',
-    ['New project…', 'New folder', 'Join a shared project…', 'A project from a document…', 'Open a project file…', 'Open an Org file…'].every((w) =>
+    ['New project…', 'New folder', 'Join a shared project…', 'A project from a document…', 'Import a project file…', 'Import an Org file…'].every((w) =>
       plus.some((p) => p.startsWith(w)),
     ),
     JSON.stringify(plus),

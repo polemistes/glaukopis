@@ -114,3 +114,33 @@ Built on 2026-10-23 from the plan: stages 1 and 2 on main, stages 3 and 4 by two
 - **The closing of a side is `closeSideAt`**, since `closeSide` already closes the panel at the side.
 - **The other languages keep their word for *Side by side*** until translated: the meaning did not change, only the English name.
 - **`e2e/harness.mjs` gained `app.quit()`**, which closes the window as the user does, through its close request; `close()` only ends the driver.
+
+## Addendum, 2026-11-21: a place that was never arrived at is not gone to again
+
+The owner joined a shared project of thousands of elements. The window stood still while the project was drawn, for so long that the application was ended from outside; started again, it went to the same project and stood still again, at every start, with no way round it. The standing still was two faults in the drawing of the diagram, mended the same day (below); but whatever makes a window stand still over a project, the next start must not walk into the same project unasked.
+
+- **The place is kept when it is arrived at**, not when it is gone to: a project, when every project the window shows is open with what it holds (one that was joined, when it has been fetched) or is known not to open, and the page has been drawn with it and answers again; any other place at once. Before, the place was written a moment after the address changed, which for a joined project is before anything of it has come.
+- **At start the place kept is forgotten as it is gone to**, written to disk before the project is opened, and kept again on arrival. A start that never arrives leaves no place, and the start after it shows the start screen, where the project stands first among those last opened and in the list.
+- **A window closed as one closes it keeps its place as before**, arrived at or not: that is a choice, not a window that stood still.
+- **Nothing is said about it.** The program cannot know why the last start did not arrive (ended from outside, the power gone, the machine shut down), and the start screen needs no explaining.
+
+Why not otherwise: *asking at start whether to open the project again*, as browsers ask after a crash, puts a question before every start that follows an unclean end, most of which are harmless; *a setting or a key held at start* is something one must know of beforehand, at the one moment one cannot look it up.
+
+What made the window stand still, for the record, since both are easy to make again:
+
+- **Each element of the diagram measured itself as it was put on the page**, which made the layout stale, and the next element put on the page asked for the layout: one layout of all the elements for each of them. They are now measured together once what is being drawn is drawn (`project/diagram/measuring.ts`), and told to the diagram as one change.
+- **Each element stood in a wrapper styled `display: contents`**, and WebKit goes through every such wrapper for each element under one that moves. The wrappers are plain boxes now, with nothing in them but what is placed out of them.
+
+With 3000 elements the window of the one who joins stood still for 155 seconds, and for 162 at the next start; it is under 4 seconds now at both, which is what drawing 3000 boxes takes, and it grows evenly with their number where it grew with its square. Drawing only the elements in sight would take that away too, and is not done: an element's size is known by measuring it on the page, so those out of sight would be placed by guess and move when they come into sight. `e2e/huge-shared.mjs` measures it and tries the start that never arrives.
+
+## Addendum, 2026-11-21: nothing in the list unfolds by itself
+
+The owner, of the list as it was built: when a project is opened its top elements are unfolded in the list, and they cannot be folded; unfolding should be done by hand, also for the top elements. This takes back what the decision said of the open project (*under an open project its tree down to the element in view*).
+
+- **A project's tree is folded and unfolded by the chevron before the project**, whether the project is shown in a side or not, and is folded until it is unfolded: opening a project unfolds nothing. The tree of a project that is shown is the project itself, live; of one that is not, read from disk, as before.
+- **An element is unfolded by its own chevron** and no other way: entering an element does not unfold the way to it. The element in view is marked where it is in sight.
+- **What is unfolded stays so while the application runs**, for a project that is closed and opened again too; **Fold everything** folds the trees of the projects with the folders.
+- **A list opened at a place shows the way to it**, as before: the dropdown of a path is opened to see where one is. What is folded by hand there stays folded until the list is opened at a place again.
+- **The keys are the same for every project**: Right unfolds and Left folds a project's row, which they did only for a project that was not shown.
+
+One set of folds holds all of it, by project and element, a project's own tree by its top element; the set of *closed projects unfolded* is gone. `e2e/harness.mjs` has `unfoldWay()`, which unfolds the project of the side and the way to the element in view by their chevrons, for the scripts that enter an element by its row.

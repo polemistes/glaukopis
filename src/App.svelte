@@ -36,6 +36,8 @@
   import NotebookView from '$lib/notebook/NotebookView.svelte';
   import { watchInbox } from '$lib/notebook/arriving.svelte';
   import ProjectView, { viewing } from '$lib/project/ProjectView.svelte';
+  import { openProjects } from '$lib/project/open-projects.svelte';
+  import { sides } from '$lib/project/sides.svelte';
   import { PROJECT } from '$lib/project/model/types';
   import { panes } from '$lib/project/panes.svelte';
   import SettingsDialog from '$lib/settings/SettingsDialog.svelte';
@@ -102,6 +104,12 @@
    * At start, where the address names no place: the place the window was at
    * when it was closed (ADR 0063). An address that names one wins, as a
    * link does. A project that is gone gives the start screen.
+   *
+   * The place is forgotten as it is gone to, and kept again when it is
+   * arrived at (see `arrived`): a start that never gets there, as when the
+   * window stands still over a project and is ended from outside, is then
+   * followed by one at the start screen, and not by another that stands
+   * still over the same project.
    */
   async function goToPlaceKept() {
     if (location.hash && location.hash !== '#' && location.hash !== '#/') return;
@@ -111,6 +119,10 @@
     if (typeof kept !== 'string' || !kept) return;
     const place = parseRoute(kept);
     if (place.view === 'home' || place.view === 'settings') return;
+    if (!made) {
+      settings.set('lastPlace', null);
+      await settings.flush();
+    }
     if (place.view === 'project') {
       await projects.load();
       if (!projects.list.some((p) => p.id === place.project)) return;
@@ -122,13 +134,37 @@
     router.replace(place);
   }
 
-  // The place is kept, a moment after it changes and before the window
-  // closes, to be gone to at the next start. Not the settings, which stand
-  // over another place and are replaced at once. It depends on the place.
+  /**
+   * Whether the place has been arrived at: a project, when every project
+   * shown is there, open with what it holds or known not to open; any other
+   * place at once.
+   */
+  const arrived = $derived(
+    route.view === 'project'
+      ? openProjects.there(route.project) && sides.maps.every((s) => openProjects.there(s.project))
+      : route.view !== 'file' || sides.maps.every((s) => openProjects.there(s.project)),
+  );
+
+  // The place is kept once it is arrived at and the page has been drawn with
+  // it and answers again, and before the window closes, to be gone to at the
+  // next start: a window that stands still over what it shows keeps no place.
+  // Not the settings, which stand over another place and are replaced at
+  // once. It depends on the place and on whether it is arrived at.
   $effect(() => {
-    if (!ready || route.view === 'settings') return;
+    if (!ready || route.view === 'settings' || !arrived) return;
     const place = formatRoute(route);
-    if (untrack(() => settings.value.lastPlace) !== place) settings.set('lastPlace', place);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let frame = requestAnimationFrame(() => {
+      frame = requestAnimationFrame(() => {
+        timer = setTimeout(() => {
+          if (settings.value.lastPlace !== place) settings.set('lastPlace', place);
+        });
+      });
+    });
+    return () => {
+      cancelAnimationFrame(frame);
+      clearTimeout(timer);
+    };
   });
 
   /**

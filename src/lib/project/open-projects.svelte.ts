@@ -198,6 +198,15 @@ export class OpenProjects {
     return id ? this.#open.get(id) : undefined;
   }
 
+  /**
+   * Whether a project is there: open, with what it holds, or known not to
+   * open. One that was joined is there when it has been fetched, not before.
+   */
+  there(id: string | null | undefined): boolean {
+    const open = this.get(id);
+    return open?.state === 'failed' || (open?.state === 'open' && !!open.project?.node(PROJECT));
+  }
+
   /** The projects open now, in the order they were opened. */
   all(): OpenProject[] {
     return [...this.#open.values()];

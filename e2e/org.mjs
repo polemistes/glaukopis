@@ -234,11 +234,11 @@ try {
   check('references.bib holds the work cited, by its key', /@book\{nagy1979,/.test(bib) && /Best of the Achaeans/.test(bib), bib.split('\n')[0]);
 
   // --- Opened as an Org file: a new project with the same Org form ---
-  // As Open an Org file… does once the folder of the first is chosen: the
+  // As Import an Org file… does once the folder of the first is chosen: the
   // dialog that chooses a file cannot be answered from here.
   await app.click('[data-projects-new]');
   await sleep(200);
-  check('the home offers to open an Org file', (await app.findByText('[role="menuitem"]', 'Open an Org file…').catch(() => null)) !== null);
+  check('the home offers to import an Org file', (await app.findByText('[role="menuitem"]', 'Import an Org file…').catch(() => null)) !== null);
   await app.press('Escape');
   await app.exec(`void window.__glaukopisOrg.open(arguments[0])`, first.dir);
   // The work is in the library already: what to do with it may be asked.

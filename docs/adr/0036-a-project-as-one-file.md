@@ -58,3 +58,12 @@ the hash of what they hold.
 
 - A project file can be opened more than once, each time as a project of
   its own.
+
+## Addendum, 2026-11-21: exported and imported, not saved and opened
+
+The owner: *Save as* should be *Export*, since what is saved is exported outside the program and must be imported back; and *Open*, in the menu that adds a project, *Import*. So it is, for the three forms a project leaves the program in and comes back from, in the menus, the titles of the file dialogs and what is said after:
+
+- **Export as a file…**, **Export as Org…**, **Export as a mind map…**, in the menu of a project.
+- **Import a project file…**, **Import an Org file…**, **Import a mind map…**, in the **+** at the head of the list and on the start screen.
+
+*Save as* said that the file was the project from then on, as it is in a program that works in files, and *Open* that the file was worked in; neither is so here: the file is a copy that has left, and importing it makes a new project. A document is still *brought in* (`locales/GLOSSARY.md`). The names of the messages are as they were (`home-menu-save-file`, `home-file-open`, …); English and Bokmål are changed, the other languages at their next round.

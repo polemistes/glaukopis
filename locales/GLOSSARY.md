@@ -64,10 +64,16 @@ language would use, not a transliteration of the English.
   preview shows.
 - **the preview** — the pages of the document, set as they will print,
   shown beside the text.
-- **export** — making the document as a file for others.
-- **bring in** — the English avoids "import" where it can: a document is
-  *brought in* and becomes a map; references are *imported* from Zotero
-  (where the common word is kept).
+- **export** — making the document as a file for others. A project is
+  *exported* too, as a file, as Org or as a mind map: what is written leaves
+  the program, and is no longer the project (never *save as*, which says
+  that it is; the owner's word, 2026-11-21).
+- **import** — a project file, an Org file or a mind map is *imported*, and
+  a new project is made of it (never *open*, which says that the file is
+  worked in); references are *imported* from Zotero (where the common word
+  is kept).
+- **bring in** — the English avoids "import" for a document: a document is
+  *brought in* and becomes a map.
 
 ## References and citations
 

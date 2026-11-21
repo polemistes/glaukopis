@@ -102,7 +102,7 @@ try {
   };
 
   // --- A map of Freeplane opened ---
-  check('the plus at the head of the list offers to open a mind map', await plusMenu('Open a mind map…'));
+  check('the plus at the head of the list offers to import a mind map', await plusMenu('Import a mind map…'));
   await openAt(join(desk, 'odyssey.mm'));
   await opened('The Odyssey');
   const names = await diagramNames();
@@ -132,7 +132,7 @@ try {
 
   // --- Saved as a map of Freeplane, and opened again ---
   const written = join(desk, 'again.mm');
-  check('the project’s menu offers to save it as a mind map', await projectMenu('The Odyssey', 'Save as a mind map…'));
+  check('the project’s menu offers to export it as a mind map', await projectMenu('The Odyssey', 'Export as a mind map…'));
   await saveAt('The Odyssey', written);
   await until('the map written', () => existsSync(written));
   await sleep(300);
