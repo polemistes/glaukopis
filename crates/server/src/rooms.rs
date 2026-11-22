@@ -526,6 +526,12 @@ pub struct Change {
     pub digest: String,
     /// The computer that brought it.
     pub device: String,
+    /// Whether the computer said that nothing of it was written by the
+    /// writer: what the application writes into a project by itself, as who
+    /// is who in its history when it is opened. Such a change is no writing
+    /// that another computer wrote apart from.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub quiet: bool,
 }
 
 impl Said {
@@ -538,13 +544,13 @@ impl Said {
     pub fn from_another(&self, seen: Option<&str>, device: &str, held: bool) -> bool {
         let Some(seen) = seen else { return held };
         match self.changes.iter().rposition(|c| c.digest == seen) {
-            Some(at) => self.changes[at + 1..].iter().any(|c| c.device != device),
+            Some(at) => self.changes[at + 1..].iter().any(|c| c.device != device && !c.quiet),
             None => true,
         }
     }
 
-    fn note(&mut self, digest: &str, device: &str) {
-        self.changes.push(Change { digest: digest.to_owned(), device: device.to_owned() });
+    fn note(&mut self, digest: &str, device: &str, quiet: bool) {
+        self.changes.push(Change { digest: digest.to_owned(), device: device.to_owned(), quiet });
         if self.changes.len() > KEPT_CHANGES {
             let over = self.changes.len() - KEPT_CHANGES;
             self.changes.drain(..over);
@@ -564,6 +570,9 @@ pub struct Exchange {
     pub changes: Vec<Vec<u8>>,
     /// The form of the texts the computer knows: see `form_of`.
     pub form: u32,
+    /// Whether the computer says that the writer wrote nothing of what it
+    /// brings: see `Change::quiet`.
+    pub quiet: bool,
 }
 
 /// What an exchange gives back.
@@ -905,9 +914,13 @@ impl Room {
         let after = inner.digest();
         let changed = after != before;
         let said = inner.said.get_or_insert_default();
-        let apart = changed && had && said.from_another(asked.seen.as_deref(), &asked.device, before != EMPTY_DIGEST);
+        // Apart, where the writer wrote on both: what the application wrote by itself is no writing.
+        let apart = changed
+            && !asked.quiet
+            && had
+            && said.from_another(asked.seen.as_deref(), &asked.device, before != EMPTY_DIGEST);
         if changed {
-            said.note(&after, &asked.device);
+            said.note(&after, &asked.device, asked.quiet);
             inner.unsaved = true;
         }
         let exchanged = Exchanged {
@@ -1694,7 +1707,7 @@ mod tests {
     fn what_came_from_another_computer_is_told_by_the_changes_kept() {
         let mut said = Said::default();
         for (digest, device) in [("d1", "a"), ("d2", "a"), ("d3", "b"), ("d4", "a")] {
-            said.note(digest, device);
+            said.note(digest, device, false);
         }
         assert!(!said.from_another(Some("d4"), "a", true), "nothing after what was seen");
         assert!(said.from_another(Some("d2"), "a", true), "the other brought d3");
@@ -1702,10 +1715,15 @@ mod tests {
         assert!(said.from_another(Some("d3"), "b", true));
         assert!(said.from_another(Some("d0"), "a", true), "what is not kept tells nothing: taken as apart");
         assert!(said.from_another(None, "a", true), "nothing seen of a document that holds something");
+        // What another computer's application wrote by itself is not what it wrote.
+        said.note("d5", "b", true);
+        assert!(!said.from_another(Some("d4"), "a", true), "a quiet change of another is no writing");
+        said.note("d6", "b", false);
+        assert!(said.from_another(Some("d4"), "a", true));
         assert!(!said.from_another(None, "a", false), "nor of one that holds nothing");
 
         for n in 0..40 {
-            said.note(&format!("e{n}"), "a");
+            said.note(&format!("e{n}"), "a", false);
         }
         assert_eq!(said.changes.len(), KEPT_CHANGES);
         assert_eq!(said.changes.last().unwrap().digest, "e39");
@@ -1721,7 +1739,7 @@ mod tests {
     }
 
     fn asked(device: &str, seen: Option<&str>, since: Option<StateVector>, changes: Vec<Vec<u8>>) -> Exchange {
-        Exchange { device: device.into(), seen: seen.map(str::to_owned), since, changes, form: 1 }
+        Exchange { device: device.into(), seen: seen.map(str::to_owned), since, changes, form: 1, quiet: false }
     }
 
     fn exchange(room: &Room, asked: &Exchange) -> Result<Exchanged, Unexchanged> {

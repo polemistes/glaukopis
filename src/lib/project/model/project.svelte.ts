@@ -399,7 +399,10 @@ export class Project {
         // What another window wrote, that window saved.
         if (origin === WINDOW) return;
         // What came from another copy is applied as a change that is not local.
-        this.#saving.change(update, transaction.local);
+        // What the program writes by itself, who is who in the history and
+        // what is put in order when a project is read, is none of the
+        // writer's writing: the writer's other computers are told so (record 0119).
+        this.#saving.change(update, transaction.local, origin === HISTORY || origin === TIDY);
       },
     );
     // Who deleted what is kept, while the history is on: Yjs does not say it.

@@ -129,8 +129,13 @@ export async function projectLoad(id: string): Promise<LoadedProject> {
 }
 
 /** A batch of changes: made here or received from another, and when, in milliseconds since 1970. */
-export const projectAppend = (id: string, update: Uint8Array, here = true, time?: number) =>
-  call<void>('project_append', withHead({ id, here, time: time ?? null }, update));
+export const projectAppend = (
+  id: string,
+  update: Uint8Array,
+  here = true,
+  time?: number,
+  quiet = false,
+) => call<void>('project_append', withHead({ id, here, time: time ?? null, quiet }, update));
 /** A change to a project as another window wrote it: the update of its document, in base64. */
 export interface ProjectUpdate {
   id: string;

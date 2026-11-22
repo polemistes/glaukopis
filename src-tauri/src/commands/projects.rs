@@ -130,6 +130,9 @@ struct AppendHead {
     id: String,
     here: Option<bool>,
     time: Option<i64>,
+    /// Whether the writer wrote nothing of it: what the application writes
+    /// into a project by itself (record 0119, `sync::wrote`).
+    quiet: Option<bool>,
 }
 
 /// Adds a change to the log: made here or received from another, and when it
@@ -144,6 +147,14 @@ pub fn project_append(window: WebviewWindow, state: State<'_, AppState>, request
     let (head, update) = with_head::<AppendHead>(&request)?;
     let time = head.time.unwrap_or_else(glaukopis_core::history::now_ms);
     state.projects.append_change(&head.id, &update, head.here.unwrap_or(true), time)?;
+    // What the writer wrote here is marked, for the engine that tells the
+    // writer's other computers whether the two wrote apart.
+    if head.here.unwrap_or(true)
+        && !head.quiet.unwrap_or(false)
+        && let Ok(dir) = state.projects.dir(&head.id)
+    {
+        glaukopis_core::sync::wrote::mark(&dir);
+    }
     let from = window.label().to_owned();
     let passed = ProjectUpdate { id: head.id, update: B64.encode(&update) };
     let others = |target: &EventTarget| matches!(target, EventTarget::WebviewWindow { label } if *label != from);

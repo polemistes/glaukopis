@@ -22,6 +22,7 @@ pub mod remote;
 pub mod settings;
 pub mod shelves;
 pub mod whole;
+pub mod wrote;
 
 pub use engine::{Hears, State, Status, Sync};
 

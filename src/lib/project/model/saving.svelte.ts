@@ -16,9 +16,11 @@ import type { RefRecord } from './types';
 export interface Persistence<S = Summary> {
   /**
    * Writes a batch of changes to the log: whether they were made here or
-   * came from another, and when, in milliseconds since 1970.
+   * came from another, and when, in milliseconds since 1970. `quiet` says
+   * that the writer wrote nothing of it: what the program writes into a
+   * project by itself, as who is who in its history (record 0119).
    */
-  append(update: Uint8Array, here: boolean, time: number): Promise<void>;
+  append(update: Uint8Array, here: boolean, time: number, quiet?: boolean): Promise<void>;
   /** With `keep`, where the project's full history is on, the log is kept in it. */
   saveState(state: Uint8Array, summary: S, keep: boolean): Promise<void>;
   /**
@@ -81,8 +83,8 @@ export class Saving<S = Summary> {
 
   readonly #persistence: Persistence<S> | null;
   readonly #project: Saved<S>;
-  /** Changes not yet written, each with whether it was made here. */
-  #pending: { update: Uint8Array; here: boolean }[] = [];
+  /** Changes not yet written, each with whether it was made here, and whether the writer wrote nothing of it. */
+  #pending: { update: Uint8Array; here: boolean; quiet: boolean }[] = [];
   #followers = new Set<Follower>();
   #appendTimer: ReturnType<typeof setTimeout> | undefined;
   #idleTimer: ReturnType<typeof setTimeout> | undefined;
@@ -103,9 +105,9 @@ export class Saving<S = Summary> {
   }
 
   /** A change was made, here or by another: it is written a moment later, with those that follow it. */
-  change(update: Uint8Array, here: boolean) {
+  change(update: Uint8Array, here: boolean, quiet = false) {
     for (const f of this.#followers) f.change(update, here);
-    this.#pending.push({ update, here });
+    this.#pending.push({ update, here, quiet });
     this.status = 'unsaved';
     clearTimeout(this.#appendTimer);
     this.#appendTimer = setTimeout(() => void this.flush(), APPEND_DELAY);
@@ -125,25 +127,30 @@ export class Saving<S = Summary> {
       return this.#writing;
     }
     const time = Date.now();
-    const batches: { update: Uint8Array; here: boolean; changes: number }[] = [];
+    const batches: { update: Uint8Array; here: boolean; quiet: boolean; changes: number }[] = [];
     let run: Uint8Array[] = [];
-    this.#pending.forEach(({ update, here }, i) => {
+    // A batch is quiet where every change in it is: one word of the writer's among them makes it writing.
+    let quiet = true;
+    this.#pending.forEach(({ update, here, quiet: silent }, i) => {
       run.push(update);
+      quiet &&= silent;
       const next = this.#pending[i + 1];
       if (next && next.here === here) return;
       batches.push({
         update: run.length === 1 ? run[0] : Y.mergeUpdates(run),
         here,
+        quiet,
         changes: run.length,
       });
       run = [];
+      quiet = true;
     });
     this.#pending = [];
     for (const b of batches) for (const f of this.#followers) f.written(time, b.here, b.changes);
     this.status = 'saving';
     for (const batch of batches) {
       this.#writing = this.#writing
-        .then(() => this.#persistence!.append(batch.update, batch.here, time))
+        .then(() => this.#persistence!.append(batch.update, batch.here, time, batch.quiet))
         .then(() => {
           this.#sinceSnapshot.updates++;
           this.#sinceSnapshot.bytes += batch.update.length;
@@ -158,7 +165,7 @@ export class Saving<S = Summary> {
         })
         .catch((error) => {
           // Keep what could not be written, to try again with the next change.
-          this.#pending.unshift({ update: batch.update, here: batch.here });
+          this.#pending.unshift({ update: batch.update, here: batch.here, quiet: batch.quiet });
           this.status = 'error';
           this.saveError = error?.message ?? String(error);
           console.error('the project could not be saved', error);

@@ -335,6 +335,9 @@ struct Head {
     /// A state vector, in hex.
     #[serde(default)]
     since: Option<String>,
+    /// Whether the writer wrote nothing of what is brought: see `rooms::Change`.
+    #[serde(default)]
+    quiet: bool,
 }
 
 /// The most the head of an exchange may hold.
@@ -434,7 +437,7 @@ async fn exchange(
     if !changes.is_empty() && !server.listing.has(&home, &kind, &id) && server.listing.count(&home) >= MOST_DOCUMENTS {
         return Err(Failure::new(StatusCode::INSUFFICIENT_STORAGE, "full", MANY_DOCUMENTS));
     }
-    let asked = Arc::new(Exchange { device, seen: head.seen, since, changes, form });
+    let asked = Arc::new(Exchange { device, seen: head.seen, since, changes, form, quiet: head.quiet });
     let key = key(&home, &kind, &id);
     let dir = doc_dir(&server.config.data, &home, &kind, &id);
 

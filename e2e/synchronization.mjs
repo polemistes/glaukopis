@@ -59,7 +59,8 @@ async function writeAtEnd(app, words) {
 /** Opens the settings at the section Synchronization, once it says how it stands. */
 async function openSync(app) {
   if (!(await app.exists('dialog[open] [data-synchronization]'))) {
-    await app.keys(['Control', ',']);
+    // From the row at the top: in a text, Ctrl+, is a key of the writing.
+    await app.click('[data-place="settings"]');
     await app.waitForText('dialog[open] header h2', 'Settings');
   }
   await app.waitFor('[data-synchronization]:not([data-synchronization=""])', 8000);

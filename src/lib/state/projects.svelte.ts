@@ -214,8 +214,8 @@ export async function openProject(id: string): Promise<OpenProject> {
   // what is on disk, before anything is made of it.
   if (formOfStored(loaded.state, loaded.updates) > FORM) throw new LaterForm(t('project-later'));
   const persistence: Persistence = {
-    append: (update: Uint8Array, here: boolean, time: number) =>
-      projectAppend(id, update, here, time),
+    append: (update: Uint8Array, here: boolean, time: number, quiet?: boolean) =>
+      projectAppend(id, update, here, time, quiet),
     saveState: async (state: Uint8Array, summary: Summary, keep: boolean) => {
       const info = await projectSaveState(id, state, summary, keep);
       projects.put(info);
