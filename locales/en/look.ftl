@@ -113,3 +113,10 @@ look-section-document-type = Document type
 look-taken-from = Look taken from
 # Over the list of what the document sets otherwise than its type.
 look-changed-list = Changed in this document
+
+# What a document type of the writer's own is beside its look and its parts, under Document type in Look.
+look-type-field-name = Name
+look-type-description = Description
+look-type-passage-kinds = Paragraph and words kinds offered first
+look-type-exported-as = Exported as
+look-type-delete = Delete this document type…

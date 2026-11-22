@@ -3,14 +3,28 @@
    * The last part of Look, Document type (the plan of one form, stage 2):
    * where the look of the document is taken from, named with where it is
    * from and never called a layout; and what the document changes, each
-   * with where it was made and Reset. Only the body of the part: its
-   * heading and its place are Look's.
+   * with where it was made and Reset. Then, for a type of the writer's own,
+   * what the type is beside its look and its parts: its name and
+   * description, the kinds of paragraph and of words it offers first, the
+   * kinds of file it is exported as, and a way to delete it; each change
+   * saved to the type at once. Only the body of the part: its heading and
+   * its place are Look's.
    */
-  import type { Template } from '$lib/api/templates';
+  import {
+    templatesDelete,
+    templatesSave,
+    type OutputTarget,
+    type Template,
+  } from '$lib/api/templates';
   import { LIMITS, type Limit } from '$lib/document/composition';
+  import { TARGETS, targetWords } from '$lib/document/templates';
+  import { CATALOGUE, GROUPS } from '$lib/editor/kinds';
   import { t } from '$lib/i18n';
   import { documents, templateName } from '$lib/preview/documents.svelte';
   import type { Project } from '$lib/project/model/project.svelte';
+  import Button from '$lib/ui/Button.svelte';
+  import { confirm } from '$lib/ui/confirm.svelte';
+  import { describeError } from '$lib/ui/toast.svelte';
   import { formatGroups, layoutName } from './choosing.svelte';
   import { Composition } from './composition.svelte';
 
@@ -38,6 +52,96 @@
   }
 
   let { project, at, target, template, changes, onreset, onchoose }: Props = $props();
+
+  /** Whether the type is the writer's own, and the application has it: then it is changed here. */
+  const ownType = $derived(
+    !!template && template.group === 'own' && !!documents.templateSummary(template.id)?.own,
+  );
+  let error = $state<string | null>(null);
+
+  /** Saves the type with a change, and keeps the project's copy of it. */
+  async function change(patch: Partial<Template>) {
+    if (!template || !ownType) return;
+    error = null;
+    try {
+      const saved = await templatesSave({
+        ...(JSON.parse(JSON.stringify(template)) as Template),
+        ...patch,
+      });
+      documents.forgetTemplate(saved.id);
+      await documents.reload();
+      project.keepTemplate(saved);
+    } catch (e) {
+      error = describeError(e) ?? t('template-save-failed');
+    }
+  }
+
+  function rename(name: string) {
+    const clean = name.replace(/\s+/g, ' ').trim();
+    if (clean && clean !== template?.name) void change({ name: clean });
+  }
+
+  /** The kinds of paragraph and of words of the catalogue, by their groups. */
+  const passageGroups = $derived(
+    GROUPS.map((g) => ({
+      id: g.id,
+      label: g.label(),
+      kinds: CATALOGUE.filter((k) => g.kinds.includes(k.id)),
+    })).filter((g) => g.kinds.length),
+  );
+  function offerKind(kind: string, yes: boolean) {
+    if (!template) return;
+    const list = template.passageKinds.filter((k) => k !== kind);
+    void change({ passageKinds: yes ? [...list, kind] : list });
+  }
+
+  /** The kinds of file the document itself is exported as. */
+  const targets = $derived(template?.outputs.find((o) => o.id === 'document')?.targets ?? []);
+  function exportAs(target: OutputTarget, yes: boolean) {
+    if (!template) return;
+    const outputs = JSON.parse(JSON.stringify(template.outputs)) as Template['outputs'];
+    let output = outputs.find((o) => o.id === 'document');
+    if (!output) {
+      output = { id: 'document', targets: [] };
+      outputs.push(output);
+    }
+    const list = output.targets.filter((x) => x !== target);
+    output.targets = yes ? TARGETS.filter((x) => x === target || list.includes(x)) : list;
+    void change({ outputs });
+  }
+
+  /**
+   * Deletes the type, after asking: the elements that chose it choose what
+   * it was made from, in one step of undo, and the project lets its copy go.
+   */
+  async function remove() {
+    if (!template || !ownType) return;
+    const gone = template;
+    const ok = await confirm({
+      title: t('template-delete-title', { name: gone.name }),
+      message: t('template-delete-message'),
+      confirm: t('template-delete-confirm'),
+      danger: true,
+    });
+    if (!ok) return;
+    error = null;
+    try {
+      await templatesDelete(gone.id);
+      documents.forgetTemplate(gone.id);
+      await documents.reload();
+      const users = [...project.nodes.values()]
+        .filter((n) => n.document.template === gone.id)
+        .map((n) => n.id);
+      project.checkpoint();
+      project.transact(() => {
+        for (const id of users) project.setDocument(id, { template: gone.basedOn ?? 'plain' });
+      });
+      project.checkpoint();
+      project.dropTemplate(gone.id);
+    } catch (e) {
+      error = describeError(e) ?? t('template-delete-failed');
+    }
+  }
 
   const nameOf = (id: string) => project.node(id)?.title || t('project-untitled');
   const own = $derived(project.node(target)?.document ?? {});
@@ -139,7 +243,79 @@
   </ul>
 {/if}
 
+{#if ownType && template}
+  {@const tp = template}
+  {#if error}<p class="error selectable" role="alert">{error}</p>{/if}
+  <label class="row">
+    <span class="what">{t('look-type-field-name')}</span>
+    <input value={tp.name} data-type-name onchange={(e) => rename(e.currentTarget.value)} />
+  </label>
+  <label class="row tall">
+    <span class="what">{t('look-type-description')}</span>
+    <textarea
+      rows="3"
+      value={tp.description}
+      data-type-description
+      onchange={(e) => void change({ description: e.currentTarget.value })}></textarea>
+  </label>
+
+  <h4 data-at="offered">{t('look-type-passage-kinds')}</h4>
+  {#each passageGroups as group (group.id)}
+    <h5>{group.label}</h5>
+    {#each group.kinds as spec (spec.id)}
+      <label class="row check">
+        <span class="what">{spec.label()}</span>
+        <input
+          type="checkbox"
+          data-offered={spec.id}
+          checked={tp.passageKinds.includes(spec.id)}
+          onchange={(e) => offerKind(spec.id, e.currentTarget.checked)}
+        />
+      </label>
+    {/each}
+  {/each}
+
+  <h4 data-at="exported">{t('look-type-exported-as')}</h4>
+  {#each TARGETS as target (target)}
+    <label class="row check">
+      <span class="what">{targetWords(target)}</span>
+      <input
+        type="checkbox"
+        data-target={target}
+        checked={targets.includes(target)}
+        onchange={(e) => exportAs(target, e.currentTarget.checked)}
+      />
+    </label>
+  {/each}
+
+  <div class="actions">
+    <Button size="sm" variant="danger" data-delete-type onclick={remove}
+      >{t('look-type-delete')}</Button
+    >
+  </div>
+{/if}
+
 <style>
+  .error {
+    padding: 8px 12px;
+    margin: 8px 0;
+    border-radius: var(--radius-m);
+    background: var(--danger-soft);
+    color: var(--danger);
+    white-space: pre-wrap;
+  }
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 12px 0 4px;
+  }
+  h5 {
+    margin: 14px 0 2px;
+    font-size: var(--text-xs);
+    font-weight: 500;
+    color: var(--ink-3);
+  }
   .changed {
     margin: 0 0 8px;
     padding: 6px 10px;

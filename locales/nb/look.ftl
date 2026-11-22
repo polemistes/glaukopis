@@ -98,3 +98,9 @@ look-done = Ferdig
 look-section-document-type = Dokumenttype
 look-taken-from = Utseende hentet fra
 look-changed-list = Endret i dette dokumentet
+
+look-type-field-name = Navn
+look-type-description = Beskrivelse
+look-type-passage-kinds = Avsnitts- og ordslag som tilbys først
+look-type-exported-as = Eksporteres som
+look-type-delete = Slett denne dokumenttypen …
