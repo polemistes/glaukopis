@@ -58,6 +58,7 @@
   import SpellingSettings from '$lib/spelling/SpellingSettings.svelte';
   import WordsSettings from '$lib/words/WordsSettings.svelte';
   import FirefoxSettings from '$lib/notebook/FirefoxSettings.svelte';
+  import SyncSettings from '$lib/sync/SyncSettings.svelte';
 
   let system = $state<SystemInfo | null>(null);
   let tools = $state<ToolsInfo | null>(null);
@@ -642,6 +643,8 @@
         </Button>
       </div>
     </section>
+
+    <SyncSettings />
 
     <section data-firefox>
       <h2>{t('settings-firefox')}</h2>
