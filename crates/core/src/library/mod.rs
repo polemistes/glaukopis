@@ -2,6 +2,7 @@
 
 pub mod attachments;
 pub mod collections;
+pub mod elsewhere;
 pub mod entry;
 pub mod export;
 pub mod figures;
@@ -98,6 +99,10 @@ pub struct Library {
     /// now or one they had before (kept in `ids`): made when first asked for
     /// after a change, and kept up to date as entries are added.
     keys: std::cell::OnceCell<HashMap<String, (usize, bool)>>,
+    /// What was found amiss in its files when they were read, for the
+    /// writer's other computers not to be told of it as of changes made
+    /// here (`elsewhere`).
+    damaged: elsewhere::Damaged,
 }
 
 impl Library {
@@ -124,6 +129,7 @@ impl Library {
             reread: false,
             index: std::cell::OnceCell::new(),
             keys: std::cell::OnceCell::new(),
+            damaged: elsewhere::Damaged::default(),
         };
         library.load()?;
         Ok(library)
@@ -188,6 +194,7 @@ impl Library {
         self.reindex();
         let (collections, aside) = Collections::load(&self.collections_file)?;
         self.collections = collections;
+        self.damaged.collections |= aside.is_some();
         self.warnings.extend(aside.map(|a| a.message()));
         self.load_files()?;
 
@@ -207,6 +214,7 @@ impl Library {
         let aside = sidefile::copy_aside(&self.file, &cause)?;
         let (path, name) = (self.file.clone(), aside.file_name().unwrap_or_default().to_string_lossy().into_owned());
         let said = move || tr!("core-library-not-utf8", path = &path, aside = &name);
+        self.damaged.references = true;
         self.warnings.push(said());
         notices::tell(said);
         Ok(String::from_utf8_lossy(e.as_bytes()).into_owned())
@@ -218,9 +226,13 @@ impl Library {
     fn load_files(&mut self) -> Result<()> {
         let (files, aside) = Files::load(&self.files_file)?;
         self.files = files;
+        self.damaged.files |= aside.is_some();
         self.warnings.extend(aside.map(|a| a.message()));
         if self.files.reconcile(&self.dir) {
             self.files_dirty = true;
+            // The store held files the record did not know of: what the
+            // record says of them now is made of their names on this disk.
+            self.damaged.files = true;
         }
         Ok(())
     }

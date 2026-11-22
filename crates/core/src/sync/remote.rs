@@ -4,13 +4,16 @@
 //! The token of this computer is used here and nowhere else. Refusals come
 //! as those of sharing do, and are said in the same words (`sharing`).
 
+use std::io::Write;
+use std::path::Path;
+
 use serde::Deserialize;
 use serde_json::{Value, json};
 
 use crate::error::{Error, Result};
 use crate::library::figures::KeepImages;
 use crate::net::{self, Client};
-use crate::sharing::{Remote, Synced, Used};
+use crate::sharing::{Remote, RemoteFile, Synced, Used};
 use crate::tr;
 
 use super::{hex, unhex};
@@ -262,6 +265,33 @@ impl<'a> Home<'a> {
     /// Takes a document off the server.
     pub fn delete(&self, kind: &str, id: &str) -> Result<()> {
         self.ask("DELETE", &format!("/docs/{}/{}", net::encode(kind), net::encode(id)), None).map(|_| ())
+    }
+
+    /// The files the home holds, and the most one of them may hold.
+    pub fn files(&self) -> Result<(Vec<RemoteFile>, u64)> {
+        self.remote.files_in(&self.path(""), &self.token)
+    }
+
+    /// Sends a file of the store under its hash, from the disk as it is read.
+    pub fn send_file(&self, hash: &str, path: &Path) -> Result<()> {
+        let answer = self.client.send_file(&self.remote.file_url(&self.path(""), hash), &self.token, path)?;
+        if (200..300).contains(&answer.status) { Ok(()) } else { Err(self.remote.refusal(answer.status, &answer.body)) }
+    }
+
+    /// Fetches a file the home holds into `into`, which writes to the file
+    /// at `path`, as it comes; no more than `limit`.
+    pub fn fetch_file(&self, hash: &str, into: &mut dyn Write, path: &Path, limit: u64) -> Result<()> {
+        let url = self.remote.file_url(&self.path(""), hash);
+        let answer = self.client.fetch_into(&url, &self.token, into, path, limit)?;
+        if (200..300).contains(&answer.status) { Ok(()) } else { Err(self.remote.refusal(answer.status, &answer.body)) }
+    }
+
+    /// Takes a file off the server. One that is not there is gone already.
+    pub fn delete_file(&self, hash: &str) -> Result<()> {
+        match self.ask("DELETE", &format!("/files/{}", net::encode(hash)), None) {
+            Ok(_) | Err(Error::Refused { kind: "no-file", .. }) => Ok(()),
+            Err(error) => Err(error),
+        }
     }
 }
 

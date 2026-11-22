@@ -486,6 +486,68 @@ impl Files {
         Ok(())
     }
 
+    /// Puts these folders in the stead of those there are, as they came
+    /// from elsewhere (`Library::put_file_folders`). What stood in a folder
+    /// that goes stands where that folder stood, as `folder_delete` has it;
+    /// a folder whose parent is not among them stands at the top, and so
+    /// does one folder of each ring of folders that lie in each other, the
+    /// one whose id comes first, so that every computer breaks the ring
+    /// alike. Whether anything changed.
+    pub fn replace_folders(&mut self, mut folders: Vec<FileFolder>) -> bool {
+        let ids: HashSet<String> = folders.iter().map(|f| f.id.clone()).collect();
+        // Where each folder that goes stood, followed up past those that go too.
+        let parent_of: HashMap<String, Option<String>> =
+            self.folders.iter().map(|f| (f.id.clone(), f.parent.clone())).collect();
+        let standing = |mut at: Option<String>| {
+            for _ in 0..=parent_of.len() {
+                match at {
+                    Some(id) if !ids.contains(&id) => at = parent_of.get(&id).cloned().flatten(),
+                    _ => break,
+                }
+            }
+            at.filter(|id| ids.contains(id))
+        };
+        let mut changed = false;
+        for file in &mut self.files {
+            if file.folder.as_ref().is_some_and(|f| !ids.contains(f)) {
+                file.folder = standing(file.folder.clone());
+                changed = true;
+            }
+        }
+        for folder in &mut folders {
+            if folder.parent.as_deref().is_some_and(|p| !ids.contains(p) || p == folder.id) {
+                folder.parent = None;
+            }
+        }
+        loop {
+            let up: HashMap<&str, &str> =
+                folders.iter().filter_map(|f| Some((f.id.as_str(), f.parent.as_deref()?))).collect();
+            let mut sorted: Vec<&str> = up.keys().copied().collect();
+            sorted.sort();
+            let ringed = sorted.into_iter().find(|id| {
+                let mut at = *id;
+                for _ in 0..=up.len() {
+                    match up.get(at) {
+                        Some(next) if next == id => return true,
+                        Some(next) => at = next,
+                        None => return false,
+                    }
+                }
+                false
+            });
+            let Some(id) = ringed.map(str::to_owned) else { break };
+            if let Some(folder) = folders.iter_mut().find(|f| f.id == id) {
+                folder.parent = None;
+            }
+        }
+        if folders != self.folders {
+            self.folders = folders;
+            self.index_folders();
+            changed = true;
+        }
+        changed
+    }
+
     /// The folders that removing these files would leave empty: those the
     /// files stood in, and the folders above them, where nothing else would
     /// be left in them or under them. A folder that was empty before, or

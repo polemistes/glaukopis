@@ -15,8 +15,10 @@
 pub mod arrangement;
 pub mod engine;
 pub mod facts;
+pub mod files;
 pub mod home;
 pub mod kept;
+pub mod library;
 pub mod mirror;
 pub mod remote;
 pub mod settings;
