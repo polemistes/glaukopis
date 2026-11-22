@@ -32,6 +32,14 @@ parts-signature = Unterschrift
 # The cover.
 parts-blurb = Klappentext
 
+parts-title-page = Titelseite
+parts-half-title = Schmutztitel
+parts-keywords = Schlüsselwörter
+parts-contents = Inhaltsverzeichnis
+parts-list-of-figures = Abbildungsverzeichnis
+parts-list-of-tables = Tabellenverzeichnis
+parts-bibliography = Literaturverzeichnis
+
 # On the label of a second element of a kind a document has one of.
 parts-doubled = Nicht gedruckt: ein anderes Element dieser Art kommt auf derselben Ebene zuerst.
 

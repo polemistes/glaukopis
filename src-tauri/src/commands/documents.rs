@@ -192,6 +192,8 @@ pub struct LeanDocument {
     /// The parts of the document, sent whole: they are short.
     pub parts: Vec<Part>,
     pub sections: Vec<LeanSection>,
+    /// Where the parts stand among the runs of the text, as the tree has them (ADR 0118).
+    pub order: Option<Vec<glaukopis_core::document::Placed>>,
     pub references: Vec<CarriedReference>,
     /// The kinds of paragraph and of words that are the writer's own.
     pub kinds: Vec<OwnKind>,
@@ -288,6 +290,7 @@ fn whole(request: LeanRequest) -> CommandResult<(Request, Arc<AtomicBool>)> {
         identifiers: request.document.identifiers,
         parts: request.document.parts,
         sections,
+        order: request.document.order,
         references: request.document.references,
         kinds: request.document.kinds,
         looks: request.document.looks,

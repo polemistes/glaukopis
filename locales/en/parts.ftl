@@ -32,6 +32,15 @@ parts-signature = Signature
 # The cover.
 parts-blurb = Blurb
 
+# What Glaukopis makes itself, printed where an element of the kind stands.
+parts-title-page = Title page
+parts-half-title = Half title
+parts-keywords = Keywords
+parts-contents = Table of contents
+parts-list-of-figures = List of figures
+parts-list-of-tables = List of tables
+parts-bibliography = Bibliography
+
 # On the label of a second element of a kind a document has one of.
 parts-doubled = Not printed: another element of this kind comes first among its siblings.
 

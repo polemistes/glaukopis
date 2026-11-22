@@ -1893,3 +1893,48 @@ Of the menus of projects, and of the list:
   type "again".
 - **Document properties and the template editor explain nothing.** No help
   texts, in fields or under them. What becomes less clear is said later.
+
+## 2026-11-22 — one name, one form, and nothing on the page that was not put there
+
+Of the names, and of the editor of a document type:
+
+> Let us lose the "template" and always call it "document type". I am also
+> confused about the difference between Look and Layout. We must change all
+> the "As the ... has it" or "my own from this". I know what it means, but
+> still don't understand it. We must be concrete. […] Perhaps it is better
+> to have a button at the top: "New document type" and then the document
+> type editor lets you choose which type to start from, if any. We need to
+> make the type editor much more intuitive. For example, if I start from a
+> novel, why can I not take away some of the parts that it has? […] The
+> type editor should be a place where you very intuitively and easily can
+> decide every detail about how the document will be.
+
+Of where the parts of a document stand:
+
+> Why must parts of documents have a specific place in the document, and not
+> just come in the order the elements come? It seems like an unnecessary
+> complication to me. We can inform about each document style's required
+> order of parts if there is any, as for publisher's or journal's
+> requirements, but we should not need to enforce it.
+
+And, of the two ways proposed for what Glaukopis makes itself, and of the
+one form proposed for a document and for a document type:
+
+> I think I prefer placeable elements, and that no title page, table of
+> contents etc. is shown unless it is placed somewhere. I find it confusing
+> that text is put on pages that I have not done anything to get there. I
+> also think things should not be placed at the standard place, but rather
+> where the user puts them. Informing about the standard, but letting it be
+> up to the user to follow it or not. Do this, and the single form A.
+
+- **"Template" is not said**: it is a document type, always.
+- **Concrete words**: nothing is "as the … has it", nothing is "my own from
+  this"; a thing is named, and a button says what it makes.
+- **The document is printed in the order of the tree.** A type and a
+  publisher's requirements inform about an order; nothing is moved.
+- **Nothing is on a page that the writer did not put there**: a title page,
+  a table of contents, a list, a bibliography is an element, printed where
+  it stands, and not printed where there is none.
+- **One form for how a document is made**, for one document and for a
+  document type alike, in which every detail can be decided; a layout is no
+  thing of its own to the writer.

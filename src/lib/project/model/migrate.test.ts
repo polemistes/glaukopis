@@ -253,8 +253,8 @@ describe('an abstract or a cover in the settings of an element', () => {
     const [chapterCover] = q.tree().children.get(chapter)!;
     expect(q.node(chapterCover)?.kind).toBe('cover');
     expect(q.usedPictures().map((u) => u.hash)).toEqual(['abc123', 'def456']);
-    // The document is made of them: the front matter first, then what a cover output prints.
-    expect(buildDocument(q, book).parts.map((part) => part.kind)).toEqual(['abstract', 'cover']);
+    // The document is made of them, as they stand in the tree: the cover, on no page, then the abstract.
+    expect(buildDocument(q, book).parts.map((part) => part.kind)).toEqual(['cover', 'abstract']);
 
     // By the project when it begins, outside undo.
     const r = new Project(null);

@@ -32,6 +32,14 @@ parts-signature = Signature
 # The cover.
 parts-blurb = Quatrième de couverture
 
+parts-title-page = Page de titre
+parts-half-title = Faux-titre
+parts-keywords = Mots-clés
+parts-contents = Table des matières
+parts-list-of-figures = Liste des figures
+parts-list-of-tables = Liste des tableaux
+parts-bibliography = Bibliographie
+
 # On the label of a second element of a kind a document has one of.
 parts-doubled = Pas imprimé : un autre élément de ce type le précède au même niveau.
 

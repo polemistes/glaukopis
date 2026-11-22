@@ -32,6 +32,14 @@ parts-signature = Underskrift
 # The cover.
 parts-blurb = Bagsidetekst
 
+parts-title-page = Titelblad
+parts-half-title = Smudstitel
+parts-keywords = Nøgleord
+parts-contents = Indholdsfortegnelse
+parts-list-of-figures = Figurliste
+parts-list-of-tables = Tabelliste
+parts-bibliography = Litteraturliste
+
 # On the label of a second element of a kind a document has one of.
 parts-doubled = Udskrives ikke: et andet element af denne art kommer først blandt dets søskende.
 

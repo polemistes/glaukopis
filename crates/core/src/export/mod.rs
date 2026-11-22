@@ -614,14 +614,70 @@ struct Prepared {
     lot: bool,
 }
 
-/// One thing of the order of a document: a part the core makes, or an
-/// element of a kind.
+/// One thing of the order of a document: a part the core makes, with the
+/// element that says where, where an element does; an element of a kind; or
+/// a run of the sections of the text.
 enum Item<'a> {
-    Made(GeneratedPart),
+    Made(GeneratedPart, Option<&'a Part>),
     Part(&'a Part),
+    Body(&'a [Section]),
 }
 
-/// The order of a document, as the template's contents say. A kind item
+/// The order of a document. That of the tree, where the document says it
+/// (`order_of_tree`); else that of the template's contents.
+fn order<'a>(template: &Template, doc: &'a Document) -> Vec<Item<'a>> {
+    match &doc.order {
+        Some(placed) => order_of_tree(doc, placed),
+        None => order_of_template(template, doc),
+    }
+}
+
+/// The order of a document as its tree has it (ADR 0118): each part where
+/// it stands, the text between them, and what the core makes where an
+/// element of its kind stands and nowhere else. Of a kind a document has
+/// one of, the first is used; a kind of the cover is on no page. Sections no
+/// item names stand at the end, so that the text is never lost.
+fn order_of_tree<'a>(doc: &'a Document, placed: &[crate::document::Placed]) -> Vec<Item<'a>> {
+    use crate::document::Placed;
+    let mut seen: Vec<&str> = Vec::new();
+    let mut out: Vec<Item<'a>> = Vec::new();
+    let mut printed = 0usize;
+    for item in placed {
+        match *item {
+            Placed::Sections(from, to) => {
+                let to = to.min(doc.sections.len());
+                let from = from.max(printed);
+                if from < to {
+                    out.push(Item::Body(&doc.sections[from..to]));
+                    printed = to;
+                }
+            }
+            Placed::Part(i) => {
+                let Some(part) = doc.parts.get(i) else { continue };
+                if matches!(place_of(&part.kind), PartPlace::Cover | PartPlace::None) {
+                    continue;
+                }
+                if one_of(&part.kind) {
+                    if seen.contains(&part.kind.as_str()) {
+                        continue;
+                    }
+                    seen.push(&part.kind);
+                }
+                out.push(match GeneratedPart::of_kind(&part.kind) {
+                    Some(made) => Item::Made(made, Some(part)),
+                    None => Item::Part(part),
+                });
+            }
+        }
+    }
+    if printed < doc.sections.len() {
+        out.push(Item::Body(&doc.sections[printed..]));
+    }
+    out
+}
+
+/// The order of a document made elsewhere than of a tree, as the template's
+/// contents say: the sample pages of a layout, a document of a test. A kind item
 /// stands for every element of that kind, in tree order; of a kind a
 /// document has one of, the first is used and the rest passed over. A part
 /// of a kind the template does not list is printed by its place, after what
@@ -631,7 +687,12 @@ enum Item<'a> {
 /// by a cover output, and one of place `none` nowhere. A template that does
 /// not list the body has it after what it lists, so that the text is never
 /// lost; a part the template lists twice is printed once.
-fn order<'a>(template: &Template, parts: &'a [Part]) -> Vec<Item<'a>> {
+fn order_of_template<'a>(template: &Template, doc: &'a Document) -> Vec<Item<'a>> {
+    let parts = &doc.parts;
+    let body = |part: GeneratedPart| match part {
+        GeneratedPart::Body => Item::Body(&doc.sections),
+        made => Item::Made(made, None),
+    };
     let mut seen: Vec<&str> = Vec::new();
     let usable: Vec<&'a Part> = parts
         .iter()
@@ -653,7 +714,7 @@ fn order<'a>(template: &Template, parts: &'a [Part]) -> Vec<Item<'a>> {
             ContentsItem::Part { part } => {
                 if !made.contains(part) {
                     made.push(*part);
-                    out.push(Item::Made(*part));
+                    out.push(body(*part));
                 }
             }
             ContentsItem::Kind { kind } => {
@@ -677,11 +738,11 @@ fn order<'a>(template: &Template, parts: &'a [Part]) -> Vec<Item<'a>> {
     let front = rest(PartPlace::Front);
     let mut back = rest(PartPlace::Here);
     back.extend(rest(PartPlace::Back));
-    let at = out.iter().position(|i| matches!(i, Item::Made(GeneratedPart::Body))).unwrap_or(out.len());
+    let at = out.iter().position(|i| matches!(i, Item::Body(_))).unwrap_or(out.len());
     let n = front.len();
     out.splice(at..at, front);
     if !made.contains(&GeneratedPart::Body) {
-        out.insert(at + n, Item::Made(GeneratedPart::Body));
+        out.insert(at + n, Item::Body(&doc.sections));
     }
     out.extend(back);
     out
@@ -1044,203 +1105,235 @@ fn prepare(ctx: &Context, request: &Request, target: Target, keep_citations: boo
     let mut letters = 0u32;
     let mut bibliography_placed = false;
     let wants_bibliography = has_citations && style_has_bibliography && !keep_citations;
-    let bibliography_blocks = |blocks: &mut Vec<Value>| {
+    let bibliography_blocks = |blocks: &mut Vec<Value>, named: &str| {
         if f.bibliography.new_page
             && let Some(b) = target.page_break()
         {
             blocks.push(b);
         }
-        if !f.bibliography.title.trim().is_empty() {
+        if !named.trim().is_empty() {
             blocks.push(json!({
                 "t": "Header",
-                "c": [1, ["bibliography", ["unnumbered"], []], meta_text(f.bibliography.title.trim())["c"]],
+                "c": [1, ["bibliography", ["unnumbered"], []], meta_text(named.trim())["c"]],
             }));
         }
         blocks.push(div("refs", vec![]));
     };
-    for item in order(&request.template, &doc.parts) {
-        match item {
-            Item::Made(GeneratedPart::HalfTitle) => {
-                flush(&mut front, &mut blocks, &mut titled);
-                if !title.is_empty() {
-                    let para = json!({"t": "Para", "c": title.clone()});
-                    if typst {
-                        blocks.push(div("gk-half-title", vec![para]));
-                    } else {
-                        blocks.push(
+    // What stands over a list or the bibliography: the name of the element
+    // that places it, nothing where it has none; where no element places it,
+    // the words it has had.
+    let headed = |by: Option<&Part>, usual: &str| -> String {
+        match by {
+            Some(part) => crate::document::plain(&part.title).trim().to_owned(),
+            None => usual.trim().to_owned(),
+        }
+    };
+    // The text an element that places what the core makes has of its own, and what stands under it: after what is made.
+    let own_text = |by: Option<&Part>, stretches: &mut Stretches, blocks: &mut Vec<Value>| {
+        if let Some(part) = by {
+            write_sections(&converter, &part.sections, stretches, target, &looked, blocks);
+        }
+    };
+    let of_tree = doc.order.is_some();
+    for item in order(&request.template, doc) {
+        // The element that places what the core makes, for its own text after it.
+        let placing = match &item {
+            Item::Made(_, by) => *by,
+            _ => None,
+        };
+        'item: {
+            match item {
+                Item::Made(GeneratedPart::HalfTitle, _) => {
+                    flush(&mut front, &mut blocks, &mut titled);
+                    if !title.is_empty() {
+                        let para = json!({"t": "Para", "c": title.clone()});
+                        if typst {
+                            blocks.push(div("gk-half-title", vec![para]));
+                        } else {
+                            blocks.push(
                             json!({"t": "Div", "c": [["", ["gk-half-title"], [["custom-style", "Title"]]], [para]]}),
                         );
-                        blocks.extend(target.page_break());
+                            blocks.extend(target.page_break());
+                        }
                     }
                 }
-            }
-            Item::Made(GeneratedPart::TitlePage) => {
-                let subtitle = doc.subtitle.as_deref().map(str::trim).filter(|s| !s.is_empty());
-                let affiliations = if f.title.show_affiliations { affiliation_lines(&authors) } else { Vec::new() };
-                if !typst {
-                    // The title page where the template puts it, and nowhere where it puts none, as the
-                    // preview has it: Pandoc is given no title to set a block of its own from (ADR 0055).
-                    let page = title_page(target, &title, subtitle, (&authors, &affiliations, &roles), date);
-                    titled |= !page.is_empty();
-                    front.extend(page);
-                    continue;
+                Item::Made(GeneratedPart::TitlePage, _) => {
+                    let subtitle = doc.subtitle.as_deref().map(str::trim).filter(|s| !s.is_empty());
+                    let affiliations = if f.title.show_affiliations { affiliation_lines(&authors) } else { Vec::new() };
+                    if !typst {
+                        // The title page where the template puts it, and nowhere where it puts none, as the
+                        // preview has it: Pandoc is given no title to set a block of its own from (ADR 0055).
+                        let page = title_page(target, &title, subtitle, (&authors, &affiliations, &roles), date);
+                        titled |= !page.is_empty();
+                        front.extend(page);
+                        break 'item;
+                    }
+                    let mut parts: Vec<Value> = Vec::new();
+                    if !title.is_empty() {
+                        parts.push(div("gk-title", vec![json!({"t": "Para", "c": title.clone()})]));
+                    }
+                    if let Some(s) = subtitle {
+                        parts.push(div("gk-subtitle", vec![para_text(s)]));
+                    }
+                    if !authors.is_empty() {
+                        parts.push(div("gk-authors", vec![para_text(&names_of(&authors))]));
+                        if !affiliations.is_empty() {
+                            parts.push(div("gk-affiliations", affiliations.iter().map(|l| para_text(l)).collect()));
+                        }
+                    }
+                    if !roles.is_empty() {
+                        parts.push(div("gk-roles", roles.iter().map(|l| para_text(l)).collect()));
+                    }
+                    if let Some(d) = date {
+                        parts.push(div("gk-date", vec![para_text(d)]));
+                    }
+                    front.extend(parts);
                 }
-                let mut parts: Vec<Value> = Vec::new();
-                if !title.is_empty() {
-                    parts.push(div("gk-title", vec![json!({"t": "Para", "c": title.clone()})]));
-                }
-                if let Some(s) = subtitle {
-                    parts.push(div("gk-subtitle", vec![para_text(s)]));
-                }
-                if !authors.is_empty() {
-                    parts.push(div("gk-authors", vec![para_text(&names_of(&authors))]));
-                    if !affiliations.is_empty() {
-                        parts.push(div("gk-affiliations", affiliations.iter().map(|l| para_text(l)).collect()));
+                Item::Made(GeneratedPart::Keywords, _) => {
+                    let Some(k) = &keywords_para else { break 'item };
+                    if typst {
+                        front.push(div("gk-keywords", vec![k.clone()]));
+                    } else {
+                        front.push(k.clone());
                     }
                 }
-                if !roles.is_empty() {
-                    parts.push(div("gk-roles", roles.iter().map(|l| para_text(l)).collect()));
+                // The lists: in Typst outlines where they are listed; elsewhere
+                // Pandoc makes them, and places them where its pattern has them,
+                // after the title block, whatever the template's order says.
+                // Elsewhere where the template places them too (ADR 0055): LaTeX is
+                // given its commands there; Pandoc makes them for Word, Writer and the
+                // web at the head, whence they are moved to the mark left here
+                // (`after::placed_lists`).
+                Item::Made(GeneratedPart::Contents, by) => {
+                    flush(&mut front, &mut blocks, &mut titled);
+                    let named = headed(by, &words("document-contents"));
+                    if typst {
+                        blocks.push(outline(&named, None));
+                    } else if latex {
+                        blocks.push(raw(
+                            "latex",
+                            format!(
+                                "\\renewcommand*\\contentsname{{{}}}{{\\setcounter{{tocdepth}}{{3}}\\tableofcontents}}",
+                                latex::escape(&named)
+                            ),
+                        ));
+                    } else {
+                        toc = true;
+                        meta.insert("toc-title".into(), meta_text(&named));
+                        blocks.extend(list_mark(target, "toc"));
+                    }
                 }
-                if let Some(d) = date {
-                    parts.push(div("gk-date", vec![para_text(d)]));
+                Item::Made(GeneratedPart::ListOfFigures, by) => {
+                    flush(&mut front, &mut blocks, &mut titled);
+                    let named = headed(by, &f.figures.end_title);
+                    if typst {
+                        blocks.push(outline(&named, Some("figure.where(kind: image)")));
+                    } else if latex {
+                        blocks.push(raw(
+                            "latex",
+                            format!("\\renewcommand*\\listfigurename{{{}}}\\listoffigures", latex::escape(&named)),
+                        ));
+                    } else {
+                        lof = true;
+                        blocks.extend(list_mark(target, "lof"));
+                    }
                 }
-                front.extend(parts);
-            }
-            Item::Made(GeneratedPart::Keywords) => {
-                let Some(k) = &keywords_para else { continue };
-                if typst {
-                    front.push(div("gk-keywords", vec![k.clone()]));
-                } else {
-                    front.push(k.clone());
+                Item::Made(GeneratedPart::ListOfTables, by) => {
+                    flush(&mut front, &mut blocks, &mut titled);
+                    let named = headed(by, &f.tables.end_title);
+                    if typst {
+                        blocks.push(outline(&named, Some("figure.where(kind: table)")));
+                    } else if latex {
+                        blocks.push(raw(
+                            "latex",
+                            format!("\\renewcommand*\\listtablename{{{}}}\\listoftables", latex::escape(&named)),
+                        ));
+                    } else {
+                        lot = true;
+                        blocks.extend(list_mark(target, "lot"));
+                    }
                 }
-            }
-            // The lists: in Typst outlines where they are listed; elsewhere
-            // Pandoc makes them, and places them where its pattern has them,
-            // after the title block, whatever the template's order says.
-            // Elsewhere where the template places them too (ADR 0055): LaTeX is
-            // given its commands there; Pandoc makes them for Word, Writer and the
-            // web at the head, whence they are moved to the mark left here
-            // (`after::placed_lists`).
-            Item::Made(GeneratedPart::Contents) => {
-                flush(&mut front, &mut blocks, &mut titled);
-                let named = words("document-contents");
-                if typst {
-                    blocks.push(outline(&named, None));
-                } else if latex {
-                    blocks.push(raw(
-                        "latex",
-                        format!(
-                            "\\renewcommand*\\contentsname{{{}}}{{\\setcounter{{tocdepth}}{{3}}\\tableofcontents}}",
-                            latex::escape(&named)
-                        ),
-                    ));
-                } else {
-                    toc = true;
-                    meta.insert("toc-title".into(), meta_text(&named));
-                    blocks.extend(list_mark(target, "toc"));
+                Item::Body(sections) => {
+                    flush(&mut front, &mut blocks, &mut titled);
+                    // In LaTeX the columns are an environment around the body.
+                    let columns = crate::export::latex::columns_around(f)
+                        .filter(|_| matches!(target, Target::Latex | Target::PdfLatex));
+                    if let Some((open, _)) = &columns {
+                        blocks.push(json!({"t": "RawBlock", "c": ["latex", open]}));
+                    }
+                    write_sections(&converter, sections, &mut stretches, target, &looked, &mut blocks);
+                    if let Some((_, close)) = &columns {
+                        blocks.push(json!({"t": "RawBlock", "c": ["latex", close]}));
+                    }
                 }
-            }
-            Item::Made(GeneratedPart::ListOfFigures) => {
-                flush(&mut front, &mut blocks, &mut titled);
-                if typst {
-                    blocks.push(outline(&f.figures.end_title, Some("figure.where(kind: image)")));
-                } else if latex {
-                    blocks.push(raw(
-                        "latex",
-                        format!(
-                            "\\renewcommand*\\listfigurename{{{}}}\\listoffigures",
-                            latex::escape(&f.figures.end_title)
-                        ),
-                    ));
-                } else {
-                    lof = true;
-                    blocks.extend(list_mark(target, "lof"));
+                // The notes are placed by the filter (`resources/pandoc/notes.lua`),
+                // before the bibliography or at the end, as before: the item
+                // has no place of its own in this piece.
+                // The text has its runs (`Item::Body`): as a part the core makes it is not in the order.
+                Item::Made(GeneratedPart::Notes | GeneratedPart::Body, _) => {
+                    flush(&mut front, &mut blocks, &mut titled)
                 }
-            }
-            Item::Made(GeneratedPart::ListOfTables) => {
-                flush(&mut front, &mut blocks, &mut titled);
-                if typst {
-                    blocks.push(outline(&f.tables.end_title, Some("figure.where(kind: table)")));
-                } else if latex {
-                    blocks.push(raw(
-                        "latex",
-                        format!(
-                            "\\renewcommand*\\listtablename{{{}}}\\listoftables",
-                            latex::escape(&f.tables.end_title)
-                        ),
-                    ));
-                } else {
-                    lot = true;
-                    blocks.extend(list_mark(target, "lot"));
+                Item::Made(GeneratedPart::Bibliography, by) => {
+                    flush(&mut front, &mut blocks, &mut titled);
+                    if wants_bibliography {
+                        bibliography_blocks(&mut blocks, &headed(by, &f.bibliography.title));
+                    }
+                    bibliography_placed = true;
                 }
-            }
-            Item::Made(GeneratedPart::Body) => {
-                flush(&mut front, &mut blocks, &mut titled);
-                // In LaTeX the columns are an environment around the body.
-                let columns = crate::export::latex::columns_around(f)
-                    .filter(|_| matches!(target, Target::Latex | Target::PdfLatex));
-                if let Some((open, _)) = &columns {
-                    blocks.push(json!({"t": "RawBlock", "c": ["latex", open]}));
+                Item::Part(p) if p.kind == "abstract" => {
+                    let Some(a) = &abstract_blocks else { break 'item };
+                    if typst {
+                        front.push(div("gk-abstract-title", vec![para_text(&f.title.abstract_label)]));
+                        front.push(div("gk-abstract", a.clone()));
+                    } else if matches!(target, Target::Docx | Target::Odt) {
+                        // In its place, as paragraphs with the styles the reference document defines, where
+                        // the template puts it: not as metadata, which Pandoc sets at the head (ADR 0055).
+                        front.push(styled("AbstractTitle", vec![para_text(&f.title.abstract_label)]));
+                        front.push(styled("Abstract", a.clone()));
+                    } else if latex {
+                        // The environment of the class, under the layout's label.
+                        front.push(raw(
+                            "latex",
+                            format!(
+                                "\\renewcommand*\\abstractname{{{}}}\\begin{{abstract}}",
+                                latex::escape(&f.title.abstract_label)
+                            ),
+                        ));
+                        front.extend(a.iter().cloned());
+                        front.push(raw("latex", "\\end{abstract}"));
+                    } else if matches!(target, Target::Html | Target::Epub) {
+                        let mut inner = vec![
+                            json!({"t": "Div", "c": [["", ["abstract-title"], []], [para_text(&f.title.abstract_label)]]}),
+                        ];
+                        inner.extend(a.iter().cloned());
+                        front.push(json!({"t": "Div", "c": [["", ["abstract"], []], inner]}));
+                    } else {
+                        meta.insert("abstract".into(), json!({"t": "MetaBlocks", "c": a}));
+                        meta.insert("abstract-title".into(), meta_text(&f.title.abstract_label));
+                    }
                 }
-                write_sections(&converter, &doc.sections, &mut stretches, target, &looked, &mut blocks);
-                if let Some((_, close)) = &columns {
-                    blocks.push(json!({"t": "RawBlock", "c": ["latex", close]}));
-                }
-            }
-            // The notes are placed by the filter (`resources/pandoc/notes.lua`),
-            // before the bibliography or at the end, as before: the item
-            // has no place of its own in this piece.
-            Item::Made(GeneratedPart::Notes) => flush(&mut front, &mut blocks, &mut titled),
-            Item::Made(GeneratedPart::Bibliography) => {
-                flush(&mut front, &mut blocks, &mut titled);
-                if wants_bibliography {
-                    bibliography_blocks(&mut blocks);
-                }
-                bibliography_placed = true;
-            }
-            Item::Part(p) if p.kind == "abstract" => {
-                let Some(a) = &abstract_blocks else { continue };
-                if typst {
-                    front.push(div("gk-abstract-title", vec![para_text(&f.title.abstract_label)]));
-                    front.push(div("gk-abstract", a.clone()));
-                } else if matches!(target, Target::Docx | Target::Odt) {
-                    // In its place, as paragraphs with the styles the reference document defines, where
-                    // the template puts it: not as metadata, which Pandoc sets at the head (ADR 0055).
-                    front.push(styled("AbstractTitle", vec![para_text(&f.title.abstract_label)]));
-                    front.push(styled("Abstract", a.clone()));
-                } else if latex {
-                    // The environment of the class, under the layout's label.
-                    front.push(raw(
-                        "latex",
-                        format!(
-                            "\\renewcommand*\\abstractname{{{}}}\\begin{{abstract}}",
-                            latex::escape(&f.title.abstract_label)
-                        ),
-                    ));
-                    front.extend(a.iter().cloned());
-                    front.push(raw("latex", "\\end{abstract}"));
-                } else if matches!(target, Target::Html | Target::Epub) {
-                    let mut inner = vec![
-                        json!({"t": "Div", "c": [["", ["abstract-title"], []], [para_text(&f.title.abstract_label)]]}),
-                    ];
-                    inner.extend(a.iter().cloned());
-                    front.push(json!({"t": "Div", "c": [["", ["abstract"], []], inner]}));
-                } else {
-                    meta.insert("abstract".into(), json!({"t": "MetaBlocks", "c": a}));
-                    meta.insert("abstract-title".into(), meta_text(&f.title.abstract_label));
+                Item::Part(p) => {
+                    flush(&mut front, &mut blocks, &mut titled);
+                    let sections = part_sections(&converter, p, &mut letters);
+                    write_sections(&converter, &sections, &mut stretches, target, &looked, &mut blocks);
                 }
             }
-            Item::Part(p) => {
-                flush(&mut front, &mut blocks, &mut titled);
-                let sections = part_sections(&converter, p, &mut letters);
-                write_sections(&converter, &sections, &mut stretches, target, &looked, &mut blocks);
-            }
+        }
+        if placing.is_some_and(|part| part.sections.iter().any(|s| !s.blocks.is_empty() || s.heading.is_some())) {
+            flush(&mut front, &mut blocks, &mut titled);
+            own_text(placing, &mut stretches, &mut blocks);
         }
     }
     flush(&mut front, &mut blocks, &mut titled);
-    // The bibliography is never lost: where the template has no place for it, it stands at the end.
     if wants_bibliography && !bibliography_placed {
-        bibliography_blocks(&mut blocks);
+        if of_tree {
+            // A document of a tree has a bibliography where an element of that kind stands, and none
+            // where there is none (ADR 0118): Pandoc is told to add none at the end of its own.
+            meta.insert("suppress-bibliography".into(), json!({"t": "MetaBool", "c": true}));
+        } else {
+            // Elsewhere it is never lost: where the template has no place for it, it stands at the end.
+            bibliography_blocks(&mut blocks, &f.bibliography.title);
+        }
     }
 
     // The title, the subtitle, the authors and the date as metadata only where
@@ -2631,14 +2724,66 @@ mod tests {
         text.find(words).unwrap_or_else(|| panic!("“{words}” is not in the document:\n{text}"))
     }
 
+    /// A document of a tree is printed in the order of the tree: every part
+    /// where its element stands, the text between them, and what the core
+    /// makes where an element of its kind stands and nowhere else.
+    #[test]
+    fn the_order_of_a_tree_is_the_documents() {
+        use crate::document::Placed;
+        let mut r = with_parts();
+        r.document.parts.push(part("title-page", "Title page", "p-title", ""));
+        r.document.parts.push(part("bibliography", "Works", "p-bib", ""));
+        r.document.parts.push(part("cover", "Cover", "p-cover", ""));
+        let sections = r.document.sections.len();
+        assert!(sections >= 1, "the fixture has text");
+        // The acknowledgements first, the title page after the text, the dedication last: as the tree has them.
+        r.document.order = Some(vec![
+            Placed::Part(4),
+            Placed::Part(1),
+            Placed::Part(2),
+            Placed::Sections(0, sections),
+            Placed::Part(5),
+            Placed::Part(7),
+            Placed::Part(6),
+            Placed::Part(0),
+            Placed::Part(99),
+        ]);
+        let names: Vec<String> = order(&r.template, &r.document)
+            .iter()
+            .map(|i| match i {
+                Item::Made(p, by) => format!("{p:?}:{}", by.and_then(|b| b.element.as_deref()).unwrap_or("")),
+                Item::Body(s) => format!("Body:{}", s.len()),
+                Item::Part(p) => format!("{}:{}", p.kind, p.element.as_deref().unwrap_or("")),
+            })
+            .collect();
+        // The article's contents place nothing: no keywords, no table of contents. The second
+        // abstract is passed over, the cover is on no page, and what is not there is not printed.
+        assert_eq!(
+            names,
+            [
+                "acknowledgements:p-ack".to_owned(),
+                "abstract:p-abs".to_owned(),
+                format!("Body:{sections}"),
+                "TitlePage:p-title".to_owned(),
+                "Bibliography:p-bib".to_owned(),
+                "dedication:p-ded".to_owned(),
+            ]
+        );
+        // Text no item names is never lost: it stands at the end.
+        r.document.order = Some(vec![Placed::Part(0)]);
+        let n = order(&r.template, &r.document).len();
+        assert_eq!(n, 2, "the dedication, then the text");
+    }
+
     #[test]
     fn the_order_of_the_parts_is_the_templates() {
         let r = with_parts();
         let names = |template: &Template| -> Vec<String> {
-            order(template, &r.document.parts)
+            order(template, &r.document)
                 .iter()
                 .map(|i| match i {
-                    Item::Made(p) => format!("{p:?}"),
+                    Item::Made(p, _) => format!("{p:?}"),
+                    Item::Body(_) => "Body".to_owned(),
                     Item::Part(p) => format!("{}:{}", p.kind, p.element.as_deref().unwrap_or("")),
                 })
                 .collect()

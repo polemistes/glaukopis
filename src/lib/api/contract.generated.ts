@@ -5631,6 +5631,75 @@ export const partKinds: templates.PartKindEntry[] = [
     "one": true,
     "place": "cover",
     "style": "Blurb"
+  },
+  {
+    "basedOn": null,
+    "group": "front",
+    "id": "title-page",
+    "look": {
+      "heading": false
+    },
+    "one": true,
+    "place": "here",
+    "style": "Title Page Text"
+  },
+  {
+    "basedOn": null,
+    "group": "front",
+    "id": "half-title",
+    "look": {
+      "heading": false
+    },
+    "one": true,
+    "place": "here",
+    "style": "Half Title Text"
+  },
+  {
+    "basedOn": null,
+    "group": "front",
+    "id": "keywords",
+    "look": {
+      "heading": false
+    },
+    "one": true,
+    "place": "here",
+    "style": "Keywords Text"
+  },
+  {
+    "basedOn": null,
+    "group": "front",
+    "id": "contents",
+    "look": {},
+    "one": true,
+    "place": "here",
+    "style": "Contents Text"
+  },
+  {
+    "basedOn": null,
+    "group": "front",
+    "id": "list-of-figures",
+    "look": {},
+    "one": true,
+    "place": "here",
+    "style": "List of Figures Text"
+  },
+  {
+    "basedOn": null,
+    "group": "front",
+    "id": "list-of-tables",
+    "look": {},
+    "one": true,
+    "place": "here",
+    "style": "List of Tables Text"
+  },
+  {
+    "basedOn": null,
+    "group": "back",
+    "id": "bibliography",
+    "look": {},
+    "one": true,
+    "place": "here",
+    "style": "Bibliography Text"
   }
 ];
 

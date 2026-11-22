@@ -57,6 +57,24 @@ pub enum GeneratedPart {
     Bibliography,
 }
 
+impl GeneratedPart {
+    /// The part an element of a kind stands for, where the kind is one of
+    /// what the core makes: the kind is named as the part is. The text and
+    /// the notes are of no kind.
+    pub fn of_kind(kind: &str) -> Option<Self> {
+        Some(match kind {
+            "half-title" => GeneratedPart::HalfTitle,
+            "title-page" => GeneratedPart::TitlePage,
+            "keywords" => GeneratedPart::Keywords,
+            "contents" => GeneratedPart::Contents,
+            "list-of-figures" => GeneratedPart::ListOfFigures,
+            "list-of-tables" => GeneratedPart::ListOfTables,
+            "bibliography" => GeneratedPart::Bibliography,
+            _ => return None,
+        })
+    }
+}
+
 /// One item of the order of a document: a generated part, or every element
 /// of a kind.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

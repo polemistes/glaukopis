@@ -32,6 +32,15 @@ parts-signature = Signatur
 # Omslaget.
 parts-blurb = Baksidetekst
 
+# Det Glaukopis lager selv, skrevet ut der et element av slaget står.
+parts-title-page = Tittelside
+parts-half-title = Smusstittel
+parts-keywords = Nøkkelord
+parts-contents = Innholdsfortegnelse
+parts-list-of-figures = Figurliste
+parts-list-of-tables = Tabelliste
+parts-bibliography = Litteraturliste
+
 # På merkelappen til et element nummer to av en type et dokument har ett av.
 parts-doubled = Skrives ikke ut: et annet element av denne typen kommer først blant søsknene.
 

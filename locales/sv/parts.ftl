@@ -32,6 +32,14 @@ parts-signature = Underskrift
 # The cover.
 parts-blurb = Baksidestext
 
+parts-title-page = Titelsida
+parts-half-title = Smutstitel
+parts-keywords = Nyckelord
+parts-contents = Innehållsförteckning
+parts-list-of-figures = Figurförteckning
+parts-list-of-tables = Tabellförteckning
+parts-bibliography = Litteraturförteckning
+
 # On the label of a second element of a kind a document has one of.
 parts-doubled = Skrivs inte ut: ett annat element av det här slaget kommer först bland sina syskon.
 

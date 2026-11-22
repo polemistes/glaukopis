@@ -241,6 +241,18 @@ pub fn catalogue() -> &'static [Entry] {
             entry("signature", Back, Some("back-section"), Place::Back, true, "Signature", unheaded()),
             // The cover.
             entry("blurb", Cover, Some("cover"), Place::Cover, true, "Blurb", unheaded()),
+            // What the core makes, each printed where an element of its kind
+            // stands (ADR 0118): the kind is named as the part is
+            // (`GeneratedPart::of_kind`). The name of the element is the heading
+            // over the lists and the bibliography; the others have none. The
+            // styles are those of the text such an element has of its own.
+            entry("title-page", Front, None, Place::Here, true, "Title Page Text", unheaded()),
+            entry("half-title", Front, None, Place::Here, true, "Half Title Text", unheaded()),
+            entry("keywords", Front, None, Place::Here, true, "Keywords Text", unheaded()),
+            entry("contents", Front, None, Place::Here, true, "Contents Text", plain()),
+            entry("list-of-figures", Front, None, Place::Here, true, "List of Figures Text", plain()),
+            entry("list-of-tables", Front, None, Place::Here, true, "List of Tables Text", plain()),
+            entry("bibliography", Back, None, Place::Here, true, "Bibliography Text", plain()),
         ]
     })
 }

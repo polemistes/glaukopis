@@ -412,6 +412,13 @@ export interface ExportPart {
   sections: ExportSection[];
 }
 
+/**
+ * One thing of a document, in the order it is printed, which is the order
+ * of the tree (ADR 0118): a part, by where it stands among the parts, or a
+ * run of the sections of the text, from one up to another.
+ */
+export type ExportPlaced = { part: number } | { sections: [number, number] };
+
 export interface ExportAuthor {
   name: string;
   affiliation?: string;
@@ -443,6 +450,8 @@ export interface ExportDocument {
   /** The elements of a matter or cover kind among the direct children of the element printed (ADR 0038). */
   parts: ExportPart[];
   sections: ExportSection[];
+  /** Where the parts stand among the runs of the text; without it, the order is that of the template's contents. */
+  order?: ExportPlaced[];
   references: ExportReference[];
   /** The kinds of paragraph and of words that are the writer's own, which the project carries. */
   kinds?: OwnKind[];

@@ -32,6 +32,14 @@ parts-signature = 署名
 # 表紙。
 parts-blurb = 内容紹介
 
+parts-title-page = タイトルページ
+parts-half-title = 前扉
+parts-keywords = キーワード
+parts-contents = 目次
+parts-list-of-figures = 図一覧
+parts-list-of-tables = 表一覧
+parts-bibliography = 参考文献
+
 # 文書に一つだけ置く種類の、二つ目の要素のラベルに。
 parts-doubled = 印刷されません：同じ階層の要素のうち、この種類の別の要素が先にあります。
 

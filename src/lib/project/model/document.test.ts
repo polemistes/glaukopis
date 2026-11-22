@@ -236,7 +236,7 @@ describe('the kinds of elements that make a document', () => {
     );
   }
 
-  it('orders the children of every element as front matter, the rest, back matter', () => {
+  it('leaves the children of every element in the order of the tree, whatever their kinds', () => {
     const p = project();
     const book = p.addChild(PROJECT, { title: 'Book' })!;
     const chapter = p.addChild(book, { title: 'Chapter' })!;
@@ -258,24 +258,60 @@ describe('the kinds of elements that make a document', () => {
     expect(kinded(p, PROJECT)).toEqual([
       '1 Book',
       '2 Chapter',
+      '3 Tables [appendix]',
+      '3 Text',
       '3 Abstract [abstract]',
       '3 A word first [front-section]',
-      '3 Text',
       '3 Achilles',
-      '3 Tables [appendix]',
     ]);
-    // Printed itself, the chapter's matter is its parts, and not among its sections.
+    // Printed itself, the chapter's elements of a kind are its parts, and not among its sections;
+    // the order says where each stands among the runs of the text: as the tree has them.
     const d = buildDocument(p, chapter);
     expect(d.parts.map((part) => `${part.kind} ${inlineText(part.title)}`)).toEqual([
+      'appendix Tables',
       'abstract Abstract',
       'front-section A word first',
-      'appendix Tables',
     ]);
     expect(kinded(p, chapter)).toEqual(['1 Text', '1 Achilles']);
-    expect(d.parts[0].sections).toEqual([
+    expect(d.order).toEqual([
+      { part: 0 },
+      { sections: [0, 1] },
+      { part: 1 },
+      { part: 2 },
+      { sections: [1, 2] },
+    ]);
+    expect(d.parts[1].sections).toEqual([
       { level: 0, heading: null, blocks: p.blocksOf(abstract), element: abstract },
     ]);
-    expect(d.parts[1].sections).toEqual([]);
+    expect(d.parts[2].sections).toEqual([]);
+  });
+
+  it('prints what Glaukopis makes where an element of its kind stands, under the document itself', () => {
+    const p = project();
+    const book = p.addChild(PROJECT, { title: 'Book', body: 'Preamble.' })!;
+    const title = p.addChild(book, { title: 'Title page' })!;
+    const chapter = p.addChild(book, { title: 'Chapter', body: 'Text.' })!;
+    const works = p.addChild(book, { title: 'Works cited' })!;
+    const again = p.addChild(book, { title: 'Works again' })!;
+    const ofChapter = p.addChild(chapter, { title: 'Of the chapter' })!;
+    p.setKind([title], 'title-page');
+    p.setKind([works, again, ofChapter], 'bibliography');
+    const d = buildDocument(p, book);
+    // The second bibliography among the siblings is passed over; that of the
+    // chapter is the chapter's, and printed when the chapter is the document.
+    expect(d.parts.map((part) => `${part.kind} ${inlineText(part.title)}`)).toEqual([
+      'title-page Title page',
+      'bibliography Works cited',
+    ]);
+    expect(d.order).toEqual([{ sections: [0, 1] }, { part: 0 }, { sections: [1, 2] }, { part: 1 }]);
+    expect(kinded(p, book)).toEqual(['0 —', '1 Chapter']);
+    expect(buildDocument(p, chapter).parts.map((part) => inlineText(part.title))).toEqual([
+      'Of the chapter',
+    ]);
+    // A document with nothing placed has nothing made: the text alone.
+    const bare = buildDocument(p, PROJECT);
+    expect(bare.parts).toEqual([]);
+    expect(bare.order).toEqual([{ sections: [0, bare.sections.length] }]);
   });
 
   it('a part is a branch of its own: its text at level 0, its children from level 1', () => {

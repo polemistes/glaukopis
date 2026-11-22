@@ -1,11 +1,15 @@
 /**
  * The kinds of elements that make a document, which come with the
  * application (ADR 0038): the abstract, a dedication, an appendix, the
- * cover. Each has a base, a place in the document, and whether a document
- * has one of it or many; the core has the same catalogue with the look of
- * each (`templates/kinds.rs`), and a test holds the ids alike. A kind of
- * the writer's own may be based on one of these (`KindRecord.basedOn`),
- * and is then that in the document.
+ * cover; and what Glaukopis makes itself, a title page, a table of
+ * contents, a bibliography, each printed where an element of its kind
+ * stands and nowhere where there is none (ADR 0118). Each has a base and
+ * whether a document has one of it or many; the core has the same
+ * catalogue with the look of each (`templates/kinds.rs`), and a test holds
+ * the ids alike. A kind of the writer's own may be based on one of these
+ * (`KindRecord.basedOn`), and is then that in the document. Every element
+ * is printed where it stands in the tree: `place` says only what is on no
+ * page, a cover, and is otherwise how the kinds were grouped.
  */
 
 import type { PartGroup, PartPlace } from '$lib/api/templates';
@@ -22,6 +26,8 @@ export interface PartSpec {
   place: PartPlace;
   /** Whether a document has one of it, or many. */
   one: boolean;
+  /** What Glaukopis makes where an element of the kind stands: the kind is named as the part is. */
+  made: boolean;
   label(): string;
 }
 
@@ -29,7 +35,7 @@ function spec(
   id: string,
   group: PartGroup,
   place: PartPlace,
-  more: { basedOn?: string; one?: boolean } = {},
+  more: { basedOn?: string; one?: boolean; made?: boolean } = {},
 ): PartSpec {
   return {
     id,
@@ -37,6 +43,7 @@ function spec(
     basedOn: more.basedOn ?? null,
     place,
     one: more.one ?? false,
+    made: more.made ?? false,
     label: () => t(`parts-${id}`),
   };
 }
@@ -67,6 +74,14 @@ export const PARTS: readonly PartSpec[] = [
   spec('signature', 'back', 'back', { basedOn: 'back-section', one: true }),
   // The cover.
   spec('blurb', 'cover', 'cover', { basedOn: 'cover', one: true }),
+  // What Glaukopis makes, where an element of the kind stands.
+  spec('title-page', 'front', 'here', { one: true, made: true }),
+  spec('half-title', 'front', 'here', { one: true, made: true }),
+  spec('keywords', 'front', 'here', { one: true, made: true }),
+  spec('contents', 'front', 'here', { one: true, made: true }),
+  spec('list-of-figures', 'front', 'here', { one: true, made: true }),
+  spec('list-of-tables', 'front', 'here', { one: true, made: true }),
+  spec('bibliography', 'back', 'here', { one: true, made: true }),
 ];
 
 const byId = new Map(PARTS.map((p) => [p.id, p]));

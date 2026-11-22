@@ -636,9 +636,10 @@ pub struct Section {
     pub kind: Option<String>,
 }
 
-/// An element of a matter or cover kind among the direct children of the
+/// An element of a kind of the catalogue among the direct children of the
 /// element printed, in tree order: its text at level 0, its children from
-/// level 1. Placed as the template says (ADR 0038).
+/// level 1. Of a kind of what the core makes, it says where that is printed,
+/// and its name is the heading over it (ADR 0118).
 #[derive(Debug, Clone, Default, PartialEq, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct Part {
@@ -649,6 +650,16 @@ pub struct Part {
     /// The name of the element, which is the heading where the kind prints one.
     pub title: Vec<Inline>,
     pub sections: Vec<Section>,
+}
+
+/// One thing of a document, in the order it is printed: a part, by where it
+/// stands among the parts, or a run of the sections of the text, from one
+/// up to another. The order is that of the tree (ADR 0118).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum Placed {
+    Part(usize),
+    Sections(usize, usize),
 }
 
 impl Part {
@@ -740,6 +751,14 @@ pub struct Document {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub parts: Vec<Part>,
     pub sections: Vec<Section>,
+    /// The order the parts and the text are printed in, which is the order
+    /// of the tree: a part where its element stands, and among the parts
+    /// those of what the core makes, a title page, a table of contents, a
+    /// bibliography, each printed where it stands and nowhere where there
+    /// is none (ADR 0118). Without it, a document made elsewhere than of a
+    /// tree, the order is that of the template's contents.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub order: Option<Vec<Placed>>,
     /// The references the project carries for what is cited. The library's own
     /// entries are preferred to these where it has them.
     pub references: Vec<CarriedReference>,

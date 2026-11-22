@@ -32,6 +32,14 @@ parts-signature = Firma
 # The cover.
 parts-blurb = Quarta di copertina
 
+parts-title-page = Frontespizio
+parts-half-title = Occhietto
+parts-keywords = Parole chiave
+parts-contents = Indice
+parts-list-of-figures = Indice delle figure
+parts-list-of-tables = Indice delle tabelle
+parts-bibliography = Bibliografia
+
 # On the label of a second element of a kind a document has one of.
 parts-doubled = Non stampato: un altro elemento di questo tipo viene prima, tra quelli accanto a esso.
 

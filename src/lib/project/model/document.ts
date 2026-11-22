@@ -12,18 +12,24 @@
  *   text or sub-elements an older project gave it are not printed.
  * - An element without a name gives its text only, and does not deepen
  *   what is under it.
- * - The children of every element stand in the order front matter, the
- *   rest, back matter, by what their kinds are in the document
- *   (`project/parts.ts`). Of a kind a document has one of, the first among
- *   siblings is taken and the others are left out; a kind printed nowhere
- *   is left out. Those of a matter or cover kind among the direct children
- *   of the element at the top are the parts of the document, each a branch
- *   of its own: its text at level 0, its children from level 1.
+ * - The children of every element stand in the order of the tree (ADR
+ *   0118): no kind moves an element. Of a kind a document has one of, the
+ *   first among siblings is taken and the others are left out; a kind
+ *   printed nowhere is left out. Those of a kind of the catalogue
+ *   (`project/parts.ts`) among the direct children of the element at the
+ *   top are the parts of the document, each a branch of its own: its text
+ *   at level 0, its children from level 1. Among them are those of what
+ *   Glaukopis makes itself, a title page, a table of contents, a
+ *   bibliography: each is printed where its element stands, and nothing of
+ *   the kind where there is none. Deeper down such an element is of the
+ *   element it stands under, and is printed when that is the document.
+ * - `order` says where the parts stand among the runs of the text.
  */
 
 import type {
   ExportDocument,
   ExportPart,
+  ExportPlaced,
   ExportReference,
   ExportSection,
   LeanDocument,
@@ -61,14 +67,12 @@ interface Child {
 }
 
 /**
- * The children of an element in the order of the document: front matter,
- * then the rest, then back matter, each in tree order; of a kind a document
- * has one of, the first only; nothing of a kind printed nowhere.
+ * The children of an element as the document has them, in the order of the
+ * tree: of a kind a document has one of, the first only; nothing of a kind
+ * printed nowhere.
  */
-function childrenInOrder(project: Project, children: readonly string[]): Child[] {
-  const front: Child[] = [];
-  const rest: Child[] = [];
-  const back: Child[] = [];
+function childrenPrinted(project: Project, children: readonly string[]): Child[] {
+  const out: Child[] = [];
   const taken = new Set<string>();
   for (const id of children) {
     const node = project.node(id);
@@ -78,11 +82,10 @@ function childrenInOrder(project: Project, children: readonly string[]): Child[]
       if (taken.has(part.id)) continue;
       taken.add(part.id);
     }
-    const place = part?.place;
-    if (place === 'none') continue;
-    (place === 'front' ? front : place === 'back' ? back : rest).push({ id, part });
+    if (part?.place === 'none') continue;
+    out.push({ id, part });
   }
-  return [...front, ...rest, ...back];
+  return out;
 }
 
 /**
@@ -133,15 +136,15 @@ export function walkDocument(project: Project, id: string, visit: (placed: Place
         }
         return;
       }
-      for (const child of childrenInOrder(project, tree.children.get(nodeId) ?? [])) {
-        const place = child.part?.place;
-        // A part of the document: a direct child of the top, of a matter or cover kind.
-        if (isRoot && isTop && (place === 'front' || place === 'back' || place === 'cover')) {
-          walkBranch(child.id, 0, within, false, child.id, child.part?.id);
+      for (const child of childrenPrinted(project, tree.children.get(nodeId) ?? [])) {
+        // A part of the document: a direct child of the top, of a kind of the catalogue.
+        if (isRoot && isTop && child.part) {
+          walkBranch(child.id, 0, within, false, child.id, child.part.id);
           continue;
         }
-        // Deeper down, what a cover output alone prints is not printed.
-        if (place === 'cover') continue;
+        // Deeper down, what a cover output alone prints is not printed, nor what
+        // Glaukopis makes for the element it stands under.
+        if (child.part?.place === 'cover' || child.part?.made) continue;
         walk(child.id, Math.max(next, 1), false, child.part?.id);
       }
     };
@@ -153,6 +156,13 @@ export function walkDocument(project: Project, id: string, visit: (placed: Place
 export function buildDocument(project: Project, id: string): ExportDocument {
   const sections: ExportSection[] = [];
   const parts: ExportPart[] = [];
+  const order: ExportPlaced[] = [];
+  /** Where the run of the text that is being walked begins, among the sections. */
+  let run = 0;
+  const endRun = () => {
+    if (sections.length > run) order.push({ sections: [run, sections.length] });
+    run = sections.length;
+  };
   const cited = new Set<string>();
 
   walkDocument(project, id, (placed) => {
@@ -160,13 +170,17 @@ export function buildDocument(project: Project, id: string): ExportDocument {
     const blocks = placed.clone ? [] : project.blocksOf(placed.id);
     let into = sections;
     if (placed.part) {
-      if (placed.part === placed.id)
+      if (placed.part === placed.id) {
+        // A part begins: the text before it is a run, and the part stands after it.
+        endRun();
+        order.push({ part: parts.length });
         parts.push({
           kind: placed.kind ?? '',
           element: placed.id,
           title: readTitle(project.fragment(placed.id, 'title') ?? undefined),
           sections: [],
         });
+      }
       into = parts[parts.length - 1].sections;
     }
     if (placed.root) {
@@ -188,6 +202,8 @@ export function buildDocument(project: Project, id: string): ExportDocument {
       ...(placed.kind ? { kind: placed.kind } : {}),
     });
   });
+
+  endRun();
 
   const { settings } = project.documentOf(id);
   const title: Inline[] = settings.title?.trim()
@@ -223,6 +239,7 @@ export function buildDocument(project: Project, id: string): ExportDocument {
     identifiers: settings.identifiers ?? {},
     parts,
     sections,
+    order,
     references,
     kinds,
   };
