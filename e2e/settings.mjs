@@ -245,8 +245,8 @@ try {
      })`,
   );
   check(
-    'the three defaults begin with none',
-    defaults.every((d) => d === ':None, as the document type has it'),
+    'the three defaults begin with what the document type has',
+    defaults.every((d) => d === ':From the document type'),
     JSON.stringify(defaults),
   );
   await app.exec(`document.querySelector('[data-your-details]').scrollIntoView()`);
