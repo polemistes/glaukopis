@@ -36,3 +36,10 @@ checklist-long-quotation = { $by ->
        *[other] { $lines } lines
     }; the layout sets quotations off from { $limit } words.
 }
+
+## The order of the tree: what is said of the parts, and never mended.
+
+# Works are cited in the text, and no element of the kind Bibliography stands under the document.
+checklist-no-bibliography = Works are cited, and the document has no bibliography. Add one under Parts in Look.
+# The parts the document has, in the order its type has them: "Title page · Abstract · The text · Bibliography".
+checklist-order = The document type has these parts in this order: { $parts }.

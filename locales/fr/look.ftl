@@ -58,8 +58,6 @@ look-delete-layout = Supprimer cette mise en page à moi…
 ## list in the order they are printed, and what is required. What is changed
 ## there is kept as the document's own changes over what it is.
 
-look-contents-kinds-missing = Aucun pour l’instant
-look-contents-kinds-make = En créer un
 # On the second element of a kind a document has one of.
 look-contents-kinds-doubled = Seul le premier est utilisé
 look-contents-limit-words = Mots du texte, au plus
@@ -77,8 +75,6 @@ look-from-with = De « { $name } » ({ $what })
 look-style = Style de référence
 look-style-change = Modifier ce style de référence…
 
-# The switch of the title page, first in the part of the front page.
-look-front-title-page = Une page de titre
 
 # The groups of the fonts to choose from.
 look-fonts-document = Dans ce document

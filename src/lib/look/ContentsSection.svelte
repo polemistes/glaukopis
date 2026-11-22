@@ -1,38 +1,33 @@
 <script lang="ts">
   /**
-   * The parts of the document type, a section of Look (ADR 0054, in one list
-   * of 2026-10-24): everything the document is made of, in the order it is
-   * printed, the type's order: the parts the core makes itself, each with a
-   * switch, and the kinds of elements the type gives a place, each with the
-   * elements under this one that fill it and a way to make one; then what
-   * the type requires. Only the body of the section: its heading and its
-   * place are Look's.
+   * The parts of a document, a section of Look (ADR 0118): what the document
+   * type suggests, in its usual order, each with the elements of that kind
+   * the document has, which go to them, and a way to add one. Nothing is
+   * turned on here and nothing is placed: a part is an element, printed
+   * where it stands in the tree, and what Glaukopis makes itself, a title
+   * page, a table of contents, a bibliography, is there where an element of
+   * its kind is. Then what the type requires. Only the body of the section:
+   * its heading and its place are Look's.
    *
-   * What is changed here belongs to the document, as a change to its look
-   * does: it is written as the element's own changes over the template
+   * What is required is changed for the document, as a change to its look
+   * is: written as the element's own changes over the type
    * (`DocumentSettings.composition`), which the elements under it inherit,
-   * each a step of undo of its own. A value set back to what the elements
-   * above leave is taken away instead, so that a change taken back leaves
-   * nothing; and every row that something other than the template sets says
-   * where, and offers the template's value again.
+   * each a step of undo of its own.
    */
   import ArrowRight from '@lucide/svelte/icons/arrow-right';
   import Plus from '@lucide/svelte/icons/plus';
-  import type { GeneratedPart } from '$lib/api/templates';
   import {
-    ALWAYS_MADE,
-    hasPart,
     LIMITS,
-    printOrder,
+    suggestedParts,
     type CompositionPath,
     type Limit,
   } from '$lib/document/composition';
-  import { generatedPartWords } from '$lib/document/templates';
-  import { t } from '$lib/i18n';
+  import { documentWord, t } from '$lib/i18n';
   import { documents } from '$lib/preview/documents.svelte';
   import type { Project } from '$lib/project/model/project.svelte';
-  import { partOf, placeWords, type PartSpec as PartKind } from '$lib/project/parts';
+  import { PARTS, partOf, placeWords, type PartSpec as PartKind } from '$lib/project/parts';
   import Button from '$lib/ui/Button.svelte';
+  import { openMenu, type MenuItem } from '$lib/ui/menu.svelte';
   import type { Provenance } from '$lib/ui/settings/rows';
   import { Composition } from './composition.svelte';
 
@@ -40,7 +35,7 @@
     project: Project;
     /** The element whose document it is. */
     at: string;
-    /** Shows an element in the text: one that fills a place of its own, from its line here. */
+    /** Shows an element in the text: one of a kind, from its line here. */
     ongo: (element: string) => void;
   }
 
@@ -50,7 +45,7 @@
     documents.load();
   });
 
-  // What the document contains, read and changed as the front page reads and changes its switch.
+  // What the document requires, read and changed over what its type requires.
   const c = new Composition(
     () => project,
     () => at,
@@ -62,48 +57,71 @@
   /** The name of an element. */
   const nameOf = (id: string) => project.node(id)?.title || t('project-untitled');
 
-  // ---- the parts the core makes ----
+  // ---- the parts ----
 
-  function setPart(part: GeneratedPart, on: boolean) {
-    c.setPart(part, on);
-  }
-
-  // ---- the kinds of elements with a place of their own ----
-
-  /**
-   * Everything the type makes the document of, in print order: a part the
-   * core makes, or a kind of element known to the project.
-   */
-  const printed = $derived.by(() => {
-    if (!used) return [];
-    return printOrder(used, (id) => partOf(project, id)?.place).flatMap(
-      (p): ({ part: GeneratedPart } | { kind: PartKind })[] => {
-        if ('part' in p) return [{ part: p.part }];
-        const kind = partOf(project, p.kind);
-        return kind ? [{ kind }] : [];
-      },
-    );
-  });
-  /** The elements under this one, of each kind: by the kind itself, or a kind of the project based on it. */
+  /** The elements directly under this one, of each kind: by the kind itself, or a kind of the project based on it. */
   const partsOf = $derived.by(() => {
     const children = project.tree().children.get(at) ?? [];
     const out = new Map<string, string[]>();
     for (const child of children) {
-      const kind = partOf(project, project.node(child)?.kind)?.id;
-      if (kind) out.set(kind, [...(out.get(kind) ?? []), child]);
+      const node = project.node(child);
+      const kind = partOf(project, node?.kind)?.id;
+      if (kind && !node?.excluded) out.set(kind, [...(out.get(kind) ?? []), child]);
     }
     return out;
   });
-
-  /** Makes an element of a kind under this one, named as the kind is: first among the children for the front, last for the back and the cover. */
-  function makePart(kind: PartKind) {
-    project.checkpoint();
-    const id = project.addChild(at, {
-      title: kind.label(),
-      index: kind.group === 'front' ? 0 : undefined,
+  /**
+   * The kinds listed: what the type suggests, in its usual order, and after
+   * them those the document has that the type does not name, so that every
+   * part there is stands in the list.
+   */
+  const listed = $derived.by<PartKind[]>(() => {
+    if (!used) return [];
+    const ids = suggestedParts(used);
+    for (const kind of partsOf.keys()) if (!ids.includes(kind)) ids.push(kind);
+    return ids.flatMap((id) => {
+      const kind = partOf(project, id);
+      return kind ? [kind] : [];
     });
+  });
+  /** The kinds of the catalogue that are not listed: offered under Another part. */
+  const others = $derived(PARTS.filter((k) => !listed.some((l) => l.id === k.id)));
+
+  /**
+   * What an element of a kind is first named. Where its name is printed over
+   * what Glaukopis makes, the word the document would have had there, in
+   * the language of the document; else the name of the kind.
+   */
+  function firstName(kind: PartKind): string {
+    const language = project.documentOf(at).settings.language;
+    const layout = documents.formatForCached(project, at);
+    if (kind.id === 'contents') return documentWord(language, 'Contents');
+    if (kind.id === 'bibliography' && layout?.bibliography.title.trim())
+      return documentWord(language, layout.bibliography.title.trim());
+    if (kind.id === 'list-of-figures' && layout?.figures.endTitle.trim())
+      return documentWord(language, layout.figures.endTitle.trim());
+    if (kind.id === 'list-of-tables' && layout?.tables.endTitle.trim())
+      return documentWord(language, layout.tables.endTitle.trim());
+    return kind.label();
+  }
+
+  /**
+   * Adds an element of a kind under this one, last among its children: it
+   * is printed where it stands, and it is the writer who moves it.
+   */
+  function addPart(kind: PartKind) {
+    project.checkpoint();
+    const id = project.addChild(at, { title: firstName(kind) });
     if (id) project.setKind([id], kind.id);
     project.checkpoint();
+  }
+
+  function addAnother(event: MouseEvent) {
+    const items: MenuItem[] = others.map((kind) => ({
+      label: kind.label(),
+      action: () => addPart(kind),
+    }));
+    openMenu(event.currentTarget as HTMLElement, items, { align: 'start' });
   }
 
   // ---- what is required ----
@@ -157,54 +175,40 @@
 
 {#if used}
   {@const u = used}
-  {#each printed as item ('part' in item ? item.part : `kind:${item.kind.id}`)}
-    {#if 'part' in item}
-      {@const part = item.part}
-      {@const always = ALWAYS_MADE.includes(part)}
-      <label class="row check" class:always>
-        <span class="what">{generatedPartWords(part)}</span>
-        <input
-          type="checkbox"
-          data-part-switch={part}
-          checked={always || hasPart(u, part)}
-          disabled={always}
-          onchange={(e) => setPart(part, e.currentTarget.checked)}
-        />
-      </label>
-      {@render fromLine(`parts.${part}`)}
-    {:else}
-      {@const kind = item.kind}
-      {@const elements = partsOf.get(kind.id) ?? []}
-      {@const where =
-        kind.place === 'cover' || kind.place === 'none' ? placeWords(kind.place, true) : null}
-      <div class="place" data-kind={kind.id}>
-        <div class="place-head">
-          <strong>{kind.label()}</strong>
-          <span class="where">{where ?? ''}</span>
-          <Button size="sm" data-make={kind.id} onclick={() => makePart(kind)}>
+  {#each listed as kind (kind.id)}
+    {@const elements = partsOf.get(kind.id) ?? []}
+    {@const where =
+      kind.place === 'cover' || kind.place === 'none' ? placeWords(kind.place, true) : null}
+    <div class="place" data-kind={kind.id}>
+      <div class="place-head">
+        <strong>{kind.label()}</strong>
+        <span class="where">{where ?? ''}</span>
+        {#if !kind.one || !elements.length}
+          <Button size="sm" data-make={kind.id} onclick={() => addPart(kind)}>
             {#snippet icon()}<Plus size={13} />{/snippet}
-            {t('look-contents-kinds-make')}
+            {t('look-parts-add')}
           </Button>
-        </div>
-        {#each elements as element, i (element)}
-          <button
-            type="button"
-            class="element"
-            data-element={element}
-            onclick={() => ongo(element)}
-          >
-            <span class="truncate">{nameOf(element)}</span>
-            {#if kind.one && i > 0}
-              <span class="doubled">{t('look-contents-kinds-doubled')}</span>
-            {/if}
-            <ArrowRight size={13} />
-          </button>
-        {:else}
-          <p class="none">{t('look-contents-kinds-missing')}</p>
-        {/each}
+        {/if}
       </div>
-    {/if}
+      {#each elements as element, i (element)}
+        <button type="button" class="element" data-element={element} onclick={() => ongo(element)}>
+          <span class="truncate">{nameOf(element)}</span>
+          {#if kind.one && i > 0}
+            <span class="doubled">{t('look-contents-kinds-doubled')}</span>
+          {/if}
+          <ArrowRight size={13} />
+        </button>
+      {/each}
+    </div>
   {/each}
+  {#if others.length}
+    <div class="another">
+      <Button size="sm" data-make-another onclick={addAnother}>
+        {#snippet icon()}<Plus size={13} />{/snippet}
+        {t('look-parts-another')}
+      </Button>
+    </div>
+  {/if}
 
   <h4>{t('look-type-requirements')}</h4>
   {#each LIMITS as limit (limit)}
@@ -245,12 +249,7 @@
 {/if}
 
 <style>
-  /* A part the core always makes: shown, and not turned. */
-  .row.always {
-    cursor: default;
-  }
-
-  /* Each kind with a place of its own, with the elements that fill it. */
+  /* Each kind the type suggests, with the elements of it the document has. */
   .place {
     padding: 8px 0;
     border-bottom: 1px solid var(--line);
@@ -298,9 +297,7 @@
     font-size: var(--text-xs);
     color: var(--warn);
   }
-  .none {
-    margin: 2px 0 0 8px;
-    font-size: var(--text-sm);
-    color: var(--ink-4);
+  .another {
+    padding: 10px 0 2px;
   }
 </style>

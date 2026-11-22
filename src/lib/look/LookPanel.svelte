@@ -78,7 +78,6 @@
   import { LOOK_SECTIONS, lookUi, type LookRequest, type LookSection } from './look.svelte';
   import { PAPERS } from './papers';
   import ContentsSection from './ContentsSection.svelte';
-  import { Composition } from './composition.svelte';
   import { lookRows, lookWords, resolvedWords, setKindLook } from './rows.svelte';
 
   interface Props {
@@ -1076,14 +1075,6 @@
     chosen(t('format-alignment'), 'title.align', aligns),
   ]);
 
-  /** What the document contains, for the switch of the title page over the front page's rows. */
-  const contained = new Composition(
-    () => project,
-    () => at,
-  );
-  /** Where the switch of the title page has its value from: nothing where it is the template's. */
-  const titlePageFrom = $derived(contained.from('parts.title-page'));
-
   /**
    * Quotations in the text that the layout would have set off by their
    * length: a warning of the checklist, from this many words or lines. The
@@ -1965,27 +1956,6 @@
 
         <section class="part" data-part="front">
           <h3>{sectionWords.front}</h3>
-          <!-- Whether the document has a title page: the switch of What the document contains, here too. -->
-          <label class="row check" data-front-switch>
-            <span class="what">{t('look-front-title-page')}</span>
-            <input
-              type="checkbox"
-              data-part-switch="title-page"
-              checked={contained.has('title-page')}
-              disabled={!contained.used}
-              onchange={(e) => contained.setPart('title-page', e.currentTarget.checked)}
-            />
-          </label>
-          {#if titlePageFrom}
-            {@const said = titlePageFrom}
-            <p class="from" data-from>
-              {said.words}{#if said.again}{' · '}<button
-                  type="button"
-                  class="again"
-                  onclick={said.again.take}>{said.again.label}</button
-                >{/if}
-            </p>
-          {/if}
           <Settings target={f} rows={titleRows} {from} />
         </section>
 

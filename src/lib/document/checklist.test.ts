@@ -51,8 +51,9 @@ function template(more: Partial<Template> = {}): Template {
 describe('the checklist of a document', () => {
   it('says nothing of a document that keeps to its template', () => {
     const p = project();
-    const article = p.addChild(PROJECT, { title: 'Article', body: 'One two three.' })!;
+    const article = p.addChild(PROJECT, { title: 'Article' })!;
     const abstract = p.addChild(article, { title: 'Abstract', body: 'In short.' })!;
+    p.addChild(article, { title: 'Text', body: 'One two three.' });
     p.setKind([abstract], 'abstract');
     p.setDocument(article, { keywords: ['Homer', 'wrath'] });
     const t = template({
@@ -65,8 +66,9 @@ describe('the checklist of a document', () => {
 
   it('counts the words of the document, of the abstract, and the keywords against the requirements', () => {
     const p = project();
-    const article = p.addChild(PROJECT, { title: 'Article', body: 'One two three four.' })!;
+    const article = p.addChild(PROJECT, { title: 'Article' })!;
     const abstract = p.addChild(article, { title: 'Abstract', body: 'In short, too long.' })!;
+    p.addChild(article, { title: 'Text', body: 'One two three four.' });
     p.setKind([abstract], 'abstract');
     p.setDocument(article, { keywords: ['Homer', 'wrath', 'epic'] });
     const t = template({
@@ -81,6 +83,56 @@ describe('the checklist of a document', () => {
     expect(remarks[1].text).toContain('4');
     expect(remarks[2].text).toContain('3');
     for (const r of remarks) expect(r.text).not.toMatch(/^checklist-/);
+  });
+
+  it('says where works are cited and no bibliography stands under the document', () => {
+    const p = project();
+    const article = p.addChild(PROJECT, { title: 'Article' })!;
+    const text = p.addChild(article, { title: 'Text', body: 'The wrath is sung.' })!;
+    expect(checklist(p, article, template())).toEqual([]);
+    p.cite(text, ['nagy']);
+    const remarks = checklist(p, article, template());
+    expect(remarks.map((r) => r.kind)).toEqual(['no-bibliography']);
+    expect(remarks[0].text).not.toMatch(/^checklist-/);
+    // A reference style that has everything in its notes asks for none.
+    expect(checklist(p, article, template(), null, false)).toEqual([]);
+    // One placed, it is said no more; one left out of the document is none.
+    const works = p.addChild(article, { title: 'Works cited' })!;
+    p.setKind([works], 'bibliography');
+    expect(checklist(p, article, template())).toEqual([]);
+    p.setExcluded(works, true);
+    expect(checklist(p, article, template()).map((r) => r.kind)).toEqual(['no-bibliography']);
+  });
+
+  it('says in what order the type has the parts, where they stand otherwise, and moves nothing', () => {
+    const p = project();
+    const article = p.addChild(PROJECT, { title: 'Article' })!;
+    const text = p.addChild(article, { title: 'Text', body: 'One two.' })!;
+    const abstract = p.addChild(article, { title: 'Abstract', body: 'In short.' })!;
+    const title = p.addChild(article, { title: 'Title page' })!;
+    p.setKind([abstract], 'abstract');
+    p.setKind([title], 'title-page');
+    const remarks = checklist(p, article, template());
+    expect(remarks.map((r) => r.kind)).toEqual(['order']);
+    expect(remarks[0].text).toBe(
+      'The document type has these parts in this order: Title page · Abstract · The text.',
+    );
+    expect(p.tree().children.get(article)).toEqual([text, abstract, title]);
+    // In the type's order, nothing is said; nor of a part the type does not list.
+    const q = project();
+    const other = q.addChild(PROJECT, { title: 'Article' })!;
+    const first = q.addChild(other, { title: 'Dedication' })!;
+    const second = q.addChild(other, { title: 'Abstract' })!;
+    q.addChild(other, { title: 'Text', body: 'One two.' });
+    q.setKind([first], 'dedication');
+    q.setKind([second], 'abstract');
+    expect(checklist(q, other, template())).toEqual([]);
+    // The text an element has of its own stands before everything under it.
+    const r = project();
+    const own = r.addChild(PROJECT, { title: 'Article', body: 'Written on the article.' })!;
+    const late = r.addChild(own, { title: 'Abstract' })!;
+    r.setKind([late], 'abstract');
+    expect(checklist(r, own, template()).map((x) => x.kind)).toEqual(['order']);
   });
 
   it('lists every element of a kind the document has one of but the first, by its siblings', () => {

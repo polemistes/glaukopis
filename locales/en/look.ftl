@@ -57,8 +57,9 @@ look-delete-layout = Delete this layout of mine…
 ## list in the order they are printed, and what is required. What is changed
 ## there is kept as the document's own changes over what it is.
 
-look-contents-kinds-missing = None yet
-look-contents-kinds-make = Make one
+look-parts-add = Add
+# Under the parts the type suggests: a menu of the other kinds there are.
+look-parts-another = Another part…
 # On the second element of a kind a document has one of.
 look-contents-kinds-doubled = Only the first is used
 look-contents-limit-words = Words of the text, at most
@@ -76,8 +77,6 @@ look-from-with = From { $name } ({ $what })
 look-style = Reference style
 look-style-change = Change this reference style…
 
-# The switch of the title page, first in the part of the front page.
-look-front-title-page = A title page
 
 # The groups of the fonts to choose from.
 look-fonts-document = In this document
@@ -93,7 +92,7 @@ look-hide = Hide the look
 ## Fewer words, stage 3: the parts and the headings of Look in plain words.
 
 look-section-line-numbers = Line numbers
-look-section-type-parts = Parts of the document type
+look-section-type-parts = Parts
 look-section-the-layout = Layout
 look-choose-layout = Choose a layout
 look-layout-modifications = Modifications to the layout

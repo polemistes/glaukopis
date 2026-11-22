@@ -219,7 +219,11 @@
 
   /** The layout as the document uses it, with its changes: what the checklist judges the front page and the quotations by. */
   const used = $derived(format ? laidOver(format, project.lookOf(at).changes) : null);
-  const remarks = $derived<Remark[]>(template ? checklist(project, at, template, used) : []);
+  /** Whether the reference style of the document lists the works cited: one that has all in its notes asks for no bibliography. */
+  const listsWorks = $derived(documents.style(choice.style)?.bibliography ?? true);
+  const remarks = $derived<Remark[]>(
+    template ? checklist(project, at, template, used, listsWorks) : [],
+  );
   const words = $derived(countWords(project, at));
   const wordsMost = $derived(template?.requirements.words ?? null);
 

@@ -57,8 +57,6 @@ look-delete-layout = Dieses eigene Layout löschen…
 ## list in the order they are printed, and what is required. What is changed
 ## there is kept as the document's own changes over what it is.
 
-look-contents-kinds-missing = Noch keines
-look-contents-kinds-make = Eines anlegen
 # On the second element of a kind a document has one of.
 look-contents-kinds-doubled = Nur das erste wird verwendet
 look-contents-limit-words = Wörter des Textes, höchstens
@@ -76,8 +74,6 @@ look-from-with = Von { $name } ({ $what })
 look-style = Zitierstil
 look-style-change = Diesen Zitierstil ändern…
 
-# The switch of the title page, first in the part of the front page.
-look-front-title-page = Eine Titelseite
 
 # The groups of the fonts to choose from.
 look-fonts-document = In diesem Dokument

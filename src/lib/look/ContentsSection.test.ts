@@ -19,7 +19,6 @@ const { flushSync, mount, unmount } = await import('svelte');
 const { documents } = await import('$lib/preview/documents.svelte');
 const { Project } = await import('$lib/project/model/project.svelte');
 const { PROJECT } = await import('$lib/project/model/types');
-const { GENERATED_PARTS } = await import('$lib/document/parts-order');
 const { default: ContentsSection } = await import('./ContentsSection.svelte');
 
 type P = InstanceType<typeof Project>;
@@ -81,7 +80,6 @@ function shown(p: P, at: string, ongo = vi.fn()) {
     target,
     ongo,
     find,
-    part: (id: string) => find<HTMLInputElement>(`[data-part-switch="${id}"]`)!,
     field: (key: string) => find<HTMLInputElement>(`[data-requirement="${key}"]`)!,
     /** The lines that say where a value comes from, in order. */
     froms: () => [...target.querySelectorAll('[data-from]')].map((l) => l.textContent?.trim()),
@@ -99,113 +97,73 @@ function type(field: HTMLInputElement, value: string) {
   flushSync();
 }
 
-describe('what the document contains, in Look', () => {
-  it('shows the parts as the template has them, and a part turned on as the element’s own change', () => {
-    const { p, chapter } = aBook();
-    const view = shown(p, chapter);
-    const switches = [...view.target.querySelectorAll('[data-part-switch]')];
-    expect(switches.map((s) => s.getAttribute('data-part-switch'))).toEqual([...GENERATED_PARTS]);
-    expect(view.part('title-page').checked).toBe(true);
-    expect(view.part('contents').checked).toBe(false);
-    // The text, the notes and the bibliography are always made: shown on, and not turned.
-    for (const always of ['body', 'notes', 'bibliography']) {
-      expect(view.part(always).checked).toBe(true);
-      expect(view.part(always).disabled).toBe(true);
-    }
-    expect(view.part('contents').disabled).toBe(false);
-    expect(view.froms()).toEqual([]);
+describe('the parts of a document, in Look', () => {
+  /** The kinds listed, in their order. */
+  const kinds = (target: HTMLElement) =>
+    [...target.querySelectorAll('.place')].map((e) => e.getAttribute('data-kind'));
 
-    press(view.part('contents'));
-    expect(p.node(chapter)!.document.composition).toEqual({ parts: { contents: true } });
-    expect(view.part('contents').checked).toBe(true);
-    expect(view.froms()).toEqual(['Changed here · take My article’s again']);
-
-    // Turned off again, nothing is left of it; and the turning was one step of undo.
-    press(view.part('contents'));
-    expect(p.yNodes.get(chapter)!.has('document')).toBe(false);
-    expect(view.froms()).toEqual([]);
-    p.undo();
-    flushSync();
-    expect(view.part('contents').checked).toBe(true);
-    p.undo();
-    flushSync();
-    expect(view.part('contents').checked).toBe(false);
-    expect(p.yNodes.get(chapter)!.has('document')).toBe(false);
-  });
-
-  it('tells a change made over the element, lets it say otherwise, and takes each change away again', () => {
-    const { p, book, chapter } = aBook();
-    p.setDocument(book, { composition: { parts: { 'title-page': false } } });
-    const view = shown(p, chapter);
-    expect(view.part('title-page').checked).toBe(false);
-    expect(view.froms()).toEqual(['Changed in “Book” · take My article’s again']);
-
-    // The chapter turns it on for itself.
-    press(view.part('title-page'));
-    expect(p.node(chapter)!.document.composition).toEqual({ parts: { 'title-page': true } });
-    expect(view.part('title-page').checked).toBe(true);
-    expect(view.froms()).toEqual(['Changed here · take My article’s again']);
-
-    // Its own taken away, the book's holds again; the book's taken away, the template's.
-    press(view.find('[data-from] .again'));
-    expect(p.node(chapter)!.document.composition).toBeUndefined();
-    expect(view.part('title-page').checked).toBe(false);
-    expect(view.froms()).toEqual(['Changed in “Book” · take My article’s again']);
-    press(view.find('[data-from] .again'));
-    expect(p.node(book)!.document.composition).toBeUndefined();
-    expect(view.part('title-page').checked).toBe(true);
-    expect(view.froms()).toEqual([]);
-  });
-
-  it('lists the parts and the kinds in one list, in the order the type prints them', () => {
+  it('lists what the type suggests in its usual order, what Glaukopis makes among it, and turns nothing on', () => {
     const { p, book } = aBook();
     const view = shown(p, book);
-    const list = [...view.target.querySelectorAll('[data-part-switch], .place')].map(
-      (e) => e.getAttribute('data-part-switch') ?? `kind:${e.getAttribute('data-kind')}`,
-    );
-    expect(list).toEqual([
-      'half-title',
+    // The article: the title page, the abstract, the keywords, the appendices, the acknowledgements,
+    // the bibliography. The text and the notes are of no kind.
+    expect(kinds(view.target)).toEqual([
       'title-page',
-      'kind:abstract',
+      'abstract',
       'keywords',
-      'contents',
-      'list-of-figures',
-      'list-of-tables',
-      'body',
-      'kind:appendix',
-      'kind:acknowledgements',
-      'notes',
+      'appendix',
+      'acknowledgements',
       'bibliography',
     ]);
-    expect(view.target.querySelectorAll('h4')).toHaveLength(1);
+    expect(view.target.querySelector('input[type="checkbox"][data-part-switch]')).toBeNull();
+    expect(view.target.querySelector('[data-element]')).toBeNull();
+    // What a document once turned on and off is read by nothing.
+    p.setDocument(book, { composition: { parts: { contents: true, 'title-page': false } } });
+    flushSync();
+    expect(kinds(view.target)).toContain('title-page');
+    expect(kinds(view.target)).not.toContain('contents');
   });
 
-  it('lists the kinds the template gives a place to, shows the elements that fill them, and makes one', () => {
-    const { p, book } = aBook();
+  it('adds an element of a kind last under the document, shows it, and goes to it', () => {
+    const { p, book, chapter } = aBook();
     const view = shown(p, book);
-    // As the article's contents have them, then what it puts in hand besides.
-    const places = [...view.target.querySelectorAll('.place')].map((e) =>
-      e.getAttribute('data-kind'),
-    );
-    expect(places).toEqual(['abstract', 'appendix', 'acknowledgements']);
-    const abstract = () => view.find('.place[data-kind="abstract"]')!;
-    // No words of front or back: the list is in the order the document is printed.
-    expect(abstract().querySelector('.where')?.textContent).toBe('');
-    expect(abstract().querySelector('.none')?.textContent).toBe('None yet');
-
-    // Made first among the book's elements, as the front matter stands, named as its kind.
-    press(abstract().querySelector<HTMLButtonElement>('[data-make]'));
-    const made = p.tree().children.get(book)![0];
+    const place = (kind: string) => view.find(`.place[data-kind="${kind}"]`)!;
+    press(place('abstract').querySelector<HTMLButtonElement>('[data-make]'));
+    // Last: it is printed where it stands, and the writer moves it.
+    const [first, made] = p.tree().children.get(book)!;
+    expect(first).toBe(chapter);
     expect(p.node(made)!.kind).toBe('abstract');
     expect(p.node(made)!.title).toBe('Abstract');
-    expect(abstract().querySelector('.none')).toBeNull();
-    press(abstract().querySelector<HTMLButtonElement>(`[data-element="${made}"]`));
+    press(place('abstract').querySelector<HTMLButtonElement>(`[data-element="${made}"]`));
     expect(view.ongo).toHaveBeenCalledWith(made);
+    // Of a kind a document has one of, no second is offered.
+    expect(place('abstract').querySelector('[data-make]')).toBeNull();
+    // Of one it may have many, another is.
+    press(place('appendix').querySelector<HTMLButtonElement>('[data-make]'));
+    press(place('appendix').querySelector<HTMLButtonElement>('[data-make]'));
+    expect(place('appendix').querySelectorAll('[data-element]')).toHaveLength(2);
+    // A second of a kind it has one of, made otherwise: only the first is used.
+    const second = p.addChild(book, { title: 'In short' })!;
+    p.setKind([second], 'abstract');
+    flushSync();
+    expect(place('abstract').querySelector('.doubled')?.textContent).toBe('Only the first is used');
+  });
 
-    // A second of a kind the document has one of: only the first is used.
-    press(abstract().querySelector<HTMLButtonElement>('[data-make]'));
-    expect(abstract().querySelectorAll('[data-element]')).toHaveLength(2);
-    expect(abstract().querySelector('.doubled')?.textContent).toBe('Only the first is used');
+  it('names what is printed over a list as the document would have, in its language', () => {
+    const { p, book } = aBook();
+    p.setDocument(book, { language: 'nb' });
+    const view = shown(p, book);
+    press(view.find('.place[data-kind="title-page"] [data-make]'));
+    const title = p.tree().children.get(book)!.at(-1)!;
+    expect(p.node(title)!.kind).toBe('title-page');
+    expect(p.node(title)!.title).toBe('Title page');
+    // The type suggests no table of contents: it is under Another part, and listed once it is there.
+    expect(kinds(view.target)).not.toContain('contents');
+    const contents = p.addChild(book, { title: 'Innhold' })!;
+    p.setKind([contents], 'contents');
+    flushSync();
+    expect(kinds(view.target).at(-1)).toBe('contents');
+    expect(view.find('[data-make-another]')).not.toBeNull();
   });
 
   it('sets what is required as the element’s own, and takes it away where it comes back to the template’s', () => {
@@ -251,11 +209,11 @@ describe('what the document contains, in Look', () => {
     expect(p.yNodes.get(book)!.get('document')).toEqual({ template: 'my-article' });
   });
 
-  it('shows no kind of element where the template gives none a place, and says nothing of it', () => {
+  it('lists nothing where the type suggests nothing and the document has no part', () => {
     const { p, book } = aBook();
     p.keepTemplate({ ...p.templateCopy('my-article')!, contents: [{ part: 'body' }], kinds: [] });
     const view = shown(p, book);
     expect(view.find('.place')).toBeNull();
-    expect(view.target.textContent).not.toContain('gives no kind');
+    expect(view.find('[data-make-another]')).not.toBeNull();
   });
 });

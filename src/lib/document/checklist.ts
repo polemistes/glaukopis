@@ -2,7 +2,9 @@
  * The checklist of a document (ADR 0038): what the template requires and
  * what the tree says, as remarks. Words over the limit, the words of the
  * abstract, the keywords, a second element of a kind the document has one
- * of, and parts of a kind the template has no place for; a front page that
+ * of, and parts of a kind the template has no place for; works cited where
+ * no bibliography is placed, and parts that stand in another order than the
+ * type has them, which is said and never mended (ADR 0118); a front page that
  * names the contributors where the template asks for an anonymous document; and
  * quotations in the text long enough for the layout to set them off. Nothing
  * is refused: every remark names what it is about.
@@ -16,10 +18,19 @@ import { countWords } from '$lib/project/model/document';
 import type { Project } from '$lib/project/model/project.svelte';
 import { inlineText } from '$lib/project/model/text';
 import type { PassageKindRecord } from '$lib/project/model/types';
-import { isDoubled, partOf, type PartSpec } from '$lib/project/parts';
+import { isDoubled, partOf, partSpec, type PartSpec } from '$lib/project/parts';
+import { generatedPartWords } from './templates';
 
 export type RemarkKind =
-  'words' | 'abstract-words' | 'keywords' | 'doubled' | 'unplaced' | 'anonymous' | 'quotation';
+  | 'words'
+  | 'abstract-words'
+  | 'keywords'
+  | 'doubled'
+  | 'unplaced'
+  | 'no-bibliography'
+  | 'order'
+  | 'anonymous'
+  | 'quotation';
 
 export interface Remark {
   kind: RemarkKind;
@@ -108,13 +119,16 @@ function isQuotation(id: string, own: readonly PassageKindRecord[]): boolean {
 /**
  * The remarks on the document of an element, by the template it uses and
  * the layout as the document uses it (`format`), with its changes. With no
- * template, only what the tree and the layout say.
+ * template, only what the tree and the layout say. `listsWorks` is whether
+ * the reference style of the document lists the works cited at all: one
+ * that has everything in its notes asks for no bibliography.
  */
 export function checklist(
   project: Project,
   at: string,
   template: Template | null | undefined,
   format?: DocumentFormat | null,
+  listsWorks = true,
 ): Remark[] {
   const remarks: Remark[] = [];
   if (!project.node(at)) return remarks;
@@ -186,6 +200,50 @@ export function checklist(
         kind: 'unplaced',
         text: t('checklist-unplaced', { count: unplaced.length }),
         elements: unplaced,
+      });
+  }
+
+  // What the document is made of, as it stands under the element: each kind of
+  // part once, where its first element stands, and the text where it begins.
+  const stands: string[] = [];
+  if ((project.node(at)?.words ?? 0) > 0) stands.push('body');
+  for (const child of children(at)) {
+    const part = partOf(project, project.node(child)?.kind);
+    if (part?.place === 'cover' || part?.place === 'none') continue;
+    const what = part?.id ?? 'body';
+    if (!stands.includes(what)) stands.push(what);
+  }
+
+  // Works cited, and no bibliography: none is printed where no element of the kind stands.
+  if (
+    listsWorks &&
+    !stands.includes('bibliography') &&
+    tree.sequence.some((id) => {
+      const node = project.node(id);
+      return !!node && !node.excluded && [...(node.cited ?? [])].length > 0;
+    })
+  )
+    remarks.push({ kind: 'no-bibliography', text: t('checklist-no-bibliography') });
+
+  // The parts in another order than the type has them: said, and left as they stand.
+  if (template) {
+    const usual: string[] = [];
+    for (const item of template.contents) {
+      const what = 'kind' in item ? item.kind : item.part;
+      if (what !== 'notes' && !usual.includes(what)) usual.push(what);
+    }
+    const here = stands.filter((what) => usual.includes(what));
+    const asUsual = usual.filter((what) => here.includes(what));
+    if (here.join('/') !== asUsual.join('/'))
+      remarks.push({
+        kind: 'order',
+        text: t('checklist-order', {
+          parts: asUsual
+            .map((what) =>
+              what === 'body' ? generatedPartWords('body') : (partSpec(what)?.label() ?? what),
+            )
+            .join(' · '),
+        }),
       });
   }
 

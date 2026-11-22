@@ -585,7 +585,8 @@ export function elementMenu(
   const template = documents.templateCached(chosen) ?? project.templateCopy(chosen);
   const inHand = partsAmong([
     ...(template?.kinds ?? []),
-    ...(template?.contents ?? []).flatMap((c) => ('kind' in c ? [c.kind] : [])),
+    // What the type suggests: the kinds it lists, and what Glaukopis makes by the kind that places it.
+    ...(template?.contents ?? []).flatMap((c) => ('kind' in c ? [c.kind] : [c.part])),
     ...project.catalogueKindsInUse(),
   ]);
   const partItem = (p: PartSpec): MenuItem => ({

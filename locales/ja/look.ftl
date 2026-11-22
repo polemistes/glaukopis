@@ -56,8 +56,6 @@ look-delete-layout = この独自のレイアウトを削除…
 ## 要件も示す。ここで変えたものは、文書が何であるかに対する文書自身の
 ## 変更として保存される。
 
-look-contents-kinds-missing = まだありません
-look-contents-kinds-make = 作る
 # 文書に一つだけ置く種類の、二つ目の要素に。
 look-contents-kinds-doubled = 最初のものだけを使います
 look-contents-limit-words = 本文の語数の上限
@@ -75,8 +73,6 @@ look-from-with = 「{ $name }」から（{ $what }）
 look-style = 引用スタイル
 look-style-change = この引用スタイルを変更…
 
-# タイトルページのスイッチ。最初のページの部分のいちばん初めに。
-look-front-title-page = タイトルページ
 
 # 選べるフォントのまとまり。
 look-fonts-document = この文書で使用

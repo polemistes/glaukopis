@@ -2,15 +2,12 @@
  * What a document contains, as a part of Look reads and changes it (ADR
  * 0054): the template as the document uses it, and the document's own
  * changes over it, each written as a step of undo, and taken away where it
- * comes back to what the elements over it leave. Shared by *What the
- * document contains* and the front page, which begins with the switch of
- * the title page (ADR 0056): one switch, wherever it stands.
+ * comes back to what the elements over it leave.
  */
 
-import type { GeneratedPart, Template } from '$lib/api/templates';
+import type { Template } from '$lib/api/templates';
 import {
   compositionPaths,
-  hasPart,
   withCompositionPath,
   withoutCompositionPath,
   type CompositionChanges,
@@ -68,11 +65,6 @@ export class Composition {
     templateUsedCached(this.project, this.at, this.above),
   );
 
-  /** Whether the document as used has a part the core makes. */
-  has(part: GeneratedPart): boolean {
-    return !!this.used && hasPart(this.used, part);
-  }
-
   /** Writes changes of an element's own, as one step of undo; nothing where they are as they were. */
   write(element: string, next: CompositionChanges) {
     const before = this.project.node(element)?.document.composition;
@@ -93,11 +85,6 @@ export class Composition {
         ? withoutCompositionPath(this.own, path)
         : withCompositionPath(this.own, path, value),
     );
-  }
-
-  /** Turns a part the core makes on or off for this document. */
-  setPart(part: GeneratedPart, on: boolean) {
-    this.set(`parts.${part}`, on, this.given ? hasPart(this.given, part) : undefined);
   }
 
   /** Takes the template's value again: the change at a path goes from the element that makes it. */

@@ -35,3 +35,8 @@ checklist-long-quotation = { $by ->
        *[other] { $lines } linjer
     }; oppsettet setter sitater for seg fra { $limit } ord.
 }
+
+## Treets rekkefølge: det som sies om delene, og aldri rettes.
+
+checklist-no-bibliography = Det vises til verk, og dokumentet har ingen litteraturliste. Legg til en under Deler i Utseende.
+checklist-order = Dokumenttypen har disse delene i denne rekkefølgen: { $parts }.

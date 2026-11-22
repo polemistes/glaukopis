@@ -50,8 +50,8 @@ look-delete-layout = Slett dette oppsettet mitt …
 ## skrives ut, og hva som kreves. Det som endres der, holdes som dokumentets
 ## egne endringer.
 
-look-contents-kinds-missing = Ingen ennå
-look-contents-kinds-make = Lag en
+look-parts-add = Legg til
+look-parts-another = En annen del …
 look-contents-kinds-doubled = Bare det første brukes
 look-contents-limit-words = Ord i teksten, høyst
 look-contents-limit-abstract-words = Ord i sammendraget, høyst
@@ -67,8 +67,6 @@ look-from-with = Fra { $name } ({ $what })
 look-style = Referansestil
 look-style-change = Endre denne referansestilen …
 
-# The switch of the title page, first in the part of the front page.
-look-front-title-page = En tittelside
 
 # The groups of the fonts to choose from.
 look-fonts-document = I dette dokumentet
@@ -83,7 +81,7 @@ look-hide = Skjul utseendet
 ## Fewer words, stage 3: the parts and the headings of Look in plain words.
 
 look-section-line-numbers = Linjenummer
-look-section-type-parts = Dokumenttypens deler
+look-section-type-parts = Deler
 look-section-the-layout = Oppsett
 look-choose-layout = Velg et oppsett
 look-layout-modifications = Endringer i oppsettet

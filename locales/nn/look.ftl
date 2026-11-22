@@ -57,8 +57,6 @@ look-delete-layout = Slett dette oppsettet mitt …
 ## list in the order they are printed, and what is required. What is changed
 ## there is kept as the document's own changes over what it is.
 
-look-contents-kinds-missing = Ingen enno
-look-contents-kinds-make = Lag eitt
 # On the second element of a kind a document has one of.
 look-contents-kinds-doubled = Berre det første blir brukt
 look-contents-limit-words = Ord i teksten, høgst
@@ -76,8 +74,6 @@ look-from-with = Frå { $name } ({ $what })
 look-style = Referansestil
 look-style-change = Endre denne referansestilen …
 
-# The switch of the title page, first in the part of the front page.
-look-front-title-page = Ei tittelside
 
 # The groups of the fonts to choose from.
 look-fonts-document = I dette dokumentet

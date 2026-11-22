@@ -3,9 +3,7 @@ import type { GeneratedPart, Template } from '$lib/api/templates';
 import {
   composed,
   compositionPaths,
-  hasPart,
-  printOrder,
-  type Printed,
+  suggestedParts,
   withCompositionPath,
   withoutCompositionPath,
 } from './composition';
@@ -18,164 +16,47 @@ import plainFile from '../../../resources/templates/plain.json';
 const article = () => JSON.parse(JSON.stringify(articleFile)) as Template;
 const plain = () => JSON.parse(JSON.stringify(plainFile)) as Template;
 
-/** The items of the contents, a part by its id and a kind as `kind:` and its id. */
-const order = (template: Template) =>
-  template.contents.map((item) => ('part' in item ? item.part : `kind:${item.kind}`));
-
-/** The things of a print order, a part by its id, with a minus where it is off, and a kind as `kind:` and its id. */
-const printed = (list: Printed[]) =>
-  list.map((p) => ('part' in p ? `${p.on ? '' : '-'}${p.part}` : `kind:${p.kind}`));
-
-describe('the order a document type prints its parts in', () => {
-  const places: Record<string, 'front' | 'back' | 'here' | 'cover' | 'none'> = {
-    abstract: 'front',
-    preface: 'front',
-    dedication: 'front',
-    appendix: 'back',
-    acknowledgements: 'back',
-    blurb: 'cover',
-  };
-  const placeOf = (kind: string) => places[kind];
-
-  it('is the contents as they stand, each part that is off where it would stand turned on', () => {
-    expect(printed(printOrder(article(), placeOf))).toEqual([
-      '-half-title',
+describe('the parts a document type suggests', () => {
+  it('are what its contents list, in their order, what Glaukopis makes by its kind, and each once', () => {
+    // The article: the title page, the abstract, the keywords, the text, the appendices,
+    // the acknowledgements, the notes, the bibliography. The text and the notes are of no kind.
+    expect(suggestedParts(article())).toEqual([
       'title-page',
-      'kind:abstract',
+      'abstract',
       'keywords',
-      '-contents',
-      '-list-of-figures',
-      '-list-of-tables',
-      'body',
-      'kind:appendix',
-      'kind:acknowledgements',
-      'notes',
+      'appendix',
+      'acknowledgements',
       'bibliography',
     ]);
+    expect(suggestedParts(plain())).toEqual(['title-page', 'bibliography']);
   });
 
-  it('keeps the type’s own order of the kinds, acknowledgements in the front among them', () => {
+  it('then the kinds it names without listing them', () => {
     const book: Template = {
       ...article(),
       contents: [
         { part: 'title-page' },
         { kind: 'preface' },
-        { kind: 'acknowledgements' },
-        { part: 'contents' },
         { part: 'body' },
-        { part: 'bibliography' },
+        { kind: 'preface' },
       ],
-      kinds: ['preface', 'acknowledgements', 'dedication', 'appendix', 'blurb'],
+      kinds: ['preface', 'dedication', 'blurb', 'dedication'],
     };
-    expect(printed(printOrder(book, placeOf))).toEqual([
-      '-half-title',
-      'title-page',
-      'kind:preface',
-      'kind:acknowledgements',
-      '-keywords',
-      'contents',
-      '-list-of-figures',
-      '-list-of-tables',
-      // A kind of the front that the type does not place comes before the text, as the core prints it.
-      'kind:dedication',
-      'body',
-      'notes',
-      'bibliography',
-      // One of the back after everything; the cover's last.
-      'kind:appendix',
-      'kind:blurb',
-    ]);
-  });
-
-  it('has the text where the type does not list it, and each thing once', () => {
-    const bare: Template = {
-      ...article(),
-      contents: [
-        { part: 'title-page' },
-        { kind: 'abstract' },
-        { kind: 'abstract' },
-        { part: 'title-page' },
-      ],
-      kinds: ['abstract', 'abstract'],
-    };
-    const list = printed(printOrder(bare, placeOf));
-    expect(list.filter((p) => p === 'kind:abstract')).toHaveLength(1);
-    expect(list.filter((p) => p === 'title-page')).toHaveLength(1);
-    expect(list).toContain('body');
-    expect(list.indexOf('kind:abstract')).toBeLessThan(list.indexOf('body'));
+    expect(suggestedParts(book)).toEqual(['title-page', 'preface', 'dedication', 'blurb']);
   });
 });
 
 describe('what a document sets otherwise than its template', () => {
-  it('puts a part turned on in its place among the parts, passing over the kinds', () => {
-    // The article: title page, abstract, keywords, the text, appendices, acknowledgements, notes, bibliography.
-    const used = composed(article(), { parts: { contents: true, 'list-of-figures': true } });
-    expect(order(used)).toEqual([
-      'title-page',
-      'kind:abstract',
-      'keywords',
-      'contents',
-      'list-of-figures',
-      'body',
-      'kind:appendix',
-      'kind:acknowledgements',
-      'notes',
-      'bibliography',
-    ]);
-    // A half title comes before everything, keywords after the title page.
-    expect(order(composed(plain(), { parts: { 'half-title': true, keywords: true } }))).toEqual([
-      'half-title',
-      'title-page',
-      'keywords',
-      'body',
-      'notes',
-      'bibliography',
-    ]);
-  });
-
-  it('puts a part that comes after every part the template has at the end', () => {
-    const template = { ...plain(), contents: [{ part: 'title-page' }, { kind: 'appendix' }] };
-    expect(order(composed(template as Template, { parts: { 'list-of-tables': true } }))).toEqual([
-      'title-page',
-      'kind:appendix',
-      'list-of-tables',
-    ]);
-  });
-
-  it('takes out a part turned off, and never the text, its notes or its bibliography', () => {
-    const used = composed(article(), {
-      parts: {
-        'title-page': false,
-        keywords: false,
-        body: false,
-        notes: false,
-        bibliography: false,
-      },
-    });
-    expect(order(used)).toEqual([
-      'kind:abstract',
-      'body',
-      'kind:appendix',
-      'kind:acknowledgements',
-      'notes',
-      'bibliography',
-    ]);
-  });
-
-  it('leaves a part that is turned on and there already where it stands, and the template untouched', () => {
+  it('leaves the contents of the type as they are: a part is an element, and turned on by none', () => {
     const template = article();
-    const used = composed(template, { parts: { keywords: true, 'title-page': true } });
-    expect(order(used)).toEqual(order(article()));
+    const used = composed(template, {
+      parts: { contents: true, 'title-page': false },
+      requirements: { words: 9000 },
+    });
+    expect(used.contents).toEqual(article().contents);
+    expect(used.requirements.words).toBe(9000);
     expect(composed(template, undefined)).toEqual(article());
-    composed(template, { parts: { contents: true }, requirements: { words: 9000 } });
     expect(template).toEqual(article());
-  });
-
-  it('says whether the template as used has a part', () => {
-    const used = composed(article(), { parts: { contents: true, keywords: false } });
-    expect(hasPart(used, 'contents')).toBe(true);
-    expect(hasPart(used, 'keywords')).toBe(false);
-    expect(hasPart(article(), 'contents')).toBe(false);
   });
 
   it('sets what is required, null and nought taking a limit away', () => {
@@ -278,10 +159,8 @@ describe('the template a document is made with', () => {
     });
     const book = p.addChild(PROJECT, { title: 'Book' })!;
     const chapter = p.addChild(book, { title: 'Chapter' })!;
-    p.setDocument(book, { template: 'my-article', composition: { parts: { contents: true } } });
-    p.setDocument(chapter, {
-      composition: { parts: { keywords: false }, requirements: { words: 5000 } },
-    });
+    p.setDocument(book, { template: 'my-article', composition: { requirements: { keywords: 5 } } });
+    p.setDocument(chapter, { composition: { requirements: { words: 5000 } } });
     return { p, book, chapter };
   }
 
@@ -293,15 +172,13 @@ describe('the template a document is made with', () => {
     try {
       const used = await templateUsed(p, chapter);
       expect(used.id).toBe('my-article');
-      expect(hasPart(used, 'contents')).toBe(true);
-      expect(hasPart(used, 'keywords')).toBe(false);
+      expect(used.requirements.keywords).toBe(5);
       expect(used.requirements.words).toBe(5000);
       const forBook = await templateUsed(p, book);
-      expect(hasPart(forBook, 'contents')).toBe(true);
-      expect(hasPart(forBook, 'keywords')).toBe(true);
+      expect(forBook.requirements.keywords).toBe(5);
       expect(forBook.requirements.words).toBeNull();
       // The project's copy is not touched.
-      expect(hasPart(p.templateCopy('my-article')!, 'contents')).toBe(false);
+      expect(p.templateCopy('my-article')!.requirements.keywords).toBeNull();
     } finally {
       documents.loaded = loaded;
     }
@@ -310,27 +187,17 @@ describe('the template a document is made with', () => {
   it('is had at once where it has been read, the same object while nothing changes', () => {
     const { p, book, chapter } = aBook();
     const used = templateUsedCached(p, chapter)!;
-    expect(order(used)).toEqual([
-      'title-page',
-      'kind:abstract',
-      'contents',
-      'body',
-      'kind:appendix',
-      'kind:acknowledgements',
-      'notes',
-      'bibliography',
-    ]);
+    expect(used.requirements.words).toBe(5000);
     expect(templateUsedCached(p, chapter)).toBe(used);
     // With other changes in place of the element's: here, what it has from the book.
     const fromAbove = templateUsedCached(p, chapter, p.compositionOf(book).changes)!;
-    expect(hasPart(fromAbove, 'contents')).toBe(true);
-    expect(hasPart(fromAbove, 'keywords')).toBe(true);
+    expect(fromAbove.requirements.words).toBeNull();
+    expect(fromAbove.requirements.keywords).toBe(5);
     // A change is laid over as soon as it is made.
-    p.setDocument(chapter, { composition: { parts: { 'title-page': false } } });
+    p.setDocument(chapter, { composition: { requirements: { words: 7000 } } });
     const now = templateUsedCached(p, chapter)!;
     expect(now).not.toBe(used);
-    expect(hasPart(now, 'title-page')).toBe(false);
-    expect(hasPart(now, 'keywords')).toBe(true);
+    expect(now.requirements.words).toBe(7000);
     // Nothing where the template is not to be had.
     p.setDocument(book, { template: 'no-such-template' });
     expect(templateUsedCached(p, chapter)).toBeUndefined();
