@@ -329,6 +329,45 @@ impl Projects {
         Ok(info)
     }
 
+    /// Makes a project that another computer of the writer's holds (record
+    /// 0119), under its id, with all it holds: the state is written before
+    /// what is known of the project, so that it is never in the list empty,
+    /// where opening it would begin it anew. A folder left by a making that
+    /// was cut short, with a state and nothing known of it, is made again.
+    pub fn create_from(&self, id: &str, name: &str, state: &[u8]) -> Result<ProjectInfo> {
+        let dir = self.dir(id)?;
+        if dir.join(INFO).is_file() {
+            return Err(Error::invalid(tr!("core-projects-id-taken")));
+        }
+        fs::create_dir_all(&dir).context(|| tr!("io-creating", path = &dir))?;
+        write_atomic(&dir.join(STATE), state)?;
+        let stamp = now();
+        let info = ProjectInfo {
+            id: id.to_owned(),
+            name: Self::check_name(&Self::fit_name(name))?,
+            created: stamp.clone(),
+            modified: stamp,
+            ..Default::default()
+        };
+        Self::write_info(&dir, &info)?;
+        Ok(info)
+    }
+
+    /// Keeps a whole state of the project among its earlier versions: the
+    /// project as it stood here before what another computer wrote came
+    /// into it (record 0119). See `keep_whole`.
+    pub fn keep_version(&self, id: &str, whole: &[u8], always: bool) -> Result<Option<String>> {
+        keep_whole(&self.existing_dir(id)?, whole, always)
+    }
+
+    /// The folder of a project in the trash, by the name it has there.
+    pub fn trashed_dir(&self, trashed: &str) -> Result<PathBuf> {
+        if trashed.contains(['/', '\\']) || trashed.starts_with('.') || trashed.is_empty() {
+            return Err(Error::invalid(tr!("core-projects-not-in-trash")));
+        }
+        Ok(self.root.join(TRASH).join(trashed))
+    }
+
     /// Changes what is kept about a project. The id and the date of creation stay.
     pub fn update_info(&self, id: &str, change: impl FnOnce(&mut ProjectInfo)) -> Result<ProjectInfo> {
         let dir = self.existing_dir(id)?;
@@ -629,7 +668,7 @@ impl Projects {
     /// The folders and the places of the map. A file that cannot be read
     /// is set aside (see `sidefile`), and the projects stand in no folder
     /// until they are put in one again.
-    fn read_arrangement(&self) -> Result<Arrangement> {
+    pub(crate) fn read_arrangement(&self) -> Result<Arrangement> {
         Ok(sidefile::read_json(&self.root.join(FOLDERS))?.or_default())
     }
 
@@ -640,7 +679,7 @@ impl Projects {
     }
 
     /// Reads the arrangement, changes it, and writes it back, one at a time.
-    fn change_arrangement<T>(&self, change: impl FnOnce(&mut Arrangement) -> Result<T>) -> Result<T> {
+    pub(crate) fn change_arrangement<T>(&self, change: impl FnOnce(&mut Arrangement) -> Result<T>) -> Result<T> {
         let _held = FOLDERS_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let mut arrangement = self.read_arrangement()?;
         let out = change(&mut arrangement)?;
@@ -874,7 +913,7 @@ pub(crate) fn keep_history(dir: &Path) -> Result<()> {
         return Ok(());
     }
     let history = dir.join(HISTORY);
-    let mut kept = list_history(&history);
+    let kept = list_history(&history);
     let now_unix = time::OffsetDateTime::now_utc().unix_timestamp();
     let newest = kept.last().and_then(|h| parse_stamp(&h.id));
     if newest.is_some_and(|t| now_unix - t < HISTORY_INTERVAL) {
@@ -883,17 +922,41 @@ pub(crate) fn keep_history(dir: &Path) -> Result<()> {
     fs::create_dir_all(&history).context(|| tr!("io-creating", path = &history))?;
     let name = format!("{}.bin", stamp_name(now_unix));
     fs::copy(&state, history.join(&name)).context(|| tr!("core-projects-keeping-state"))?;
+    thin(&history, now_unix);
+    Ok(())
+}
 
-    // Thin: when over the limit, drop the entry closest in time to its neighbours,
-    // so that recent history is dense and old history sparse but present.
-    kept = list_history(&history);
+/// Thins the kept states: when over the limit, the entry closest in time to
+/// its neighbours goes, so that recent history is dense and old history
+/// sparse but present.
+fn thin(history: &Path, now_unix: i64) {
+    let mut kept = list_history(history);
     while kept.len() > HISTORY_LIMIT {
         let times: Vec<i64> = kept.iter().map(|h| parse_stamp(&h.id).unwrap_or(0)).collect();
         let drop = which_to_thin(&times, now_unix);
         let _ = fs::remove_file(history.join(&kept[drop].id));
         kept.remove(drop);
     }
-    Ok(())
+}
+
+/// Keeps `whole`, a document as one update, among the earlier states in
+/// `dir`: what it held before something came into it from another computer
+/// of the writer's (record 0119). As `keep_history`, not within ten minutes
+/// of the newest kept, unless `always`: where two computers wrote apart,
+/// the document as it stood here is kept whatever was kept before. Returns
+/// the name of what was kept.
+pub(crate) fn keep_whole(dir: &Path, whole: &[u8], always: bool) -> Result<Option<String>> {
+    let history = dir.join(HISTORY);
+    let now_unix = time::OffsetDateTime::now_utc().unix_timestamp();
+    let newest = list_history(&history).last().and_then(|h| parse_stamp(&h.id));
+    if !always && newest.is_some_and(|t| now_unix - t < HISTORY_INTERVAL) {
+        return Ok(None);
+    }
+    fs::create_dir_all(&history).context(|| tr!("io-creating", path = &history))?;
+    let name = format!("{}.bin", stamp_name(now_unix));
+    write_atomic(&history.join(&name), whole)?;
+    thin(&history, now_unix);
+    Ok(Some(name))
 }
 
 /// Reads the changes of the log. A record cut short by a crash, and anything

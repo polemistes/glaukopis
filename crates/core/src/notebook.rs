@@ -121,12 +121,18 @@ impl Notebook {
     /// Adds a change to the log, written at `time`, in milliseconds since
     /// 1970. It is on disk when this returns. An empty change is passed over.
     pub fn append(&self, update: &[u8], time: i64) -> Result<()> {
+        self.append_change(update, true, time)
+    }
+
+    /// As `append`, saying whether the change was made here or came from
+    /// another computer of the writer's (record 0119).
+    pub fn append_change(&self, update: &[u8], here: bool, time: i64) -> Result<()> {
         if update.is_empty() {
             return Ok(());
         }
         let _writing = self.hold();
         fs::create_dir_all(&self.dir).context(|| tr!("io-creating", path = &self.dir))?;
-        append_record(&self.dir.join(LOG), &Record::change(update.to_vec(), true, time))
+        append_record(&self.dir.join(LOG), &Record::change(update.to_vec(), here, time))
     }
 
     /// Replaces the stored state by a new one that holds everything, and

@@ -4,6 +4,7 @@
 //! sync/sync.json          the server, the home, and who this computer is in it
 //! sync/sync.key           the token that admits it, readable by the user alone
 //! sync/home.bin           the home document, as one update (`home`)
+//! sync/home.unsent        there while it holds what the server was not sent
 //! sync/base/<name>.json   what a store and its map agreed on when they last met (`mirror`)
 //! ```
 //!
@@ -12,6 +13,7 @@
 //! ```text
 //! sync.json               what was last seen of the server's document
 //! sync.had                the moment the document here was at then
+//! apart.json              of a project: that it was written in on two computers apart
 //! ```
 //!
 //! These two lie with the document so that a project that goes to the trash
@@ -35,6 +37,7 @@ const JOINED: &str = "sync.json";
 const TOKEN: &str = "sync.key";
 const HOME: &str = "home.bin";
 const BASE: &str = "base";
+const UNSENT: &str = "home.unsent";
 
 /// The home this computer is in, and who it is there.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
@@ -157,6 +160,24 @@ impl Kept {
         &self.dir
     }
 
+    /// Notes that the home document holds something the server was not
+    /// sent, or that it was sent: kept on disk, since a name taken out of a
+    /// map shows in no state vector, and the application may end between
+    /// the writing and the sending.
+    pub fn mark_unsent(&self, unsent: bool) -> Result<()> {
+        let path = self.dir.join(UNSENT);
+        if unsent {
+            fs::create_dir_all(&self.dir).context(|| tr!("io-creating", path = &self.dir))?;
+            write_atomic(&path, b"")
+        } else {
+            remove(&path)
+        }
+    }
+
+    pub fn unsent(&self) -> bool {
+        self.dir.join(UNSENT).is_file()
+    }
+
     fn base_file(&self, name: &str) -> PathBuf {
         self.dir.join(BASE).join(format!("{name}.json"))
     }
@@ -220,6 +241,41 @@ pub fn keep_cursor(dir: &Path, cursor: &Cursor, had: &[u8]) -> Result<()> {
 pub fn forget_cursor(dir: &Path) -> Result<()> {
     remove(&dir.join(CURSOR))?;
     remove(&dir.join(HAD))
+}
+
+/// That a project was written in on two computers while they were apart,
+/// kept with the project until the writer has seen it.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct Apart {
+    /// When the other computer's changes came in, in milliseconds since 1970.
+    pub time: i64,
+    /// The moment before they did, as Yjs writes a snapshot, in base64: the
+    /// review of the project shows the changes from it.
+    pub moment: String,
+    /// The project as it stood here then, among its earlier versions: the
+    /// name of the entry of its history.
+    pub kept: Option<String>,
+}
+
+const APART: &str = "apart.json";
+
+pub fn apart(dir: &Path) -> Option<Apart> {
+    read_json(&dir.join(APART)).ok().flatten()
+}
+
+/// Notes that a project was written in apart. One that is noted already and
+/// not yet seen keeps the moment it has: the writer is to see everything
+/// that came since they last looked.
+pub fn keep_apart(dir: &Path, new: &Apart) -> Result<()> {
+    if apart(dir).is_some() {
+        return Ok(());
+    }
+    write_json(&dir.join(APART), new)
+}
+
+pub fn forget_apart(dir: &Path) -> Result<()> {
+    remove(&dir.join(APART))
 }
 
 #[cfg(test)]
