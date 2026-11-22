@@ -80,10 +80,11 @@ No Tauri in it; everything that is data and not interface.
 | `ocr/`, `isolated.rs` | Tesseract in a child process (`child.rs`; a served child, `server.rs`), the pages cache, layers, searchable PDFs, rules, schemes of glyph names; child processes with time and memory limits (binary `glaukopis-isolated`), for anything that can crash or hang. |
 | `found/`, `spelling/`, `languages.rs`, `i18n.rs` | Citations found in texts written elsewhere; spelling; language packages; the core's words (`tr!`). |
 | `notebook.rs`, `notebook/`, `library/notebook.rs`, `import/notes/` | The notebook's document on disk, kept as a project's is; what a file says of itself; the inbox the plugin's helper and the window of a note write into (`note_window.rs`: the note kept unsent, and sent), the helper Firefox starts (the application itself in another role, `host.rs`), setting Firefox up, the readable Org copy; the files of notes in the library's store, out of its lists; the readers of other programs' notes. |
+| `sync/` | The same on every computer of the writer (record 0119; the plan `docs/plans/the-same-on-every-device.md`): a writer's computers share a home on a server. `engine.rs`: the one thread that makes the rounds, one request at a time; `whole.rs`: a document from its bytes on disk, with no document made of it; `remote.rs`: the calls to the server, the exchange of one document among them; `kept.rs`: what this computer keeps of it (`sync/` of the data folder, and `sync.json` with each document); `home.rs`: the home document, maps of strings for what is no document on disk; `mirror.rs`: a store brought to be the same as its map three ways, with what both agreed on last; the stores themselves in `arrangement.rs` (folders, favourites), `facts.rs` (what the list shows of a project, how it is shared), `settings.rs` (the settings that follow the writer and those that stay, by name) and `shelves.rs` (the writer's own styles, formats, templates and words). The engine and the server are tried together in `crates/server/tests/synchronization.rs`. |
 | `net.rs`, `paths.rs`, `settings.rs`, `shelf.rs`, `sidefile.rs`, `notices.rs`, `error.rs` | One network client that says who asks, one request at a time; where data is kept; settings; things kept as JSON files; a store's own files; what the core tells the user; errors. |
 
 `crates/pdf-text` is the vendored PDF text extraction with glyph names;
-`crates/server` the collaboration server (rooms, registry, files, secrets).
+`crates/server` the collaboration server (rooms, registry, files, secrets; and the homes of writers' computers, `homes.rs` and `homes_api.rs`, whose documents are rooms too).
 
 ### The shell, `src-tauri/src`
 
@@ -96,6 +97,10 @@ few commands of `commands/notewindow.rs`); the roles without a window, the
 Firefox helper and the reading of a PDF, are taken in `main.rs`. A command that can wait long or be called many times at once runs on
 `spawn_blocking` (see `commands/viewer.rs`), never as a plain synchronous
 `#[tauri::command(async)]`: the runtime's workers are few.
+`commands/sync.rs` makes the engine that keeps this computer the same as the
+writer's others (the core's `sync`), started with the windows: it is told of
+every change written (`touched`), and what another computer wrote goes to the
+windows as a change of another window does.
 
 ### The rest
 
