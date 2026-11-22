@@ -22,6 +22,7 @@
 //! sent, and said once in a run. The library is held only while something
 //! is looked up or kept, never while the network is waited for.
 
+use std::cell::Cell;
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs::File;
 use std::io::Write;
@@ -100,14 +101,16 @@ fn clear(arrived: &Path) {
 /// Brings the files of the store here and in the home to be the same, as
 /// the records of the library's document say. `note` writes into the map
 /// `stored` of the document: a size where the home holds the file, nothing
-/// where it does not. What fails for one file is said and the rest go on;
-/// what fails for the server as a whole ends it.
+/// where it does not. `written` counts how often the library's files were
+/// written by keeping what came (`Library::writes`). What fails for one file
+/// is said and the rest go on; what fails for the server as a whole ends it.
 pub fn bring(
     home: &Home,
     library: &Mutex<Library>,
     doc: &HomeDoc,
     told: &mut Told,
     note: &dyn Fn(&str, Option<&str>) -> Result<()>,
+    written: &Cell<u64>,
 ) -> Result<Done> {
     let records = doc.map("files");
     let named: BTreeMap<&str, Named> = records
@@ -181,7 +184,7 @@ pub fn bring(
     {
         let name = &named[hash.as_str()].name;
         let limit = size.parse::<u64>().unwrap_or(u64::MAX);
-        match fetch(home, library, &dir, hash, limit) {
+        match fetch(home, library, &dir, hash, limit, written) {
             Ok(()) => {}
             Err(error) if of_the_server(&error) => return Err(error),
             // The home holds it no more: whoever has it sends it again.
@@ -208,7 +211,7 @@ pub fn bring(
 }
 
 /// Fetches one file to the disk and has the library keep it.
-fn fetch(home: &Home, library: &Mutex<Library>, dir: &Path, hash: &str, limit: u64) -> Result<()> {
+fn fetch(home: &Home, library: &Mutex<Library>, dir: &Path, hash: &str, limit: u64, written: &Cell<u64>) -> Result<()> {
     let arrived = attachments::arriving(dir, hash)?;
     let fetched = (|| {
         let file = File::create(&arrived).map_err(|e| Error::io(tr!("io-creating", path = &arrived), e))?;
@@ -220,7 +223,11 @@ fn fetch(home: &Home, library: &Mutex<Library>, dir: &Path, hash: &str, limit: u
             tracing::warn!(hash, "a file the server gave is not the one its record names");
             return Err(Error::invalid(tr!("core-sync-file-not-as-named")));
         }
-        locked(library).keep_arrived(hash, &arrived)
+        let mut library = locked(library);
+        let before = library.writes();
+        let kept = library.keep_arrived(hash, &arrived);
+        written.set(written.get() + library.writes().saturating_sub(before));
+        kept
     })();
     if fetched.is_err() {
         clear(&arrived);

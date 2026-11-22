@@ -23,6 +23,7 @@
 //! The thread is woken when something was written here (`touched`), and
 //! otherwise asks the server every half minute.
 
+use std::cell::Cell;
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Condvar, Mutex, MutexGuard, PoisonError};
@@ -806,20 +807,23 @@ impl Sync {
     ) -> Result<()> {
         let name = LIBRARY.name();
         let cursor = kept::cursor(&self.kept.of_doc(LIBRARY.kind)?, &joined.home, &name);
-        let (dir, empty) = {
-            let library = held(&self.library);
+        // How its files lie, with how often the library wrote them, under one hold of it.
+        let (dir, empty, lies, writes, damaged) = {
+            let mut library = held(&self.library);
             let empty = library.is_empty()
                 && library.collections.list.is_empty()
                 && library.files.files().is_empty()
                 && library.files.folders().is_empty();
-            (library.dir().to_owned(), empty)
+            let dir = library.dir().to_owned();
+            let lies = LibraryLies::of(&dir);
+            (dir, empty, lies, library.writes(), library.take_damaged())
         };
         // A library that holds nothing, of a home that has none, is nobody's to send.
         if empty && cursor.is_none() && !docs.contains_key(&name) {
             return Ok(());
         }
-        let lies = LibraryLies::of(&dir);
-        let damaged = held(&self.library).take_damaged();
+        // How often the round wrote the library's files itself.
+        let own = Cell::new(0);
         let quiet = !damaged.any()
             && !self.kept.unsent(LIBRARY.kind)
             && cursor.is_some_and(|c| c.seen.as_ref() == docs.get(&name))
@@ -842,11 +846,16 @@ impl Sync {
                 }
             }
             let held_by_notes: BTreeSet<String> = self.notebook.held().into_iter().collect();
-            let folders = FileFolders { library: &self.library };
-            let records =
-                Records { library: &self.library, doc, held: &held_by_notes, kept_for_notes: Default::default() };
-            let references = References { library: &self.library, doc };
-            let collections = Collections { library: &self.library, doc };
+            let folders = FileFolders { library: &self.library, written: Cell::new(0) };
+            let records = Records {
+                library: &self.library,
+                doc,
+                held: &held_by_notes,
+                kept_for_notes: Default::default(),
+                written: Cell::new(0),
+            };
+            let references = References { library: &self.library, doc, written: Cell::new(0) };
+            let collections = Collections { library: &self.library, doc, written: Cell::new(0) };
             // A folder before what is put in it, a record before the reference that names its file, a reference before its collection.
             let stores: [&dyn Store; 4] = [&folders, &records, &references, &collections];
             let meeting = OfLibrary {
@@ -861,13 +870,31 @@ impl Sync {
             forget_agreed(&self.kept, records.name(), |name| {
                 name.split_once('/').is_some_and(|(hash, _)| kept.contains(hash))
             })?;
-            self.kept.note(LIBRARY_LIES, &lies)?;
+            own.set(
+                folders.written.get() + records.written.get() + references.written.get() + collections.written.get(),
+            );
         }
         if changed || !*files_settled {
             let note = |hash: &str, size: Option<&str>| self.note(LIBRARY, doc, STORED, hash, size);
-            let done = files::bring(home, &self.library, doc, told, &note)?;
+            let done = files::bring(home, &self.library, doc, told, &note, &own)?;
             problems.extend(done.problems);
             *files_settled = !done.again;
+        }
+        // Where only the round wrote the library's files since they were
+        // looked at, they lie as it left them, and that is what is kept:
+        // nothing was changed here that the next round must read. Where
+        // anything else wrote them meanwhile, how they lay before is kept,
+        // and the next round reads them.
+        let (now, written) = {
+            let library = held(&self.library);
+            (LibraryLies::of(&dir), library.writes() - writes)
+        };
+        if written == own.get() {
+            if written > 0 || !quiet {
+                self.kept.note(LIBRARY_LIES, &now)?;
+            }
+        } else if !quiet {
+            self.kept.note(LIBRARY_LIES, &lies)?;
         }
         if self.kept.unsent(LIBRARY.kind) {
             self.exchange_maps(home, joined, LIBRARY, doc, docs)?;

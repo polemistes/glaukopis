@@ -48,6 +48,14 @@ impl Damaged {
 }
 
 impl Library {
+    /// How many times the library has written one of its files in this run:
+    /// what is written while it is held by one who writes from elsewhere is
+    /// told from what others wrote by it, so that what was written only from
+    /// elsewhere is not read and compared again as a change made here.
+    pub fn writes(&self) -> u64 {
+        self.writes.get()
+    }
+
     /// What the library found amiss when it last read its files, since this
     /// was last asked; asking forgets it.
     pub fn take_damaged(&mut self) -> Damaged {

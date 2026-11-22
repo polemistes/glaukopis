@@ -36,7 +36,7 @@
 //! in that field outside the store; what the library's file holds besides
 //! its entries; the small pictures of the files.
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::{Mutex, MutexGuard, PoisonError};
 
@@ -62,6 +62,43 @@ const NAME_LIMIT: usize = 240;
 
 fn locked(library: &Mutex<Library>) -> MutexGuard<'_, Library> {
     library.lock().unwrap_or_else(PoisonError::into_inner)
+}
+
+/// The library held by a store that writes into it, counting how often its
+/// files are written while it is held (`Library::writes`), so that the round
+/// can tell what it wrote itself from what others wrote meanwhile.
+struct Writing<'a> {
+    library: MutexGuard<'a, Library>,
+    before: u64,
+    written: &'a Cell<u64>,
+}
+
+impl<'a> Writing<'a> {
+    fn new(library: &'a Mutex<Library>, written: &'a Cell<u64>) -> Self {
+        let library = locked(library);
+        let before = library.writes();
+        Writing { library, before, written }
+    }
+}
+
+impl std::ops::Deref for Writing<'_> {
+    type Target = Library;
+
+    fn deref(&self) -> &Library {
+        &self.library
+    }
+}
+
+impl std::ops::DerefMut for Writing<'_> {
+    fn deref_mut(&mut self) -> &mut Library {
+        &mut self.library
+    }
+}
+
+impl Drop for Writing<'_> {
+    fn drop(&mut self) {
+        self.written.set(self.written.get() + self.library.writes().saturating_sub(self.before));
+    }
 }
 
 /// Where a thing stands among others, as a number of six places.
@@ -225,6 +262,8 @@ pub struct References<'a> {
     pub library: &'a Mutex<Library>,
     /// The library's document: what it knows is spoken of.
     pub doc: &'a HomeDoc,
+    /// How often the library's files were written by this store (`Writing`).
+    pub written: Cell<u64>,
 }
 
 /// The name by which a reference is there.
@@ -297,7 +336,7 @@ impl Store for References<'_> {
     }
 
     fn write(&self, changes: &BTreeMap<String, Option<String>>) -> Result<()> {
-        let mut library = locked(self.library);
+        let mut library = Writing::new(self.library, &self.written);
         library.refresh()?;
         let mut arrived = Vec::new();
         let mut gone = Vec::new();
@@ -381,6 +420,7 @@ pub fn keys_made_here(library: &Mutex<Library>, doc: &HomeDoc) -> BTreeSet<Strin
 pub struct Collections<'a> {
     pub library: &'a Mutex<Library>,
     pub doc: &'a HomeDoc,
+    pub written: Cell<u64>,
 }
 
 /// The name by which a collection is there.
@@ -412,7 +452,7 @@ impl Store for Collections<'_> {
     }
 
     fn write(&self, changes: &BTreeMap<String, Option<String>>) -> Result<()> {
-        let mut library = locked(self.library);
+        let mut library = Writing::new(self.library, &self.written);
         let mut list = library.collections.list.clone();
         for (id, parts) in by_thing(changes) {
             let at = list.iter().position(|c| c.id == id);
@@ -458,6 +498,7 @@ impl Store for Collections<'_> {
 /// as the folders of projects are.
 pub struct FileFolders<'a> {
     pub library: &'a Mutex<Library>,
+    pub written: Cell<u64>,
 }
 
 impl Store for FileFolders<'_> {
@@ -477,7 +518,7 @@ impl Store for FileFolders<'_> {
     }
 
     fn write(&self, changes: &BTreeMap<String, Option<String>>) -> Result<()> {
-        let mut library = locked(self.library);
+        let mut library = Writing::new(self.library, &self.written);
         let mut folders: Vec<FileFolder> = library.files.folders().to_vec();
         let mut gone = BTreeSet::new();
         for (id, parts) in by_thing(changes) {
@@ -537,6 +578,7 @@ pub struct Records<'a> {
     /// that took them out with less of the notebook than there is does not
     /// take them from the others.
     pub kept_for_notes: RefCell<BTreeSet<String>>,
+    pub written: Cell<u64>,
 }
 
 /// The name by which a record is there.
@@ -594,7 +636,7 @@ impl Store for Records<'_> {
     }
 
     fn write(&self, changes: &BTreeMap<String, Option<String>>) -> Result<()> {
-        let mut library = locked(self.library);
+        let mut library = Writing::new(self.library, &self.written);
         let mut put = Vec::new();
         let mut gone = Vec::new();
         for (hash, parts) in by_thing(changes) {
@@ -697,11 +739,16 @@ mod tests {
         /// server's document: as the engine makes it.
         fn meet(&self, server: &HomeDoc) {
             let held = BTreeSet::new();
-            let folders = FileFolders { library: &self.library };
-            let records =
-                Records { library: &self.library, doc: &self.doc, held: &held, kept_for_notes: RefCell::default() };
-            let references = References { library: &self.library, doc: &self.doc };
-            let collections = Collections { library: &self.library, doc: &self.doc };
+            let folders = FileFolders { library: &self.library, written: Cell::default() };
+            let records = Records {
+                library: &self.library,
+                doc: &self.doc,
+                held: &held,
+                kept_for_notes: RefCell::default(),
+                written: Cell::default(),
+            };
+            let references = References { library: &self.library, doc: &self.doc, written: Cell::default() };
+            let collections = Collections { library: &self.library, doc: &self.doc, written: Cell::default() };
             let stores: [(&dyn Store, Option<Things>); 4] = [
                 (&folders, None),
                 (&records, Some(OF_RECORDS)),

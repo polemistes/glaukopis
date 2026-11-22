@@ -103,6 +103,8 @@ pub struct Library {
     /// writer's other computers not to be told of it as of changes made
     /// here (`elsewhere`).
     damaged: elsewhere::Damaged,
+    /// How many times its files were written in this run (`elsewhere::writes`).
+    writes: std::cell::Cell<u64>,
 }
 
 impl Library {
@@ -130,6 +132,7 @@ impl Library {
             index: std::cell::OnceCell::new(),
             keys: std::cell::OnceCell::new(),
             damaged: elsewhere::Damaged::default(),
+            writes: std::cell::Cell::new(0),
         };
         library.load()?;
         Ok(library)
@@ -298,20 +301,29 @@ impl Library {
             }
         }
         write_atomic_with_backup(&self.file, out.as_bytes())?;
+        self.written();
         self.stamp = stamp_of(&self.file);
         crate::changes::changed(crate::changes::Area::Library);
         self.save_files_if_changed()
     }
 
     pub(crate) fn save_collections(&self) -> Result<()> {
-        self.collections.save(&self.collections_file)
+        self.collections.save(&self.collections_file)?;
+        self.written();
+        Ok(())
     }
 
     /// Writes the record of the files.
     pub fn save_files(&mut self) -> Result<()> {
         self.files.save(&self.files_file)?;
+        self.written();
         self.files_dirty = false;
         Ok(())
+    }
+
+    /// Counts a writing of one of the library's files (`elsewhere::writes`).
+    fn written(&self) {
+        self.writes.set(self.writes.get() + 1);
     }
 
     fn save_files_if_changed(&mut self) -> Result<()> {
