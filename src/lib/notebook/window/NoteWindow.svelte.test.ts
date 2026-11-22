@@ -141,6 +141,26 @@ describe('the window of a note', () => {
     expect(said).toContain('the disk is full');
   });
 
+  it('begins a new note where it cannot go, as the one window of a phone: empty, saying the note is sent, and keeping what is written next', async () => {
+    shell.destroy.mockRejectedValueOnce(new Error('a window that cannot go'));
+    const { target, view, write, button } = await setUp();
+    write('Sent away');
+    button().click();
+    await settle();
+    expect(api.noteWindowSend).toHaveBeenCalledTimes(1);
+    expect(target.querySelector('[data-note-window-problem]')).toBeNull();
+    expect(target.querySelector('[data-note-window-told]')!.textContent).toContain(
+      'The note is sent to the notebook',
+    );
+    expect(view.state.doc.textContent).toBe('');
+    api.noteWindowKeep.mockClear();
+    write('The next');
+    expect(target.querySelector('[data-note-window-told]')).toBeNull();
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    const kept = api.noteWindowKeep.mock.calls.at(-1)![0] as NoteText;
+    expect(kept.words).toBe('The next');
+  });
+
   it('keeps what is written a moment after it is written', async () => {
     const { write } = await setUp();
     write('Kept');

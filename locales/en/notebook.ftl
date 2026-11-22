@@ -280,3 +280,5 @@ notebook-note-window-add-file = Add a file…
 # A button in the row of the window of a note: takes away everything written in the note, so that it is empty. Undo brings it back.
 notebook-note-window-clear = Clear the note
 notebook-note-window-not-sent = The note could not be written into the notebook
+# Said in a window of a note that stays when its note is sent, as on a phone, whose one window cannot go: the field is empty again.
+notebook-note-window-sent = The note is sent to the notebook

@@ -265,3 +265,5 @@ notebook-note-window-send = Til notatblokken
 notebook-note-window-clear = Tøm notatet
 notebook-note-window-add-file = Legg til en fil …
 notebook-note-window-not-sent = Notatet kunne ikke skrives inn i notatblokken
+# Said in a window of a note that stays when its note is sent, as on a phone, whose one window cannot go: the field is empty again.
+notebook-note-window-sent = Notatet er sendt til notatblokken

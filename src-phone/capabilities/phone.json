@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/mobile-schema.json",
   "identifier": "phone",
-  "description": "What the page of the phone may do: be shown, and choose files in the system's picker",
+  "description": "What the page of the phone may do: choose files in the system's picker. Its one window is not for the page to close or destroy: a page that asks is refused, and knows by that that the window stays (a note sent, the field is for the next)",
   "windows": ["note"],
   "permissions": ["core:default", "dialog:allow-open"]
 }

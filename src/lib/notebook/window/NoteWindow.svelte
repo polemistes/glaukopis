@@ -109,6 +109,8 @@
   /** What went wrong when the note was last sent. */
   let problem = $state<string | null>(null);
   let sending = $state(false);
+  /** Whether the window says that a note was sent: where it stayed, until the next is begun. */
+  let told = $state(false);
 
   const view = (): EditorView | undefined => editor?.getView();
 
@@ -148,6 +150,7 @@
     lastDoc = state.doc;
     empty = isEmptyNote(noteTextOf(state.doc));
     problem = null;
+    told = false;
     clearTimeout(timer);
     timer = setTimeout(() => void keepNow().catch(() => {}), KEEP_AFTER);
   }
@@ -162,12 +165,35 @@
       await queue;
       await noteWindowSend(text);
       sent = true;
-      if (inTauri) await getCurrentWindow().destroy();
+      if (inTauri && !(await gone())) again();
     } catch (error) {
       problem = describeError(error) ?? String(error);
     } finally {
       sending = false;
     }
+  }
+
+  /** The window goes, with its note sent; whether it did. The one window of a phone cannot. */
+  const gone = (): Promise<boolean> =>
+    getCurrentWindow()
+      .destroy()
+      .then(
+        () => true,
+        () => false,
+      );
+
+  /**
+   * A window that stays when its note is sent begins a new note: the field
+   * is emptied and says that the note was sent, and what is written next
+   * is kept as a note of its own. Without this the words sent stayed in
+   * the field as if they were not, and nothing written after them was kept.
+   */
+  function again() {
+    const v = view();
+    if (!v) return;
+    sent = false;
+    clear(v.state, v.dispatch);
+    told = true;
   }
 
   function close() {
@@ -491,6 +517,8 @@
     <p class="problem" role="alert" data-note-window-problem>
       {t('notebook-note-window-not-sent')}: {problem}
     </p>
+  {:else if told}
+    <p class="told" role="status" data-note-window-told>{t('notebook-note-window-sent')}</p>
   {/if}
 </div>
 <!-- What the tools of a text open, here as in the window of the application: the menus (of colours, of a sheet of rich text) and what is asked before something is taken away. -->
@@ -530,6 +558,12 @@
     margin: 0;
     padding: 4px 14px;
     color: var(--danger, var(--ink));
+    font-size: var(--text-sm);
+  }
+  .told {
+    margin: 0;
+    padding: 4px 14px;
+    color: var(--ink-2);
     font-size: var(--text-sm);
   }
   .tools {

@@ -43,6 +43,8 @@ A build: the core checked for Android in a minute; a release built anew in four 
 
 On the owner's phone (a Samsung Galaxy S22 Ultra, Android 16, Samsung's keyboard), by the owner's hand, the same day: "Most things seems to work." One fault was found: a tool of the row that was turned off again still looked on. It was off; a touch screen leaves the last thing tapped as if the pointer stayed over it, and a button with an icon shows a ground under the pointer. That ground is now shown only where a pointer can be over a thing without pressing it (`IconButton.svelte`; `e2e/note-window.mjs` holds a computer to having one).
 
+And a note that seemed lost was not: "when I shut the app down, and opened it, the text was gone." The phone's own log said that the note had been sent (*To the notebook*) before that. On a computer the window of a note goes when its note is sent; the one window of a phone cannot, so the words stayed in the field as if they were not sent, with the words of a failure under them, since the window's refusal to go was taken for one, and nothing written after would have been kept. A window that stays now begins a new note: the field is emptied and says that the note is sent, and what is written next is kept as a note of its own (`NoteWindow.svelte`, with its test). The phone's capability gives the page no leave to close or destroy the window, and the page knows by the refusal that it stays. The emulator could not have found this: there the script never sent a note.
+
 ## What this does not do
 
 - **Samsung's keyboard** was tried by the owner's hand and not by a script: no emulator has it. The app given for it is in `packaging/android/out/`, signed with this machine's key for trying, not the key the app will be given out with.
