@@ -851,7 +851,7 @@ font and colours over it), and Word and Writer, where each look set by
 hand is a style named *Rich text …* for what it sets. Markdown has the
 words alone. The sheet shows its paragraphs of text as the document sets
 them: its font, its line spacing, its alignment, the indent of first lines
-and the space between paragraphs, as the Look has them, with what you set
+and the space between paragraphs, as they are set in Look, with what you set
 by hand over it. A quotation, a list or another kind of paragraph is drawn
 there as everywhere in the text; how the document sets those, and where
 the lines and the pages break, is shown by the typesetting pane. In a note
@@ -1006,10 +1006,8 @@ you share it with have it, and works in every look, since it says no more
 than how it differs from a kind the look knows; its name is offered in
 your other projects when a kind is named there.
 
-The foot of the kind menu says where the looks come from: **Set as
-“Manuscript” has them**, naming the look of the document, and under it
-**How “Quotation” looks…**, named for the kind the cursor is in, which
-opens Look in the typesetting pane at the look of that kind, where it is
+At the foot of the kind menu, **How “Quotation” looks…**, named for the
+kind the cursor is in, opens Look in the typesetting pane at the look of that kind, where it is
 changed; see *The look of a document*. A draft note is for
 the screen alone, and goes into no document.
 

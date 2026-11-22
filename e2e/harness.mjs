@@ -1160,7 +1160,7 @@ export class App {
        return { what: w?.querySelector('.type-line .name')?.textContent.trim() ?? '',
                 line: w?.querySelector('.state-line .count')?.textContent.replace(/\\s+/g, ' ').trim() ?? '',
                 changes: Number(w?.querySelector('.state-line')?.dataset.changes ?? 0),
-                editing: w?.querySelector('[data-editing] span')?.textContent.trim() ?? '' };`,
+                editing: document.querySelector('.side .look [data-editing] span')?.textContent.trim() ?? '' };`,
     );
   }
 

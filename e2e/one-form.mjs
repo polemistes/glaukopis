@@ -153,7 +153,7 @@ try {
   await app.lookSection('Document type');
   await sleep(300);
   const taken = await app.exec(`return document.querySelector('.side .look select[data-taken-from] option')?.textContent.trim()`);
-  console.log(`      the first choice of Look taken from: ${taken}`);
+  check('the first choice of Look taken from names the look by the type alone', taken === 'Gentium book', taken);
   await app.screenshot('one-form-3b-type-section');
 
   // --- The type is in the chooser, with its parts and its pages ---

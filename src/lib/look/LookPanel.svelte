@@ -1735,6 +1735,15 @@
     <h2>{t('look-title')}</h2>
     <IconButton label={t('look-hide')} size="sm" onclick={onclose}><X size={15} /></IconButton>
   </header>
+  {#if editingType}
+    <!-- Over all the parts, so that Done is in view wherever the panel is scrolled. -->
+    <div class="editing" data-editing>
+      <span>{t('look-editing', { name: typeName })}</span>
+      <Button size="sm" variant="primary" onclick={() => (lookUi.editing = null)}
+        >{t('look-done')}</Button
+      >
+    </div>
+  {/if}
 
   <div class="through settings" bind:this={form} onscroll={follow}>
     <!-- What the document is, and what it sets otherwise than its type. -->
@@ -1750,7 +1759,6 @@
       onsaveto={() => void saveType(null)}
       onsaveas={(name) => void saveType(name)}
       onreset={reset}
-      ondone={() => (lookUi.editing = null)}
     >
       <!-- Where the changes hold: the whole document, or only an element under it (ADR 0059). -->
       {#if candidates.length}
@@ -1999,6 +2007,22 @@
     flex: 1;
     font-size: var(--text-md);
     font-weight: 600;
+  }
+  /* That a document type is being edited, with Done: it stays over the parts as they are scrolled. */
+  .editing {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 8px;
+    flex: none;
+    padding: 6px 16px 8px;
+    border-bottom: 1px solid var(--line);
+    background: var(--accent-softer);
+    color: var(--accent-strong);
+    font-size: var(--text-sm);
+  }
+  .editing span {
+    flex: 1 1 10em;
   }
   .through {
     flex: 1;

@@ -5,8 +5,9 @@
    * line of what the document sets otherwise than its type, with what can be
    * done with that: put it into the type, where the type is the writer's
    * own; make a type of it; take it all away. While a type of the writer's
-   * own is edited, a line says so, and Done ends it. Under them, what the
-   * panel gives: the line of where the changes hold.
+   * own is edited, that line is not shown: the panel says so over all its
+   * parts, with Done. Under them, what the panel gives: the line of where
+   * the changes hold.
    */
   import type { Snippet } from 'svelte';
   import { t } from '$lib/i18n';
@@ -22,7 +23,7 @@
     differs: boolean;
     /** Whether the type is the writer's own, and the application has it: what is set can be put into it. */
     own: boolean;
-    /** Whether the type is being edited: every change goes into it. */
+    /** Whether the type is being edited: every change goes into it, and the line of changes is not shown. */
     editing: boolean;
     /** Whether a type is being saved. */
     saving: boolean;
@@ -30,7 +31,6 @@
     onsaveto: () => void;
     onsaveas: (name: string) => void;
     onreset: () => void;
-    ondone: () => void;
     children?: Snippet;
   }
 
@@ -46,7 +46,6 @@
     onsaveto,
     onsaveas,
     onreset,
-    ondone,
     children,
   }: Props = $props();
 
@@ -59,12 +58,7 @@
     <span class="name">{typeName}</span>
     <Button size="sm" data-document-type onclick={ondocumenttype}>{t('look-document-type')}</Button>
   </div>
-  {#if editing}
-    <div class="editing" data-editing>
-      <span>{t('look-editing', { name: typeName })}</span>
-      <Button size="sm" variant="primary" onclick={ondone}>{t('look-done')}</Button>
-    </div>
-  {:else}
+  {#if !editing}
     <div class="state-line" data-changes={count}>
       {#if count}<span class="count">{t('look-changes-here', { count })}</span>{/if}
       {#if naming !== null}
@@ -145,8 +139,7 @@
   .type-line :global(button) {
     flex: none;
   }
-  .state-line,
-  .editing {
+  .state-line {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -154,12 +147,6 @@
     margin-top: 6px;
     font-size: var(--text-sm);
     color: var(--ink-3);
-  }
-  .editing {
-    color: var(--accent-strong);
-  }
-  .editing span {
-    flex: 1 1 10em;
   }
   .count {
     flex: 1 0 100%;

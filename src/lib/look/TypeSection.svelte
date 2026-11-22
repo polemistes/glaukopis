@@ -156,14 +156,18 @@
     const who = inherited.from.get('format');
     return who && who !== target ? nameOf(who) : null;
   });
-  /** The first choice: the look the type brings, or the writer's default, or what an element over this one chose. */
-  const first = $derived(
-    chosenAbove
-      ? t('look-from-with', { name: chosenAbove, what: nameOfLayout })
-      : template?.layout
-        ? t('look-from-type', { name: layoutName(template.layout), type: typeName })
-        : t('look-your-default', { name: layoutName(documents.usualFormat()) }),
-  );
+  /**
+   * The first choice: the look the type brings, or the writer's default, or
+   * what an element over this one chose. A look saved with a type of the
+   * writer's own has the type's name, and is said by that name alone.
+   */
+  const first = $derived.by(() => {
+    if (chosenAbove) return t('look-from-with', { name: chosenAbove, what: nameOfLayout });
+    if (!template?.layout)
+      return t('look-your-default', { name: layoutName(documents.usualFormat()) });
+    const name = layoutName(template.layout);
+    return name === typeName ? name : t('look-from-type', { name, type: typeName });
+  });
 
   // What the document requires otherwise than its type, beside the changes of the look.
   const composition = new Composition(
