@@ -1410,6 +1410,17 @@ pub struct FormatSummary {
     pub own: bool,
     pub confidence: String,
     pub checked: String,
+    /// What a list says of it: the paper (a4, letter, a5, b5, legal, or
+    /// custom, with its width and height), the font and its size in points,
+    /// the line spacing, and the reference style that goes with it.
+    pub paper: String,
+    pub width: Length,
+    pub height: Length,
+    pub font: String,
+    pub size: f32,
+    pub line_spacing: f32,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub style: Option<String>,
 }
 
 pub struct Formats {
@@ -1507,6 +1518,13 @@ impl Formats {
                 own,
                 confidence: f.source.as_ref().map(|s| s.confidence.clone()).unwrap_or_default(),
                 checked: f.source.as_ref().map(|s| s.checked.clone()).unwrap_or_default(),
+                paper: f.page.size,
+                width: f.page.width,
+                height: f.page.height,
+                font: f.font.family,
+                size: f.font.size,
+                line_spacing: f.text.line_spacing,
+                style: f.style,
             })
             .collect()
     }

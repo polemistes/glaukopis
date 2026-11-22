@@ -2,7 +2,6 @@
   "id": "sage-books",
   "name": "SAGE (books)",
   "group": "publisher",
-  "description": "Book manuscripts for SAGE: Times New Roman 12, double-spaced, paragraphs parted by a blank line without indent, no page numbers, headers or footers, at most four levels of heading, notes at the end of each chapter, and APA references.",
   "source": {
     "name": "Sage manuscript guidelines (books)",
     "url": "https://www.sagepub.com/book-author-editors/book-proposal-manuscript-guidelines/sage-manuscript-guidelines",

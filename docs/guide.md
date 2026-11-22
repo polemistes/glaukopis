@@ -3070,8 +3070,8 @@ the parts the template lists in front or at the back.
 
 ## What you are writing
 
-Every document begins as a **plain document**: text with a title, for
-anything, its pages as your usual layout has them. Nothing is asked when a
+Every document begins as a **plain document**: generic text, its pages as
+your usual layout has them. Nothing is asked when a
 project is made, since a project may hold a thesis, the letters about it and
 a play, each an element that prints as a document of its own. When you know
 what you are writing, say so, and the parts, the pages and the citations
@@ -3081,9 +3081,8 @@ What the document is, *Plain document* until you choose something else, is
 chosen under **Document type** in *Document properties*. **Document type…**
 at the top of Look opens it there, and so do **Document properties…** in
 the right-click menu of an element, and **What are you writing…** in the
-palette. The tab has a search at its top, by the kind of text, a journal or a
-publisher; under it the plain document, alone; then the kinds of text in
-their groups:
+palette. The tab has a search at its top; under it the plain document,
+alone; then the document types in their groups:
 
 - **Articles and papers**: a **journal article**, with an abstract and
   keywords before the text, and appendices and acknowledgements after it,
@@ -3108,34 +3107,45 @@ their groups:
 - **Stage and screen**: a **play**, with its cast and its setting before the
   acts and scenes, the speeches written as verse with their speakers and
   directions; and a **screenplay**, the script on the standard page.
-- **Other kinds of text**: a **news article**, with a standfirst over the
+- **Other**: a **news article**, with a standfirst over the
   text; a **blog post**, the text alone, as a web page or as Markdown for a
   site that makes its own pages; and a **letter**, the text and a signature.
 
-The one in use is marked, and under it a line says how its pages are set
-and, where it brings a reference style, how it cites. Choosing takes effect
+Under the name of each stands what it brings, and nothing else: its parts
+in their order; the paper, the font with its size and the line spacing of
+its pages, and the reference style where it brings one; and what it
+requires, where it requires anything, as *Words of text 12,000 · Words of
+abstract 250 · Keywords 8 · Anonymous*. A type that brings no layout of its
+own shows that of your usual layout. Of the plain document it says
+*Generic text*, and of a template of your own what you have written as its
+description.
+
+The one in use is marked. Choosing takes effect
 at once, as a step of undo, and the typesetting follows; a double click chooses
 and closes. A type chosen brings its look and its citation style: a layout or
 a reference style chosen for the document in Look gives way to the type's, in
 the same step of undo.
 
-**Writing for a journal, a publisher or a style guide?**, under the kinds of
-text, is the second step: a template for each journal, publisher and style
+**Writing for a journal, a publisher or a style guide?**, under the
+groups, is the second step: a template for each journal, publisher and style
 guide that Glaukopis has a layout for, each based on the article, the book
 or the paper, keeping that layout, its reference style, and its limits as
 requirements. *The Classical Quarterly* allows twelve thousand words,
 footnotes and abstract included, an abstract of 250 words and eight
 keywords, and asks for an anonymised text. Under a journal article only
 those made for an article are offered, under an academic book those made
-for a book, and so on; the search finds every one, whatever is chosen. Each
-says where its requirements were found, and when, and how sure that is.
+for a book, and so on; the search finds every one, whatever is chosen. The
+one in use says where its requirements were found, and when, and how sure
+that is.
 
 What a document is holds for everything under the element it is chosen on:
 a chapter printed alone is what the book is. Any element may be something
 else: a clone of a chapter (see *One tree, entered anywhere*) sends the chapter as an article, with the journal's template,
 while the book stays a book. Where it is taken from an element over this
-one, the chooser says **From** which; where the element chose itself, a
-line takes the one over it again. What new documents are, how their pages
+one, the chooser says **From** which. To have an element follow the one
+over it again, choose for it the type the one over it has, and at the top
+of a project the type new documents have: it then says nothing of its own,
+and is whatever that becomes. What new documents are, how their pages
 look and how they cite are chosen under *Settings* › *New documents*, as
 **Default document type**, **Default look** and **Default citation style**;
 each may be **None, as the document type has it**, so that a new document is
@@ -3163,8 +3173,9 @@ as a template of your own, named after the one it was made from until you
 name it; for a template that is already yours, **Change this template of
 mine…** under it changes it. The editor has, part by part:
 
-- **About this template**: its description, its group, what it is based on,
-  and where its requirements are from.
+- **About this template**: its description, which stands under its name
+  where the type is chosen, its group, what it is based on, and where its
+  requirements are from.
 - **Layout and reference style**: what it brings, or your usual.
 - **Contents**: the order of the document, as a list. In it stand the parts
   Glaukopis makes itself, the half title, the title page, the keywords, the

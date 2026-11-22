@@ -1862,3 +1862,34 @@ Of the menus of projects, and of the list:
 - **The button with ¶ opens a menu**: the marks of whitespace, and what the
   Enter key makes, a paragraph break or a line break.
 - **Where Enter makes a line break, two of them make one paragraph break.**
+
+## 2026-11-22 — Document properties: what a type brings, and no help texts
+
+> Let us fix the Document properties window. The Details tab is fine. The
+> Document type tab: Remove the help text inside the search. Do not call
+> document type a kind of text, since "kind" is already two things in
+> Glaukopis, so that is confusing enough. I cannot see a reason to have the
+> "take plain document again" button. It does the same as choosing Plain
+> document, does it not? All the descriptions of document type must become
+> much more clear and concise. They are now based on our conversations about
+> how document types should work. A user does not care about the process by
+> which something is made. She wants to see in a glance what something does.
+> For example the "Plain document" description makes no sense. It should
+> just say: "Generic text." And list the main features of that, like font
+> etc. And in general, we do not need to tell the users what a novel type
+> is. They are not stupid. Just tell them in concise form what the type
+> brings (and don't write "What the type brings:" That sounds really bad.
+> Just list the features, without explanation. Actually, remove all the
+> help texts in the document settings and template editor. I will tell you
+> later if something became less clear by that. I think it will be less
+> confusing.
+
+- **A document type is never called a kind of text.** A kind is a kind of
+  element or of paragraph and words, and nothing else.
+- **Under the name of a type stands what it brings, at a glance**: listed,
+  not explained, and with no heading over the list. The plain document is
+  *Generic text*.
+- **Choosing is the only way to say what a document is**: no button takes a
+  type "again".
+- **Document properties and the template editor explain nothing.** No help
+  texts, in fields or under them. What becomes less clear is said later.

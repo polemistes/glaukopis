@@ -250,7 +250,6 @@
   });
   const requirementRows: Row<T>[] = $derived([
     { heading: t('template-section-requirements') },
-    { note: t('template-requirements-hint') },
     number(t('template-requirement-words'), 'requirements.words', counted(1000000, 500)),
     number(
       t('template-requirement-abstract-words'),
@@ -340,7 +339,8 @@
               {/if}
             </span>
           </div>
-          {#if tp.source?.name}
+          <!-- Only a source with a page to go to: what a type with none says of where it is from is how it was thought out. -->
+          {#if tp.source?.name && tp.source.url}
             {@const s = tp.source}
             <div class="source selectable">
               <p class="overline">{t('format-source')}</p>
@@ -361,17 +361,12 @@
                 {confidenceWords(s.confidence)}
               </p>
               {#if s.notes}<p class="notes">{s.notes}</p>{/if}
-              {#if own}<p class="notes">{t('template-source-changed')}</p>{/if}
             </div>
-          {:else}
-            <p class="hint top">{t('template-source-none')}</p>
           {/if}
         {:else if section === 'looks'}
           <h3>{t('template-section-looks')}</h3>
           <label class="row">
-            <span class="what"
-              >{t('template-layout')}<small>{t('template-layout-hint')}</small></span
-            >
+            <span class="what">{t('template-layout')}</span>
             <select
               value={tp.layout ?? ''}
               onchange={(e) => (tp.layout = e.currentTarget.value || undefined)}
@@ -390,7 +385,7 @@
             </select>
           </label>
           <label class="row">
-            <span class="what">{t('template-style')}<small>{t('template-style-hint')}</small></span>
+            <span class="what">{t('template-style')}</span>
             <select
               value={tp.style ?? ''}
               onchange={(e) => (tp.style = e.currentTarget.value || undefined)}
@@ -410,7 +405,6 @@
           </label>
         {:else if section === 'contents'}
           <h3>{t('template-section-contents')}</h3>
-          <p class="hint top">{t('template-contents-hint')}</p>
           <ol class="contents">
             {#each tp.contents as item, i (i)}
               <li class:kind={'kind' in item}>
@@ -453,7 +447,6 @@
           </div>
         {:else if section === 'kinds'}
           <h3>{t('template-section-kinds')}</h3>
-          <p class="hint top">{t('template-kinds-hint')}</p>
           {#each PART_CATALOGUE as kind (kind.id)}
             {@const listed = inContents({ kind: kind.id })}
             <label class="row check">
@@ -471,12 +464,11 @@
           {/each}
         {:else if section === 'passage-kinds'}
           <h3>{t('template-section-passage-kinds')}</h3>
-          <p class="hint top">{t('template-passage-kinds-hint')}</p>
           {#each passageGroups as group (group.id)}
             <h4>{group.label}</h4>
             {#each group.kinds as spec (spec.id)}
               <label class="row check">
-                <span class="what">{spec.label()}<small>{spec.hint()}</small></span>
+                <span class="what">{spec.label()}</span>
                 <input
                   type="checkbox"
                   checked={tp.passageKinds.includes(spec.id)}
@@ -512,14 +504,10 @@
           <Settings target={tp} rows={requirementRows} />
           <label class="row tall">
             <span class="what">{t('template-requirement-note')}</span>
-            <textarea
-              rows="3"
-              bind:value={tp.requirements.note}
-              placeholder={t('template-requirement-note-placeholder')}></textarea>
+            <textarea rows="3" bind:value={tp.requirements.note}></textarea>
           </label>
         {:else if section === 'outputs'}
           <h3>{t('template-section-outputs')}</h3>
-          <p class="hint top">{t('template-outputs-hint')}</p>
           <h4>{t('template-output-document')}</h4>
           {#each TARGETS as target (target)}
             <label class="row check">
@@ -538,7 +526,6 @@
             <div class="row">
               <span class="what">{output.targets.map(targetWords).join(', ')}</span>
             </div>
-            <p class="hint">{t('template-output-cover-note')}</p>
           {/each}
         {/if}
       </div>
@@ -550,8 +537,6 @@
       <div class="left">
         <Button variant="danger" onclick={remove}>{t('template-delete')}</Button>
       </div>
-    {:else}
-      <div class="left note">{t('template-bundled')}</div>
     {/if}
     <Button variant="ghost" onclick={close}>{t('common-cancel')}</Button>
     <Button
@@ -717,11 +702,5 @@
   }
   .left {
     margin-right: auto;
-  }
-  .note {
-    max-width: 52ch;
-    font-size: var(--text-sm);
-    color: var(--ink-3);
-    line-height: 1.4;
   }
 </style>

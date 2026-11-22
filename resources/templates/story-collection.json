@@ -2,7 +2,6 @@
   "id": "story-collection",
   "name": "Collection of stories",
   "group": "fiction",
-  "description": "A collection of stories as a book: the cover, title page, copyright and dedication, the contents, each story an element, then acknowledgements and a note on the author.",
   "source": {
     "name": "The parts of a published collection, as the novel-book layout and the Chicago Manual of Style's front and back matter have them",
     "url": "",

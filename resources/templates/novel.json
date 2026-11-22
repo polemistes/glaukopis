@@ -2,7 +2,6 @@
   "id": "novel",
   "name": "Novel",
   "group": "fiction",
-  "description": "A novel as a printed book or an e-book: the cover, half-title and title page, copyright, dedication and epigraph, the contents, the chapters, then acknowledgements and a note on the author.",
   "source": {
     "name": "The parts of a published novel, as the novel-book layout and the Chicago Manual of Style's front and back matter have them",
     "url": "",

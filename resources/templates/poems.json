@@ -2,7 +2,6 @@
   "id": "poems",
   "name": "Poems",
   "group": "poetry",
-  "description": "A collection of poems: a title page and dedication, the contents, each poem an element with its lines written as verse, then acknowledgements and a note on the poet.",
   "source": {
     "name": "The parts of a published collection of poems, as the poetry layout has it",
     "url": "",

@@ -2,7 +2,6 @@
   "id": "taylor-francis-journals",
   "name": "Taylor & Francis journals",
   "group": "publisher",
-  "description": "The general layout for articles sent to Taylor & Francis journals: Times New Roman 12, double spacing, margins of at least 2.5 cm, and five levels of heading of which the fourth and fifth run into the paragraph.",
   "source": {
     "name": "Taylor & Francis Author Services, Journal manuscript layout guide",
     "url": "https://authorservices.taylorandfrancis.com/publishing-your-research/writing-your-paper/journal-manuscript-layout-guide/",

@@ -2,7 +2,6 @@
   "id": "classical-philology",
   "name": "Classical Philology",
   "group": "journal",
-  "description": "Articles for Classical Philology: 12-point type, everything double-spaced, footnotes and not endnotes, author-date references given in the notes with a list of literature cited; anonymised, at most 45 pages.",
   "source": {
     "name": "Classical Philology, Instructions for Authors (University of Chicago Press)",
     "url": "https://www.journals.uchicago.edu/journals/cp/instruct",

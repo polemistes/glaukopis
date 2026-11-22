@@ -11,7 +11,7 @@ template-group-book = Bücher und Abschlussarbeiten
 template-group-fiction = Belletristik
 template-group-stage = Bühne und Film
 template-group-poetry = Lyrik
-template-group-other = Andere Textsorten
+template-group-other = Sonstiges
 template-group-journal = Zeitschriften
 template-group-publisher = Verlage
 template-group-style-guide = Richtlinien
@@ -52,7 +52,6 @@ template-name-changed = { $name }, geändert
 # A template of the writer's own made from another, before it is named: by the other's name.
 template-name-own = { $name }, eigene
 template-sections = Bereiche der Vorlage
-template-bundled = Die Vorlagen, die Glaukopis mitbringt, bleiben, wie sie sind. Ihre Änderungen werden als eigene Vorlage gespeichert.
 template-delete = Diese Vorlage löschen
 template-save-own = Als eigene speichern
 template-saved = „{ $name }“ ist unter Ihren eigenen Vorlagen gespeichert
@@ -84,21 +83,16 @@ template-description = Beschreibung
 template-group = Gruppe
 template-based-on = Beruht auf
 template-based-on-none = Nichts Bestimmtes
-template-source-changed = Sie haben diese Vorlage geändert; die Quelle beschreibt, woraus sie gemacht wurde.
-template-source-none = Diese Vorlage folgt keinen Vorgaben eines bestimmten Verlags.
 
 ## The layout and the reference style it brings.
 
 template-layout = Layout
-template-layout-hint = Wie die Seite aussieht, für jedes Dokument dieser Vorlage
 template-style = Zitierstil
-template-style-hint = Wie Zitationen und das Literaturverzeichnis geschrieben werden; leer gilt der des Layouts
 # The layout or style the writer has chosen in the settings.
 template-usual = Wie gewohnt, aus den Einstellungen
 
 ## The contents: the order of the document.
 
-template-contents-hint = Die Folge des Dokuments: die Teile, die die Anwendung selbst erzeugt, und jedes Element einer Art, in der Folge des Baums. Eine Art, die vor dem Text steht, gehört zum Vorspann, eine danach zum Nachspann.
 # An item of the contents that places every element of a kind.
 template-contents-kind = Jedes Element der Art „{ $name }“
 template-contents-add-part = Ein Teil…
@@ -108,27 +102,21 @@ template-contents-down = Nach unten
 
 ## The kinds in hand.
 
-template-kinds-hint = Die Arten von Elementen, die die Vorlage zur Hand gibt: sie werden im Menü der Arten angeboten. Die im Inhalt sind zur Hand, ob sie hier gewählt sind oder nicht.
 template-kinds-in-contents = Im Inhalt
-template-passage-kinds-hint = Die Absatzarten und Arten von Wörtern, die die Vorlage zur Hand gibt: sie werden in den Schreibwerkzeugen zuerst angeboten.
 
 ## The requirements.
 
-template-requirements-hint = Was ein Dokument dieser Vorlage erfüllen soll. Die Checkliste und die Vorschau zählen daran; gekürzt wird nichts.
 template-requirement-words = Wörter im Text
 template-requirement-abstract-words = Wörter der Zusammenfassung
 template-requirement-keywords = Schlüsselwörter
 template-requirement-note = Was die Grenzen zählen
-template-requirement-note-placeholder = Anmerkungen eingeschlossen, Literaturverzeichnis nicht
 # Beside a number of 0, in the place of its unit.
 template-no-limit = keine Grenze
 
 ## The files the template makes.
 
-template-outputs-hint = Die Dateiarten, als die das Dokument beim Export angeboten wird.
 template-output-document = Das Dokument
 template-output-cover = Der Umschlag
-template-output-cover-note = Einen eigenen Umschlag erzeugt eine spätere Version; was die Vorlage darüber sagt, bleibt erhalten, wie es ist.
 
 ## The names of the kinds of text that come with Glaukopis, as the chooser of what you are writing
 ## and the button over the preview give them; journals, publishers and style guides keep their own.
@@ -156,3 +144,5 @@ template-requirement-anonymity = Anonym
 
 ## Stage 4 of the settings, the zoom and the keys of the kinds: the kinds Ctrl+Alt and a digit gives.
 template-kind-keys = Tasten
+
+template-described-plain = Allgemeiner Text.

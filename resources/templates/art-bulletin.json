@@ -2,7 +2,6 @@
   "id": "art-bulletin",
   "name": "The Art Bulletin",
   "group": "journal",
-  "description": "Articles for The Art Bulletin (College Art Association): Times New Roman 12 for everything, all copy double-spaced and aligned left, endnotes in Chicago style with no bibliography, quotations of 50 words or more set off; anonymised, at most 16,000 words.",
   "source": {
     "name": "College Art Association, The Art Bulletin submissions, Preparing an Accepted Manuscript for Publication, and CAA Publications Style Guide (2021)",
     "url": "https://www.collegeart.org/publications/art-bulletin/submissions",

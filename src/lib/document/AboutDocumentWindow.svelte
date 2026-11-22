@@ -433,13 +433,8 @@
             )}
           </p>
         {/if}
-        <p class="hint">{t('languages-map-hint')}</p>
-        {#if at === PROJECT}
-          <p class="hint">{t('languages-project-hint')}</p>
-        {/if}
       {:else if section === 'checklist'}
         <h3>{t('about-section-checklist')}</h3>
-        <p class="hint top">{t('about-checklist-hint')}</p>
         <div class="row">
           <span class="what"
             >{t('about-requirement-words')}{#if template?.requirements.note}<small

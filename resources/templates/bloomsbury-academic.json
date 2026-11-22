@@ -2,7 +2,6 @@
   "id": "bloomsbury-academic",
   "name": "Bloomsbury Academic (books)",
   "group": "publisher",
-  "description": "Typescripts for Bloomsbury Academic: at least double-spaced throughout, margins of at least 2.5 cm, page numbers centred at the foot in one sequence, endnotes, and quotations of over sixty words set off as a block.",
   "source": {
     "name": "Bloomsbury, Academic House Style for Authors and Editors (PDF of 2016)",
     "url": "https://www.bloomsbury.com/media/qufna2uj/ba-house-style-for-authors-and-editorssept16.pdf",

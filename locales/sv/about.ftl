@@ -57,7 +57,6 @@ about-language = Textens språk
 
 ## The checklist: what the template requires, against what the tree holds.
 
-about-checklist-hint = Vad mallen kräver, mot texten och trädet. Inget skärs bort.
 about-checklist-clear = Inget att anmärka på.
 about-requirement-words = Ord i texten
 about-requirement-anonymous = För referentgranskning: de medverkande utelämnas ur dokumentet.

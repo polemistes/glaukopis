@@ -54,6 +54,5 @@ about-language = Limba textului
 
 ## The checklist: what the template requires, against what the tree holds.
 
-about-checklist-hint = Ce cere șablonul, față de text și de arbore. Nu se taie nimic.
 about-checklist-clear = Nimic de semnalat.
 about-requirement-words = Cuvintele textului

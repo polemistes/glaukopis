@@ -2,7 +2,6 @@
   "id": "nature",
   "name": "Nature",
   "group": "journal",
-  "description": "Manuscripts for Nature: a standard font, preferably Times New Roman 12, double-spaced, with line numbers; a summary paragraph of ideally no more than 200 words in place of an abstract, and numbered references in the journal's own style.",
   "source": {
     "name": "Nature, Formatting guide",
     "url": "https://www.nature.com/nature/for-authors/formatting-guide",

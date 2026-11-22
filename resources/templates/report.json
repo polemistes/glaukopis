@@ -2,7 +2,6 @@
   "id": "report",
   "name": "Report",
   "group": "article",
-  "description": "A report: a title page, an abstract, the contents, the text, then appendices and bibliography.",
   "source": {
     "name": "The usual shape of a report for an institution or a client",
     "url": "",

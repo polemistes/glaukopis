@@ -2,7 +2,6 @@
   "id": "yale-university-press",
   "name": "Yale University Press (books)",
   "group": "publisher",
-  "description": "Book manuscripts for Yale University Press: endnotes numbered anew in each chapter, subheads used sparingly and never numbered, quotations set off as a block only from 100 words, and Chicago notes and bibliography.",
   "source": {
     "name": "Yale University Press, Manuscript Preparation Guidelines (with Preparing Your Manuscript Files and PDFs, and Assembling Notes and Documentation)",
     "url": "https://yalebooks.yale.edu/manuscript-preparation-guidelines/",

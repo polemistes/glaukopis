@@ -2,7 +2,6 @@
   "id": "university-of-chicago-press-books",
   "name": "University of Chicago Press (books)",
   "group": "publisher",
-  "description": "Book manuscripts for the University of Chicago Press: minimal formatting, headings told apart by size (18, 16 and 14 points, bold), notes made with the word processor's note function, a title page, and Chicago style for references.",
   "source": {
     "name": "University of Chicago Press, Manuscript Preparation Guidelines",
     "url": "https://press.uchicago.edu/resource/emsguide.html",

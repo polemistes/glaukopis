@@ -58,7 +58,6 @@ about-language = Lingua del testo
 
 ## The checklist: what the template requires, against what the tree holds.
 
-about-checklist-hint = Ciò che il modello chiede, a confronto con il testo e l'albero. Nulla viene tagliato.
 about-checklist-clear = Nulla da segnalare.
 about-requirement-words = Parole del testo
 about-requirement-anonymous = Per la revisione: i contributori sono lasciati fuori dal documento.

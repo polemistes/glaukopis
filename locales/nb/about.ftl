@@ -57,7 +57,6 @@ about-language = Språket i teksten
 
 ## Sjekklisten: det malen krever, mot det treet inneholder.
 
-about-checklist-hint = Det malen krever, mot teksten og treet. Ingenting kuttes.
 about-checklist-clear = Ingenting å bemerke.
 about-requirement-words = Ord i teksten
 about-requirement-anonymous = Til fagfellevurdering: bidragsyterne utelates fra dokumentet.

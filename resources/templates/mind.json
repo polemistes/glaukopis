@@ -2,7 +2,6 @@
   "id": "mind",
   "name": "Mind",
   "group": "journal",
-  "description": "Papers for Mind: line spacing of 1.15 or 1.5 and never double, continuous line numbers, sections numbered in arabic numerals with bold headings and italic sub-headings, quotations of about thirty words or more set off; anonymised.",
   "source": {
     "name": "Mind, General Instructions (Oxford University Press)",
     "url": "https://academic.oup.com/mind/pages/General_Instructions",

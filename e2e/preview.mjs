@@ -219,13 +219,15 @@ try {
   await sleep(200);
   await app.chooseWhat('APA 7 (professional paper)', { close: false });
   await app.waitFor('dialog[open] .chooser .template.chosen [data-brings]', 5000).catch(() => {});
-  const brings = await app.exec(`return document.querySelector('dialog[open] .chooser .template.chosen [data-brings]')?.textContent.trim() ?? ''`);
+  const brings = await app.exec(
+    `return Array.from(document.querySelectorAll('dialog[open] .chooser .template.chosen [data-brings]')).map((l) => l.textContent.trim()).join(' | ')`,
+  );
   await app.closeChooser();
   await sleep(4500);
   typ = source();
   check(
     'choosing a template takes the layout and the reference style that go with it',
-    (await app.whatIs()) === 'APA 7 (professional paper)' && /APA 7 \(professional paper\)/.test(brings) && /APA Style 7th/.test(brings),
+    (await app.whatIs()) === 'APA 7 (professional paper)' && /US Letter · Times New Roman 12 pt · Line spacing 2/.test(brings) && /APA Style 7th/.test(brings),
     `${await app.whatIs()} | ${brings}`,
   );
   check(

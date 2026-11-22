@@ -1,20 +1,21 @@
 <!--
   The type of a document, a tab of Document properties: what you are
   writing, the template of its element. The plain document first, alone, as
-  what every document is until something else is chosen; then the kinds of
-  text in their groups; then, as a second step, the templates of journals,
-  publishers and style guides, narrowed to those made for the kind of text in
-  use. The search finds every one. Choosing writes at once, as a step of
-  undo of its own.
+  what every document is until something else is chosen; then the types in
+  their groups; then, as a second step, those of journals, publishers and
+  style guides, narrowed to those made for the type in use. The search finds
+  every one. Under each name stands what the type brings, worked out from
+  the type itself (`brings.ts`), and nothing that explains. Choosing writes
+  at once, as a step of undo of its own.
 -->
 <script lang="ts">
   import { untrack } from 'svelte';
   import ExternalLink from '@lucide/svelte/icons/external-link';
   import Search from '@lucide/svelte/icons/search';
   import { openPath } from '$lib/api/documents';
-  import type { Template, TemplateGroup } from '$lib/api/templates';
-  import { t } from '$lib/i18n';
-  import { layoutName, styleName } from '$lib/look/choosing.svelte';
+  import type { ContentsItem, Requirements, Template, TemplateGroup } from '$lib/api/templates';
+  import { has, t } from '$lib/i18n';
+  import { styleName } from '$lib/look/choosing.svelte';
   import {
     documents,
     PLAIN_TEMPLATE,
@@ -26,8 +27,9 @@
   import { settings } from '$lib/state/settings.svelte';
   import Button from '$lib/ui/Button.svelte';
   import { notifyError } from '$lib/ui/toast.svelte';
+  import { limitsBrought, pagesBrought, partsBrought } from './brings';
   import { templateEditorUi } from './template-editor.svelte';
-  import { confidenceWords, templateGroupWords } from './templates';
+  import { confidenceWords, templateGroupWords, typeSaid } from './templates';
 
   interface Props {
     project: Project;
@@ -39,7 +41,7 @@
 
   let { project, at, onclose }: Props = $props();
 
-  /** The kinds of text, in the order they are offered. */
+  /** The groups of what is written, in the order they are offered. */
   const KINDS: readonly TemplateGroup[] = [
     'article',
     'book',
@@ -61,7 +63,7 @@
     documents.load();
   });
 
-  /** The template in use, whole: for where it comes from and what it brings. */
+  /** The template in use, whole: for where its requirements were found. */
   let template = $state.raw<Template | null>(null);
   $effect(() => {
     const id = choice.template;
@@ -80,32 +82,16 @@
     );
   });
 
-  /** The layout the template in use brings, as read: for the reference style it brings in turn. */
-  const broughtFormat = $derived(
-    template?.layout ? documents.formatCached(template.layout) : undefined,
-  );
-  /** Where the requirements of the layout the type brings are from, the usual layout's where it brings none. */
-  const layoutSource = $derived(
-    (template?.layout ? broughtFormat : documents.formatCached(documents.usualFormat()))?.source,
-  );
   /**
-   * What the template in use brings, in a line: how its pages are set and,
-   * where it or its layout names one, how it cites. A template that names
-   * no style says nothing of citing: the usual style is there for a
-   * document that cites, and needs no word for one that does not.
+   * Where the requirements of the type in use were found, where that is a
+   * page one can go to: the type's own source, else that of the layout it
+   * brings. What a type with no such page says of where it is from is how
+   * it was thought out, and is not shown.
    */
-  const brings = $derived.by(() => {
-    if (!template) return '';
-    // The writer's usual is named as such; with none in the settings, the layout that holds is named as it is.
-    const layout = template.layout
-      ? layoutName(template.layout)
-      : documents.chosenUsual('format')
-        ? t('chooser-usual-pages', { name: layoutName(documents.usualFormat()) })
-        : layoutName(documents.usualFormat());
-    const style = template.style || broughtFormat?.style;
-    return style && documents.style(style)
-      ? t('chooser-brings', { layout, style: styleName(style) })
-      : t('chooser-brings-layout', { layout });
+  const source = $derived.by(() => {
+    if (template?.source?.url) return template.source;
+    const ofLayout = template?.layout ? documents.formatCached(template.layout)?.source : undefined;
+    return ofLayout?.url ? ofLayout : undefined;
   });
 
   // ---- what is offered ----
@@ -117,6 +103,11 @@
     description: string;
     group: TemplateGroup;
     basedOn?: string;
+    layout?: string;
+    style?: string;
+    contents: ContentsItem[];
+    requirements: Requirements;
+    own?: boolean;
     ofProject?: boolean;
   }
   /**
@@ -133,6 +124,10 @@
         description: tp.description,
         group: 'own',
         basedOn: tp.basedOn,
+        layout: tp.layout,
+        style: tp.style,
+        contents: tp.contents,
+        requirements: tp.requirements,
         ofProject: true,
       })),
   );
@@ -141,10 +136,33 @@
   let query = $state('');
   const q = $derived(query.trim().toLocaleLowerCase());
   const nameOfTemplate = (s: Listed) => templateName(project, s.id) || s.name;
-  /** Whether a template is found by what is searched for: by its name, its description or its group. */
+  /**
+   * What is said of a type in words: of one that came with the application,
+   * what the interface says of it, which is little (`template-described-<id>`);
+   * of a writer's own, what the writer wrote.
+   */
+  function described(s: Listed): string {
+    if (s.own || s.ofProject) return s.description;
+    return has(`template-described-${s.id}`) ? t(`template-described-${s.id}`) : '';
+  }
+  /**
+   * What a type brings, a line for each: its parts; how its pages are set,
+   * by its layout or the writer's usual, and how it cites, where it or its
+   * layout names a reference style; and what it requires.
+   */
+  function brought(s: Listed): string[] {
+    const layout = documents.formatSummary(s.layout || documents.usualFormat());
+    const style = s.style || (s.layout ? layout?.style : undefined);
+    return [
+      partsBrought(s.contents),
+      pagesBrought(layout, style && documents.style(style) ? styleName(style) : ''),
+      limitsBrought(s.requirements),
+    ].filter(Boolean);
+  }
+  /** Whether a template is found by what is searched for: by its name, what is said of it or its group. */
   function fits(s: Listed): boolean {
     if (!q) return true;
-    return `${nameOfTemplate(s)}\n${s.name}\n${s.description}\n${templateGroupWords(s.group)}`
+    return `${nameOfTemplate(s)}\n${s.name}\n${described(s)}\n${templateGroupWords(s.group)}`
       .toLocaleLowerCase()
       .includes(q);
   }
@@ -172,10 +190,10 @@
     })).filter((g) => g.templates.length),
   );
 
-  /** The kind of text the second step is narrowed to: the one in use, where it is one; nothing for all. */
+  /** The type the second step is narrowed to: the one in use, where it is of those groups; nothing for all. */
   const narrowedTo = $derived(inUse && KINDS.includes(inUse.group) ? inUse.id : null);
   const submissions = $derived(all.filter((s) => SUBMISSION.includes(s.group)));
-  /** Those made for the kind of text in use; while something is searched for, every one that is found. */
+  /** Those made for the type in use; while something is searched for, every one that is found. */
   const offered = $derived.by(() => {
     if (q) return submissions.filter(fits);
     if (!narrowedTo) return submissions;
@@ -183,7 +201,6 @@
     // Where none is made for it, every one is offered.
     return made.length ? made : submissions;
   });
-  const narrowed = $derived(!q && !!narrowedTo && offered.length < submissions.length);
   const submissionGroups = $derived(
     SUBMISSION.map((group) => ({
       group,
@@ -221,6 +238,11 @@
   const nameOf = (id: string) => project.node(id)?.title || t('project-untitled');
   /** What a document is where nothing over it says: the writer's usual. */
   const usual = $derived(settings.value.defaultTemplate || PLAIN_TEMPLATE);
+  /** What the document is where its element says nothing of its own: what the nearest element over it chooses, else the usual. */
+  function unsaid(): string {
+    const setter = over();
+    return (setter && project.node(setter)?.document.template) || usual;
+  }
 
   // ---- choosing ----
 
@@ -236,12 +258,16 @@
    * into the project, so that a shared project and a file carry it; one
    * that came with the application is on every computer already. The
    * element's own layout and style, chosen in Look, go with the choice, in
-   * the same step of undo, so that the type's take hold.
+   * the same step of undo, so that the type's take hold. Choosing what the
+   * document is without a choice of the element's own, the type of the
+   * element over it or the usual, leaves the element saying nothing: it is
+   * that type, and follows it.
    */
   function setTemplate(id: string) {
-    if (id === choice.template && own.template) return;
-    write({ template: id, format: undefined, style: undefined });
-    keep(id);
+    const said = typeSaid(id, own.template, unsaid());
+    if (said === null) return;
+    write({ template: said, format: undefined, style: undefined });
+    if (said) keep(said);
   }
 
   function keep(id: string) {
@@ -275,34 +301,10 @@
   <div class="top">
     <div class="search">
       <Search size={14} />
-      <input
-        bind:value={query}
-        placeholder={t('chooser-search-placeholder')}
-        aria-label={t('chooser-search')}
-        spellcheck="false"
-      />
+      <input bind:value={query} aria-label={t('chooser-search')} spellcheck="false" />
     </div>
-    {#if own.template}
-      {@const setter = over()}
-      <p class="from">
-        <!-- The type over it, or the usual, brings its own layout and style, as a type chosen does. -->
-        <button
-          type="button"
-          class="link"
-          onclick={() => write({ template: undefined, format: undefined, style: undefined })}
-        >
-          {setter
-            ? t('chooser-again', { name: nameOf(setter) })
-            : t('chooser-usual-again', { name: templateName(project, usual) })}
-        </button>
-      </p>
-    {:else if templateFrom}
-      <p class="from" data-from>
-        {t('chooser-from', {
-          name: templateFrom,
-          template: templateName(project, choice.template),
-        })}
-      </p>
+    {#if templateFrom}
+      <p class="from" data-from>{t('documents-inherited-from', { name: templateFrom })}</p>
     {/if}
   </div>
 
@@ -327,11 +329,6 @@
         ontoggle={(e) => (stepOpened = e.currentTarget.open)}
       >
         <summary>{t('chooser-submission')}</summary>
-        <p class="hint">
-          {narrowed && narrowedTo
-            ? t('chooser-submission-narrowed', { name: templateName(project, narrowedTo) })
-            : t('chooser-submission-all')}
-        </p>
         {#each submissionGroups as group (group.group)}
           <h4>{group.label}</h4>
           {#each group.templates as s (s.id)}{@render entry(s)}{/each}
@@ -364,47 +361,27 @@
       }}
     >
       <span class="name">{nameOfTemplate(s)}</span>
-      {#if s.description}<span class="description">{s.description}</span>{/if}
+      {#if described(s)}<span class="description">{described(s)}</span>{/if}
+      {#each brought(s) as line, i (i)}<span class="description" data-brings>{line}</span>{/each}
       {#if s.ofProject}<span class="description">{t('chooser-of-project')}</span>{/if}
     </button>
-    {#if chosen && template && template.id === s.id}
+    {#if chosen && template && template.id === s.id && (source || (s.group === 'own' && !s.ofProject))}
       <div class="about">
-        {#if brings}<p class="brings" data-brings>{brings}</p>{/if}
-        {#if layoutSource?.name}
-          {@const source = layoutSource}
-          <p class="selectable" data-layout-source>
-            {#if source.url}
-              <button
-                type="button"
-                class="link"
-                onclick={() =>
-                  openPath(source.url).catch((e) => notifyError(t('common-link-open-failed'), e))}
-                >{t('about-layout-source', { name: source.name })}
-                <ExternalLink size={11} /></button
-              >
-            {:else}{t('about-layout-source', { name: source.name })}{/if}
-          </p>
-        {/if}
-        {#if template.source?.name}
-          {@const source = template.source}
-          <p class="selectable">
-            <span class="overline">{t('format-source')}</span>
-            {source.name}
-            {#if source.url}
-              <button
-                type="button"
-                class="link"
-                onclick={() =>
-                  openPath(source.url).catch((e) => notifyError(t('common-link-open-failed'), e))}
-              >
-                {source.url}
-                <ExternalLink size={11} />
-              </button>
-            {/if}
+        {#if source}
+          {@const from = source}
+          <p class="selectable" data-source>
+            <button
+              type="button"
+              class="link"
+              onclick={() =>
+                openPath(from.url).catch((e) => notifyError(t('common-link-open-failed'), e))}
+              >{t('about-layout-source', { name: from.name })}
+              <ExternalLink size={11} /></button
+            >
           </p>
           <p class="read">
-            {#if source.checked}{t('format-source-read', { date: source.checked })}{/if}
-            {confidenceWords(source.confidence)}
+            {#if from.checked}{t('format-source-read', { date: from.checked })}{/if}
+            {confidenceWords(from.confidence)}
           </p>
         {/if}
         {#if s.group === 'own' && !s.ofProject}
@@ -507,10 +484,6 @@
   }
   .about p {
     margin: 0 0 2px;
-  }
-  .about .overline {
-    display: block;
-    margin-top: 6px;
   }
   .about .read {
     color: var(--ink-3);

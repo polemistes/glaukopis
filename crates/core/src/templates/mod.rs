@@ -189,9 +189,6 @@ impl Template {
             id: PLAIN.into(),
             name: "Plain document".into(),
             group: Group::Plain,
-            description: "Text with a title, for anything: what every document is until you say what you are \
-                          writing. The title, the text, the notes and the bibliography."
-                .into(),
             contents: [TitlePage, Body, Notes, Bibliography]
                 .into_iter()
                 .map(|part| ContentsItem::Part { part })
@@ -290,9 +287,19 @@ pub struct TemplateSummary {
     pub confidence: String,
     pub checked: String,
     /// What it was made from: the template it is based on, for offering the
-    /// templates of journals, publishers and style guides by the kind of text.
+    /// templates of journals, publishers and style guides by what they are
+    /// made for.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub based_on: Option<String>,
+    /// What it brings, for a list to say of each: its layout and its
+    /// reference style, nothing for the writer's usual; its parts in their
+    /// order; and what it requires.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub layout: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub style: Option<String>,
+    pub contents: Vec<ContentsItem>,
+    pub requirements: Requirements,
 }
 
 pub struct Templates {
@@ -435,6 +442,10 @@ impl Templates {
                 confidence: t.source.as_ref().map(|s| s.confidence.clone()).unwrap_or_default(),
                 checked: t.source.as_ref().map(|s| s.checked.clone()).unwrap_or_default(),
                 based_on: t.based_on,
+                layout: t.layout,
+                style: t.style,
+                contents: t.contents,
+                requirements: t.requirements,
             })
             .collect()
     }
@@ -630,7 +641,6 @@ mod bundled {
             assert_eq!(raw["id"], name, "{name}: the id must be the name of the file");
             let t = templates.get(&name).unwrap_or_else(|e| panic!("{name}: {e}"));
             assert!(!t.name.trim().is_empty(), "{name}: no name");
-            assert!(!t.description.trim().is_empty(), "{name}: no description");
             assert_ne!(t.group, Group::Own, "{name}");
             if let Some(base) = &t.based_on {
                 assert!(

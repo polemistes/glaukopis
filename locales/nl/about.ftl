@@ -53,6 +53,5 @@ about-language = Taal van de tekst
 
 ## The checklist: what the template requires, against what the tree holds.
 
-about-checklist-hint = Wat het sjabloon eist, tegenover de tekst en de boom. Er wordt niets ingekort.
 about-checklist-clear = Niets op aan te merken.
 about-requirement-words = Woorden in de tekst

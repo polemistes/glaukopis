@@ -2,7 +2,6 @@
   "id": "science",
   "name": "Science",
   "group": "journal",
-  "description": "Research articles for Science: letter paper, Times New Roman, single-spaced throughout, references and notes in one numbered list, an abstract of 125 words or less and at most 3,000 words of main text.",
   "source": {
     "name": "Science, Instructions for preparing an initial manuscript (AAAS)",
     "url": "https://www.science.org/content/page/instructions-preparing-initial-manuscript",

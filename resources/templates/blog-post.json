@@ -2,7 +2,6 @@
   "id": "blog-post",
   "name": "Blog post",
   "group": "other",
-  "description": "A blog post: the text alone, as a web page or as Markdown for a site that makes its own pages.",
   "source": {
     "name": "What a blog takes: a title and the text",
     "url": "",

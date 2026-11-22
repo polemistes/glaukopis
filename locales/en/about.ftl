@@ -57,7 +57,6 @@ about-language = Language of the text
 
 ## The checklist: what the template requires, against what the tree holds.
 
-about-checklist-hint = What the template requires, against the text and the tree. Nothing is cut.
 about-checklist-clear = Nothing to remark on.
 about-requirement-words = Words of text
 about-requirement-anonymous = For review: the contributors are left out of the document.
@@ -67,7 +66,7 @@ about-requirement-anonymous = For review: the contributors are left out of the d
 # The tab of what the document is: what you are writing, its template.
 about-section-type = Document type
 
-## Fewer words, stage 3: the source of a layout's requirements, under the layout the type brings.
+## Under the type in use: where its requirements were found, by the name of the page, which opens it.
 
 about-layout-source = Source: { $name }
 

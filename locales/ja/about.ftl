@@ -53,7 +53,6 @@ about-language = テキストの言語
 
 ## チェックリスト：テンプレートが求めることを、ツリーの中身と照らし合わせる。
 
-about-checklist-hint = テンプレートが求めることを、テキストとツリーに照らし合わせます。何も削られません。
 about-checklist-clear = 指摘することはありません。
 about-requirement-words = 本文の語数
 about-requirement-anonymous = 査読用：著者等は文書から除かれます。

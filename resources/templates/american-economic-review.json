@@ -2,7 +2,6 @@
   "id": "american-economic-review",
   "name": "American Economic Review",
   "group": "journal",
-  "description": "Manuscripts for the American Economic Review: 11-point type with spacing of 1.5 and one-inch margins, the layout by which the journal measures length; sections numbered in roman numerals, footnotes, no title page, and an abstract of 100 words or fewer.",
   "source": {
     "name": "American Economic Association, AER Submission Guidelines, Style Guide, and Accepted Articles: Manuscript Preparation Guidelines",
     "url": "https://www.aeaweb.org/journals/aer/submissions",

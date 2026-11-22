@@ -2,7 +2,6 @@
   "id": "language-accepted",
   "name": "Language (accepted manuscript)",
   "group": "journal",
-  "description": "Accepted manuscripts for Language (Linguistic Society of America) by the LSA Journals Style Sheet: letter paper with one-inch margins, 12-point type and spacing of 1.5 throughout, aligned left, two levels of numbered headings in small capitals that run into the text, and endnotes after the references.",
   "source": {
     "name": "Linguistic Society of America, LSA Journals Style Sheet",
     "url": "https://www.lsadc.org/lsa_journals_style_sheet",

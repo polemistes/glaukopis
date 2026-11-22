@@ -18,6 +18,12 @@ const layout = (id: string, kind: FormatSummary['kind']): FormatSummary => ({
   own: false,
   confidence: '',
   checked: '',
+  paper: 'a4',
+  width: '21cm',
+  height: '29.7cm',
+  font: 'Times New Roman',
+  size: 12,
+  lineSpacing: 2,
 });
 
 afterEach(() => {

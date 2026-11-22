@@ -2,7 +2,6 @@
   "id": "article",
   "name": "Journal article",
   "group": "article",
-  "description": "An article for a journal: a title page, the abstract and keywords, the text, then appendices, acknowledgements, notes and bibliography, with no limits until a journal's template sets them.",
   "source": {
     "name": "The order of parts that the journals surveyed agree on",
     "url": "",

@@ -2,7 +2,6 @@
   "id": "brill-books",
   "name": "Brill (books)",
   "group": "publisher",
-  "description": "Book manuscripts for Brill: indented paragraphs, headings numbered decimally in arabic numerals, footnotes numbered anew in every chapter, a separate bibliography, and a manuscript anonymised for review.",
   "source": {
     "name": "Brill's Author Guide (PDF of April 2026)",
     "url": "https://brill.com/fileasset/downloads_static/static_publishingbooks_authorguide.pdf",

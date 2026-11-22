@@ -32,7 +32,11 @@ the settings. `paper` stands with the articles. The chooser ("What are you
 writing?") shows the plain document alone at its top, as what every document
 begins as, then the generic ones by their groups; the journals, the
 publishers and the style guides are its second step, narrowed to those based
-on the kind of text chosen, and found by its search whatever is chosen. The
+on the type chosen, and found by its search whatever is chosen. No file
+here has a description: under the name of each the chooser lists what it
+brings, its parts, its pages and its limits, read from the file and its
+layout (ADR 0117); what is said in words of one, where its name does not
+say what it is, is a message of the interface, `template-described-<id>`. The
 layouts of fiction, stage and poetry bring no reference style: a document of
 those kinds that cites does so in the writer's usual style.
 

@@ -2,7 +2,6 @@
   "id": "plos-one",
   "name": "PLOS ONE",
   "group": "journal",
-  "description": "Manuscripts for PLOS ONE: double-spaced in any standard font, with page numbers and continuous line numbers, a title page as the first page, at most three levels of heading, no footnotes, and an abstract of at most 300 words.",
   "source": {
     "name": "PLOS ONE, Submission Guidelines",
     "url": "https://journals.plos.org/plosone/s/submission-guidelines",

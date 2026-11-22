@@ -24,10 +24,10 @@ const cslDir = join(root, 'csl');
 
 const ROOT = 'plain';
 const FIELDS = new Set([
-  'id', 'name', 'group', 'description', 'source', 'basedOn', 'layout', 'style',
+  'id', 'name', 'group', 'source', 'basedOn', 'layout', 'style',
   'contents', 'kinds', 'passageKinds', 'kindKeys', 'requirements', 'outputs',
 ]);
-const REQUIRED = ['id', 'name', 'group', 'description', 'contents', 'kinds', 'passageKinds', 'requirements', 'outputs'];
+const REQUIRED = ['id', 'name', 'group', 'contents', 'kinds', 'passageKinds', 'requirements', 'outputs'];
 const SOURCE_FIELDS = ['name', 'url', 'checked', 'confidence', 'notes'];
 const GROUPS = new Set(['plain', 'article', 'book', 'fiction', 'stage', 'poetry', 'other', 'journal', 'publisher', 'style-guide', 'own']);
 const PARTS = new Set(['half-title', 'title-page', 'keywords', 'contents', 'list-of-figures', 'list-of-tables', 'body', 'notes', 'bibliography']);
@@ -95,7 +95,6 @@ for (const file of files) {
   }
   if (template.id !== file.slice(0, -5)) fault(file, `the id must be the name of the file, not ${JSON.stringify(template.id)}`);
   if (!isWord(template.name)) fault(file, 'no name');
-  if (!isWord(template.description)) fault(file, 'no description');
   if (!GROUPS.has(template.group)) fault(file, `not a group: ${JSON.stringify(template.group)}`);
   if (template.group === 'own') fault(file, 'a template that comes with the application is not of the group own');
 

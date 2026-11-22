@@ -55,6 +55,5 @@ about-language = Język tekstu
 
 ## The checklist: what the template requires, against what the tree holds.
 
-about-checklist-hint = Wymagania szablonu zestawione z tekstem i drzewem. Nic nie jest obcinane.
 about-checklist-clear = Bez uwag.
 about-requirement-words = Słowa w tekście

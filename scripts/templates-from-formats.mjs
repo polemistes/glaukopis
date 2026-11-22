@@ -9,8 +9,8 @@
 //
 //   node scripts/templates-from-formats.mjs
 //
-// Run it again whenever a format of those kinds is added or its source or
-// description changes. It can be run any number of times: once the limits
+// Run it again whenever a format of those kinds is added or its source
+// changes. It can be run any number of times: once the limits
 // have left a format, the requirements of its template are kept as the
 // template has them, so that nothing is lost, and a template is written only
 // where it would change.
@@ -181,7 +181,6 @@ for (const file of files) {
       id: format.id,
       name: format.name,
       group: format.kind,
-      description: format.description,
       source: format.source,
       basedOn: baseId,
       layout: format.id,

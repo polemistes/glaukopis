@@ -2,7 +2,6 @@
   "id": "american-historical-review",
   "name": "The American Historical Review",
   "group": "journal",
-  "description": "Articles for the American Historical Review: Times New Roman 12, double-spaced, on letter paper with one-inch margins; no headings, only section breaks; all references in footnotes of 10 points, with no bibliography; fully anonymised.",
   "source": {
     "name": "American Historical Association, AHR article submission page and Style Sheet for Article Authors",
     "url": "https://www.historians.org/news-publications/american-historical-review/how-to-submit/article-submission/",

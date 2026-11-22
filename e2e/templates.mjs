@@ -2,10 +2,12 @@
 // the Document type tab of Document properties since record 0064): the tab
 // marks what the document is, the plain document until something else is
 // chosen; the
-// plain document stands first and alone, the kinds of text follow in their
+// plain document stands first and alone, the types follow in their
 // groups, and the journals, publishers and style guides are a second step,
-// narrowed to what is made for the kind of text in use and found by the
-// search whatever is chosen. Then the parts the template gives a place to,
+// narrowed to what is made for the type in use and found by the
+// search whatever is chosen. Under each name stands what the type brings,
+// its parts, its pages and what it requires, and no words of help, in the
+// tab or in the editor of a template. Then the parts the template gives a place to,
 // made as elements of a kind of the catalogue; the kind menu that offers
 // them; the checklist; a document made of it; a template of the writer's
 // own made from the one in use; and the usual template in the settings.
@@ -80,9 +82,9 @@ try {
     `return Array.from(document.querySelectorAll('dialog[open] .chooser .templates > h4')).map((h) => h.textContent.trim())`,
   );
   check(
-    'the kinds of text follow in their groups, with no group of plain documents',
+    'the types follow in their groups, with no group of plain documents',
     JSON.stringify(groups) ===
-      JSON.stringify(['Articles and papers', 'Books and theses', 'Fiction', 'Poetry', 'Stage and screen', 'Other kinds of text']),
+      JSON.stringify(['Articles and papers', 'Books and theses', 'Fiction', 'Poetry', 'Stage and screen', 'Other']),
     groups.join(' | '),
   );
   const step = await app.exec(
@@ -95,6 +97,35 @@ try {
     JSON.stringify(step),
   );
   await app.screenshot('templates-1-chooser');
+  /** What stands under the name of a type: what is said of it in words, and what it brings, a line each. */
+  const saidOf = (name) =>
+    app.exec(
+      `const e = ${app.chooserEntry(name)};
+       return e ? Array.from(e.querySelectorAll('.choose .description')).map((d) => d.textContent.trim()) : null;`,
+    );
+  const ofPlain = await saidOf('Plain document');
+  check(
+    'the plain document is generic text, and lists its parts and how its pages are set',
+    ofPlain?.length === 3 &&
+      ofPlain[0] === 'Generic text.' &&
+      ofPlain[1] === 'Title page · The text · Notes · Bibliography' &&
+      /^A4 · Times New Roman 12 pt · Line spacing 2\b/.test(ofPlain[2]),
+    JSON.stringify(ofPlain),
+  );
+  const ofNovel = await saidOf('Novel');
+  check(
+    'a novel is not explained: its parts and its pages are listed',
+    ofNovel?.length === 2 && /^Cover · Half title · Title page · /.test(ofNovel[0]) && /^A5 · Libertinus Serif 10\.5 pt · Line spacing 1\.3$/.test(ofNovel[1]),
+    JSON.stringify(ofNovel),
+  );
+  check(
+    'the search says nothing of what to write in it, and no words of help stand in the tab',
+    !(await app.exec(`return document.querySelector('dialog[open] .chooser .search input').placeholder`)) &&
+      !(await app.exists('dialog[open] .chooser .hint, dialog[open] .chooser small, dialog[open] .chooser .from, dialog[open] .chooser .about')),
+    await app.exec(
+      `return Array.from(document.querySelectorAll('dialog[open] .chooser .hint, dialog[open] .chooser small, dialog[open] .chooser .from, dialog[open] .chooser .about')).map((e) => e.textContent.trim()).join(' | ')`,
+    ),
+  );
 
   const names = () =>
     app.exec(
@@ -122,11 +153,17 @@ try {
 
   await app.chooseWhat('Journal article', { close: false });
   check('chosen, the journal article is marked', (await app.whatIs()) === 'Journal article', await app.whatIs());
-  await app.waitFor('dialog[open] .chooser .template.chosen [data-brings]', 5000).catch(() => {});
-  const brings = await app.exec(
-    `return document.querySelector('dialog[open] .chooser .template.chosen [data-brings]')?.textContent.trim() ?? ''`,
+  const ofArticle = await saidOf('Journal article');
+  check(
+    'under it, what it brings: the parts of an article, and the pages',
+    ofArticle?.[0] === 'Title page · Abstract · Keywords · The text · Appendix · Acknowledgements · Notes · Bibliography' &&
+      /^A4 · /.test(ofArticle[1]),
+    JSON.stringify(ofArticle),
   );
-  check('under it, what it brings, in the words of pages', /^Pages as /.test(brings) && !/template|layout/i.test(brings), brings);
+  check(
+    'chosen, it offers no way back but the choosing of another',
+    !(await app.exec(`return Array.from(document.querySelectorAll('dialog[open] .chooser .top button')).length`)),
+  );
   // The second step, narrowed to what is made for an article.
   await app.exec(`document.querySelector('dialog[open] .chooser details[data-step]').open = true;`);
   await sleep(200);
@@ -138,8 +175,16 @@ try {
     'the second step offers what is made for an article: the journals, not the publishers of books',
     narrowed.names.includes('The Classical Quarterly') &&
       !narrowed.names.includes('Yale University Press (books)') &&
-      /Journal article/.test(narrowed.hint),
+      narrowed.hint === '',
     `${narrowed.hint} | ${narrowed.names.length} offered`,
+  );
+  const ofQuarterly = await saidOf('The Classical Quarterly');
+  check(
+    'a journal lists what it requires too',
+    ofQuarterly?.length === 3 &&
+      /^A4 · Times New Roman 12 pt · Line spacing 2$/.test(ofQuarterly[1]) &&
+      ofQuarterly[2] === 'Words of text 12,000 · Words of abstract 250 · Keywords 8 · Anonymous',
+    JSON.stringify(ofQuarterly),
   );
   await app.type(search, 'Yale');
   await sleep(250);
@@ -390,6 +435,23 @@ try {
   await app.waitFor('dialog[open] .editor nav', 8000);
   await app.waitUntil(`return document.querySelector('dialog[open] input.name')?.value === 'Journal article, my own'`, 5000, 'the editor to be read');
   await app.screenshot('templates-10-editor');
+  const helpIn = async () => {
+    const found = [];
+    for (const part of await app.exec(`return Array.from(document.querySelectorAll('dialog[open] .editor nav button')).map((b) => b.textContent.trim())`)) {
+      await app.clickText('dialog[open] .editor nav button', part);
+      await sleep(120);
+      // "In the contents", beside a kind that is in hand already, says why its box cannot be changed: no help.
+      const words = await app.exec(
+        `return Array.from(document.querySelectorAll('dialog[open] .editor .hint, dialog[open] .editor small, dialog[open] footer .note, dialog[open] .editor [placeholder]'))
+           .map((e) => e.getAttribute('placeholder') ?? e.textContent.trim()).filter((w) => w && w !== 'In the contents')`,
+      );
+      if (words.length) found.push(`${part}: ${words.join(' / ')}`);
+    }
+    await app.clickText('dialog[open] .editor nav button', 'About this template');
+    return found;
+  };
+  const help = await helpIn();
+  check('no part of the editor of a template has words of help', !help.length, help.join(' | '));
   await app.clickText('dialog[open] footer button', 'Save as my own');
   await app.waitUntil(`return document.querySelectorAll('dialog[open]').length === 1`, 8000, 'the editor to go');
   await sleep(500);

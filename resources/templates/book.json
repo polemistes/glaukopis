@@ -2,7 +2,6 @@
   "id": "book",
   "name": "Academic book",
   "group": "book",
-  "description": "An academic book: half-title and title page, copyright, dedication and epigraph, the contents, foreword, preface and acknowledgements, the chapters, then appendices, glossary, notes, bibliography and a note on the author.",
   "source": {
     "name": "The front and back matter of a scholarly monograph, as the Chicago Manual of Style and the publishers surveyed have them",
     "url": "",

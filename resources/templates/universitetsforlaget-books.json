@@ -2,7 +2,6 @@
   "id": "universitetsforlaget-books",
   "name": "Universitetsforlaget (books, general guide)",
   "group": "publisher",
-  "description": "Book manuscripts for Universitetsforlaget (Scandinavian University Press) by its general guide for authors: the simplest possible formatting, a blank line between paragraphs, a ragged right margin, no hyphenation, and quotations of more than two lines set off as paragraphs of their own.",
   "source": {
     "name": "Universitetsforlaget, Forfatterveiledning",
     "url": "https://www.universitetsforlaget.no/forfatter/forfatterveiledning",

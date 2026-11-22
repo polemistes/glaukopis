@@ -76,6 +76,7 @@
   import { formatGroups, layoutName, styleGroups, styleName } from './choosing.svelte';
   import { fonts } from './fonts.svelte';
   import { LOOK_SECTIONS, lookUi, type LookRequest, type LookSection } from './look.svelte';
+  import { PAPERS } from './papers';
   import ContentsSection from './ContentsSection.svelte';
   import { Composition } from './composition.svelte';
   import { lookRows, lookWords, resolvedWords, setKindLook } from './rows.svelte';
@@ -930,14 +931,7 @@
     ]),
   ]);
 
-  const pageSizes: Choices = $derived([
-    ['a4', 'A4'],
-    ['letter', 'US Letter'],
-    ['a5', 'A5'],
-    ['b5', 'B5'],
-    ['legal', 'US Legal'],
-    ['custom', t('format-page-custom')],
-  ]);
+  const pageSizes: Choices = $derived([...PAPERS, ['custom', t('format-page-custom')]]);
 
   /**
    * The first rows: the few most writers reach for, each also in its part

@@ -2,7 +2,6 @@
   "id": "routledge-books",
   "name": "Routledge / Taylor & Francis (books)",
   "group": "publisher",
-  "description": "Book chapters for Routledge and Taylor & Francis: a blank line between paragraphs and no indent, at most three levels of unnumbered subheading, notes as endnotes numbered by chapter, and an abstract of 100 to 200 words for every chapter.",
   "source": {
     "name": "Routledge / Taylor & Francis, Manuscript preparation guide (PDF of December 2024)",
     "url": "https://www.routledge.com/rsc/downloads/Manuscript_preparation_guide_1.pdf",

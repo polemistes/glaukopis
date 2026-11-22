@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Template } from '$lib/api/templates';
-import { asOwn, idFromName } from './templates';
+import { asOwn, idFromName, typeSaid } from './templates';
 
 const journal: Template = {
   id: 'journal-article',
@@ -58,5 +58,22 @@ describe('a template made one’s own', () => {
 
   it('keeps the name where none is given', () => {
     expect(asOwn(journal, '   ').name).toBe('Journal article');
+  });
+});
+
+describe('what an element says of its type when one is chosen', () => {
+  it('says the type chosen, where it is another than the document is without its word', () => {
+    expect(typeSaid('novel', undefined, 'plain')).toBe('novel');
+    expect(typeSaid('article', 'novel', 'plain')).toBe('article');
+  });
+
+  it('says nothing more where the type chosen is the usual, or that of the element over it', () => {
+    expect(typeSaid('plain', 'novel', 'plain')).toBeUndefined();
+    expect(typeSaid('book', 'article', 'book')).toBeUndefined();
+  });
+
+  it('writes nothing where the element says so already', () => {
+    expect(typeSaid('novel', 'novel', 'plain')).toBeNull();
+    expect(typeSaid('plain', undefined, 'plain')).toBeNull();
   });
 });

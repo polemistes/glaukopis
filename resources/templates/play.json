@@ -2,7 +2,6 @@
   "id": "play",
   "name": "Play",
   "group": "stage",
-  "description": "A stage play: a title page, the cast and the setting, then the acts and scenes, with the speeches written as verse, each with its speaker and its directions.",
   "source": {
     "name": "The common shape of the script formats of theatres and writers' guilds, as the play-script layout has it",
     "url": "https://en.wikipedia.org/wiki/Standard_manuscript_format",

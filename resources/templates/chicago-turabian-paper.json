@@ -2,7 +2,6 @@
   "id": "chicago-turabian-paper",
   "name": "Chicago / Turabian (paper)",
   "group": "style-guide",
-  "description": "The paper format of Turabian's Manual for Writers, 9th edition, which follows the Chicago Manual of Style: double-spaced text with single-spaced block quotations, notes and bibliography entries, margins of at least one inch, and a title page of its own.",
   "source": {
     "name": "Turabian, A Manual for Writers, 9th ed.: the official student tip sheets (University of Chicago Press, 2018)",
     "url": "https://www.chicagomanualofstyle.org/turabian/Student-Tip-Sheets.html",

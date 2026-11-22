@@ -2,7 +2,6 @@
   "id": "thesis",
   "name": "Thesis",
   "group": "book",
-  "description": "A thesis or dissertation: a title page, the abstract and acknowledgements, the table of contents with the lists of figures and tables, the chapters, then appendices and bibliography.",
   "source": {
     "name": "The usual order of a thesis, common to the universities' guides",
     "url": "",

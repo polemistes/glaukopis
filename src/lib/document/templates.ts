@@ -8,7 +8,7 @@
 import type { GeneratedPart, OutputTarget, Template, TemplateGroup } from '$lib/api/templates';
 import { t } from '$lib/i18n';
 
-/** The groups in the order the chooser lists them: the writer's own first, then by kind of text, then by who asks. */
+/** The groups in the order the chooser lists them: the writer's own first, then by what is written, then by who asks. */
 export const TEMPLATE_GROUPS: readonly TemplateGroup[] = [
   'own',
   'plain',
@@ -51,6 +51,23 @@ export function confidenceWords(confidence: string | undefined): string {
     : confidence === 'medium'
       ? t('format-source-medium')
       : t('format-source-low');
+}
+
+/**
+ * What an element is to say of its type when one is chosen for it. The type
+ * chosen, as its own; but nothing (`undefined`) where the type chosen is
+ * what the document is without a word of the element's own, the type of
+ * the element over it or the writer's usual: the element then is that type
+ * by following it, and there is no other way back to following. `null`
+ * where there is nothing to write: the element says so already.
+ */
+export function typeSaid(
+  chosen: string,
+  own: string | undefined,
+  unsaid: string,
+): string | undefined | null {
+  if (chosen === unsaid) return own ? undefined : null;
+  return chosen === own ? null : chosen;
 }
 
 /**

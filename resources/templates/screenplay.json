@@ -2,7 +2,6 @@
   "id": "screenplay",
   "name": "Screenplay",
   "group": "stage",
-  "description": "A screenplay: a title page and the script, with its scene headings, action, characters, dialogue, parentheticals and transitions on the standard page.",
   "source": {
     "name": "The standard screenplay page, as the screenplay layout has it",
     "url": "",

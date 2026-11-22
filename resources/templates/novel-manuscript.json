@@ -2,7 +2,6 @@
   "id": "novel-manuscript",
   "name": "Novel manuscript",
   "group": "fiction",
-  "description": "A novel as a manuscript for an agent or a publisher: a title page and the chapters, in the standard manuscript format.",
   "source": {
     "name": "Standard manuscript format, as the novel-manuscript layout has it",
     "url": "https://en.wikipedia.org/wiki/Standard_manuscript_format",

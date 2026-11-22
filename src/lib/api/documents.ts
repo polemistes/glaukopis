@@ -53,6 +53,16 @@ export interface FormatSummary {
   own: boolean;
   confidence: string;
   checked: string;
+  /** The paper: a4, letter, a5, b5, legal, or custom, with its width and height. */
+  paper: string;
+  width: string;
+  height: string;
+  /** The font of the text, and its size in points. */
+  font: string;
+  size: number;
+  lineSpacing: number;
+  /** The reference style that goes with it, by id. */
+  style?: string;
 }
 
 export type Align = 'left' | 'center' | 'right' | 'justified';

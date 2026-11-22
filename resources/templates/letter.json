@@ -2,7 +2,6 @@
   "id": "letter",
   "name": "Letter",
   "group": "other",
-  "description": "A letter: the text and a signature.",
   "source": {
     "name": "The shape of a letter",
     "url": "",

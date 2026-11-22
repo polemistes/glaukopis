@@ -2,7 +2,6 @@
   "id": "short-story",
   "name": "Short story",
   "group": "fiction",
-  "description": "A short story for submission to a magazine or a competition: a title page and the text, in the standard manuscript format.",
   "source": {
     "name": "Standard manuscript format, as the novel-manuscript layout has it",
     "url": "https://en.wikipedia.org/wiki/Standard_manuscript_format",

@@ -2,7 +2,6 @@
   "id": "plain",
   "name": "Plain document",
   "group": "plain",
-  "description": "Text with a title, for anything: what every document is until you say what you are writing. The title, the text, the notes and the bibliography.",
   "contents": [{ "part": "title-page" }, { "part": "body" }, { "part": "notes" }, { "part": "bibliography" }],
   "kinds": [],
   "passageKinds": [],

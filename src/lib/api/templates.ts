@@ -68,6 +68,12 @@ export interface TemplateSummary {
   checked: string;
   /** What it was made from: the template it is based on. */
   basedOn?: string;
+  /** What it brings, for a list to say of each: its layout and its reference style, nothing for the writer's usual. */
+  layout?: string;
+  style?: string;
+  /** Its parts in their order. */
+  contents: ContentsItem[];
+  requirements: Requirements;
 }
 
 /** A template whole: what a built-in one leaves to its base is filled in by the core on reading. */

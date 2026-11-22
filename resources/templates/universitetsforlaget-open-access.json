@@ -2,7 +2,6 @@
   "id": "universitetsforlaget-open-access",
   "name": "Universitetsforlaget (open access research books)",
   "group": "publisher",
-  "description": "Chapters for open access monographs and anthologies from Universitetsforlaget (Scandinavian University Press): Times New Roman 12 with spacing of 1.5, at most three levels of unnumbered heading, and for every chapter an English abstract of 150 to 250 words and four or five keywords.",
   "source": {
     "name": "Universitetsforlaget, Forfatterveiledning for forskningsbøker med åpen tilgang",
     "url": "https://www.universitetsforlaget.no/forfatter/forfatterveiledning/manusmal-for-apen-tilgang",

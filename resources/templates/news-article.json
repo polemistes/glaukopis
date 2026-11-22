@@ -2,7 +2,6 @@
   "id": "news-article",
   "name": "News article",
   "group": "other",
-  "description": "A news article: a standfirst above the text, for the web, a word processor or print.",
   "source": {
     "name": "The shape of an article in a newspaper or a magazine",
     "url": "",

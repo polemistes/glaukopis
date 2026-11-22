@@ -11,7 +11,7 @@ template-group-book = Bøker og avhandlingar
 template-group-fiction = Skjønnlitteratur
 template-group-stage = Scene og film
 template-group-poetry = Lyrikk
-template-group-other = Andre tekstar
+template-group-other = Anna
 template-group-journal = Tidsskrift
 template-group-publisher = Forlag
 template-group-style-guide = Stilguidar
@@ -52,7 +52,6 @@ template-name-changed = { $name }, endra
 # A template of the writer's own made from another, before it is named: by the other's name.
 template-name-own = { $name }, min eigen
 template-sections = Delane av malen
-template-bundled = Malane som følgjer med Glaukopis, blir verande som dei er. Endringane dine blir lagra som ein eigen mal.
 template-delete = Slett denne malen
 template-save-own = Lagre som min eigen
 template-saved = «{ $name }» er lagra blant dine eigne malar
@@ -84,21 +83,16 @@ template-description = Beskriving
 template-group = Gruppe
 template-based-on = Byggjer på
 template-based-on-none = Ikkje noko særskilt
-template-source-changed = Du har endra denne malen; kjelda beskriv det den vart laga av.
-template-source-none = Denne malen følgjer ikkje krava til noko bestemt forlag.
 
 ## The layout and the reference style it brings.
 
 template-layout = Oppsett
-template-layout-hint = Korleis sida ser ut, for kvart dokument med denne malen
 template-style = Referansestil
-template-style-hint = Korleis kjeldetilvisingane og litteraturlista blir skrivne; står feltet tomt, gjeld den oppsettet sjølv har
 # The layout or style the writer has chosen in the settings.
 template-usual = Den vanlege, frå innstillingane
 
 ## The contents: the order of the document.
 
-template-contents-hint = Rekkjefølgja i dokumentet: delane programmet lagar sjølv, og kvart element av ein type, i rekkjefølgja i treet. Ein type som står før teksten, er forstoff, ein som står etter, etterstoff.
 # An item of the contents that places every element of a kind.
 template-contents-kind = Kvart element av typen { $name }
 template-contents-add-part = Ein del …
@@ -108,27 +102,21 @@ template-contents-down = Ned
 
 ## The kinds in hand.
 
-template-kinds-hint = Typane av element malen legg i handa: dei blir tilbodne i typemenyen. Dei som står i innhaldet, er i handa anten dei er valde her eller ikkje.
 template-kinds-in-contents = Står i innhaldet
-template-passage-kinds-hint = Slaga avsnitt og ord malen legg i handa: dei blir tilbodne først i skriveverktøya.
 
 ## The requirements.
 
-template-requirements-hint = Det eit dokument med denne malen skal oppfylle. Sjekklista og førehandsvisinga tel mot desse; ingenting blir kutta.
 template-requirement-words = Ord i teksten
 template-requirement-abstract-words = Ord i samandraget
 template-requirement-keywords = Nøkkelord
 template-requirement-note = Kva grensene tel
-template-requirement-note-placeholder = Notar tekne med; litteraturlista ikkje
 # Beside a number of 0, in the place of its unit.
 template-no-limit = inga grense
 
 ## The files the template makes.
 
-template-outputs-hint = Filtypane dokumentet blir tilbode som når det blir eksportert.
 template-output-document = Dokumentet
 template-output-cover = Omslaget
-template-output-cover-note = Eit eige omslag blir laga i ein seinare versjon; det malen seier om det, blir teke vare på som det er.
 
 ## The names of the kinds of text that come with Glaukopis, as the chooser of what you are writing
 ## and the button over the preview give them; journals, publishers and style guides keep their own.
@@ -156,3 +144,5 @@ template-requirement-anonymity = Anonymt
 
 ## Stage 4 of the settings, the zoom and the keys of the kinds: the kinds Ctrl+Alt and a digit gives.
 template-kind-keys = Tastar
+
+template-described-plain = Generell tekst.

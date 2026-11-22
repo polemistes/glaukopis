@@ -2,7 +2,6 @@
   "id": "cappelen-damm-libelli",
   "name": "Cappelen Damm Forskning: Libelli",
   "group": "publisher",
-  "description": "The series Libelli from Cappelen Damm Forskning (NOASP): Calibri 12 with spacing of 1.5, headings of 16 and 14 points, endnotes, quotations of over three lines set off in single-spaced 10-point type, and Chicago short notes with a full bibliography.",
   "source": {
     "name": "Cappelen Damm Forskning, Forfatterveiledning Libelli",
     "url": "https://cdforskning.no/cdf/libelli_forfatterveiledning",

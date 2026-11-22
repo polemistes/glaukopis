@@ -2,7 +2,6 @@
   "id": "language-submission",
   "name": "Language (submission for review)",
   "group": "journal",
-  "description": "Manuscripts sent to Language (Linguistic Society of America) for review: double-spaced throughout and anonymised, with an abstract of at most 200 words and five to seven keywords; at most 18,000 words.",
   "source": {
     "name": "Language, author instructions (Cambridge University Press), with the LSA Journals Style Sheet",
     "url": "https://www.cambridge.org/core/journals/language/information/author-instructions/preparing-your-materials",
