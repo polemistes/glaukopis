@@ -125,7 +125,7 @@ One column, three places: the notes, a note, the settings. Each is a step of the
 - **The notes.** Newest first, one to a row: how it begins or its name, its first picture, when, its source in a line, its tags; those not yet looked at marked. A field to find in. A filter by box and tag, opened from the bottom of the screen.
 - **A note.** The editor of the texts. Over the keyboard a row of the tools a note needs: bold, italic, a list, *To do*, a picture, a photograph, undo. Its name, its tags, its box, its source (shown, and set as on a computer). *Delete*, undone from the line that says it was deleted.
 - **The settings.** Synchronization (the section there is, made to fit); the language; light or dark; the version, and that a newer one is out.
-- **By finger.** Everything has a button, or a row in a menu opened by a button that is seen. A long press opens what the right button opens on a computer, and is never the only way.
+- **By finger.** Everything has a button, or a row in a menu opened by a button that is seen. A long press opens what the right button opens on a computer, and is never the only way. What is shown under the pointer (a ground, a colour, a thing that appears) is shown only where a pointer can be over a thing without pressing it: a touch screen leaves the last thing tapped as if the pointer stayed, and a tool turned off again looked on to the owner (found on the owner's phone, and mended for the buttons with an icon; the rest of the interface, some two hundred places, with the phone's page).
 - **Without a network** everything works. A line at the top says so only where something waits to be sent or is wrong.
 - The page is laid out in what the keyboard leaves. Light and dark, and the language, are the system's until chosen.
 

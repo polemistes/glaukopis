@@ -61,9 +61,15 @@
     width: 24px;
     height: 24px;
   }
-  .icon-button:hover:not(:disabled) {
-    background: var(--paper-hover);
-    color: var(--ink);
+  /* Only where there is a pointer that can be over a thing without pressing
+     it. A finger cannot: a touch screen leaves the last thing tapped as if
+     the pointer stayed over it, and a tool that was turned off again kept
+     this ground and looked as if it were still on. */
+  @media (hover: hover) {
+    .icon-button:hover:not(:disabled) {
+      background: var(--paper-hover);
+      color: var(--ink);
+    }
   }
   .active {
     background: var(--accent-soft);

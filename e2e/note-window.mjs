@@ -233,6 +233,10 @@ try {
   await win.waitFor(`${FIELD} .figure img[src]`, 5000).catch(() => {});
   check('the picture stands in the note as a picture', await win.exists(`${FIELD} .figure img[src]`));
   check('the file stands in the note by its name', (await win.exec(`return document.querySelector('${FIELD} .held-file')?.textContent ?? ''`)).includes('letter.pdf'));
+  // What a tool shows under the pointer is shown only where a pointer can be
+  // over a thing without pressing it (a finger cannot, and left a tool
+  // looking on): a computer has such a pointer, and the row is one row there.
+  check('a computer has a pointer that can be over a thing', await win.exec(`return matchMedia('(hover: hover)').matches && !matchMedia('(pointer: coarse)').matches`));
   let errors = await win.pageErrors();
   check('no errors in the window', errors.length === 0, errors.join(' | '));
   await win.screenshot('note-window-2-written');

@@ -1,6 +1,6 @@
 # 0121 — Glaukopis on Android: what the trial found
 
-Date: 2026-11-22. Status: the first stage of the plan `docs/plans/an-app-for-android.md`, the trial, done on that day on the owner's word ("Start it."). It decides how the application is built for Android and what the plan is corrected by. The app itself is not built: what runs is the window of a note (0109) on a phone. One question is left to the owner's own phone: Samsung's keyboard. Builds on 0109 (the application in another role), 0111 (the form of the texts, why there is no second editor) and 0120 (a phone will be one more of the writer's devices).
+Date: 2026-11-22. Status: the first stage of the plan `docs/plans/an-app-for-android.md`, the trial, done on that day on the owner's word ("Start it."). It decides how the application is built for Android and what the plan is corrected by. The app itself is not built: what runs is the window of a note (0109) on a phone. Samsung's keyboard was tried by the owner on the owner's phone. Builds on 0109 (the application in another role), 0111 (the form of the texts, why there is no second editor) and 0120 (a phone will be one more of the writer's devices).
 
 ## Context
 
@@ -41,9 +41,11 @@ The core's own tests as a program of 32 bits, on the emulator of Android 8.0 (wh
 
 A build: the core checked for Android in a minute; a release built anew in four minutes; the app for trying after a change in a minute or two (its first build, of everything, was the longest and was not timed). On disk: 6 GB of `target/` for each kind of processor built for trying, 2.4 GB for a release; 1.2 GB for `rustup`; 3 GB for each system image of an emulator.
 
+On the owner's phone (a Samsung Galaxy S22 Ultra, Android 16, Samsung's keyboard), by the owner's hand, the same day: "Most things seems to work." One fault was found: a tool of the row that was turned off again still looked on. It was off; a touch screen leaves the last thing tapped as if the pointer stayed over it, and a button with an icon shows a ground under the pointer. That ground is now shown only where a pointer can be over a thing without pressing it (`IconButton.svelte`; `e2e/note-window.mjs` holds a computer to having one).
+
 ## What this does not do
 
-- **Samsung's keyboard** is not tried: no emulator has it. It is the owner's phone's to answer, with the app given for it (`packaging/android/out/`, signed with this machine's key for trying, not the key the app will be given out with).
+- **Samsung's keyboard** was tried by the owner's hand and not by a script: no emulator has it. The app given for it is in `packaging/android/out/`, signed with this machine's key for trying, not the key the app will be given out with.
 - **An old Android with its web view kept up** (138 on Android 8 and 9) is not tried: the emulators' images come with the web view of their day, and none was found that could be brought up without a Google account. What the page asks of a web view is counted from the source (111) and not run on one that old.
 - **A share from another app** was not tried: that Tauri hands what another app gives to a plugin in Kotlin is read in its source (`Plugin.onNewIntent`), and built in the plan's third stage.
 - **The app built for 32 bits** was checked (it compiles) and its core tested as above; the app itself was not started as a 32-bit one.
