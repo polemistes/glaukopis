@@ -23,7 +23,7 @@ Date: 2026-11-22. Status: built on 2026-11-22; holds. The second and third stage
 
 - A writer makes a document type by setting a document up, not by filling in a form of its own; and takes anything a type has away by making a type without it, or by editing one of their own.
 - A type of the writer's own is still, underneath, a template and a layout of its own, made with it and named as it is. Nothing in the files or the contract changed; no Rust changed.
-- The word *layout* remains in the names of messages, in the code and in the settings' names for files; the writer sees it in none of them but one (see the choices, 13).
+- The word *layout* remains in the names of messages, in the code and in the settings' names for files; the writer sees it in none of them.
 - A type of the writer's own that is edited does not have its parts changed by the look written into it (choices, 12); they are changed by **Save to** and **Save as document type…** only.
 
 ## Choices made in building this, which the owner has not been asked about
