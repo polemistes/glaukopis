@@ -3,7 +3,7 @@
 # on two computers apart. See locales/README.md.
 
 sync-title = Synchronization
-sync-about = Your projects, your notebook and your settings, the same on each of your computers, through a server.
+sync-about = Your projects, your library, your notebook and your settings, the same on each of your computers, through a server.
 
 ## Before it is on.
 

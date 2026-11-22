@@ -1,6 +1,6 @@
 # 0119 — The same on every device
 
-Date: 2026-11-22. Status: being built from the plan `docs/plans/the-same-on-every-device.md`, which is the specification; its choices beyond the owner's words are not yet confirmed by the owner. Adds to 0006 (the server), builds on 0002 (a project is a document of changes), 0085 (a change passes through the shell to the other windows), 0111 (the form of the texts).
+Date: 2026-11-22. Status: built on 2026-11-22 from the plan `docs/plans/the-same-on-every-device.md`, which is the specification and says what each part does; its choices beyond the owner's words are not yet confirmed by the owner. Adds to 0006 (the server), builds on 0002 (a project is a document of changes), 0085 (a change passes through the shell to the other windows), 0111 (the form of the texts).
 
 ## Context
 
@@ -24,6 +24,8 @@ Date: 2026-11-22. Status: being built from the plan `docs/plans/the-same-on-ever
 10. **The person follows the writer**: the id by which the history of a project knows who wrote is one of the settings that follow, so that the writer is one person on every computer.
 11. **The form of the texts is guarded as in a room** (0111): a computer that does not know the form of a project is not sent it and is not let write into it.
 12. **`yrs` becomes part of the application**, for working with changes as bytes and for the documents the core makes itself.
+13. **The library is a document of its own in the home**, of maps as the home document is: a reference is many names, its id and the field, so that a title corrected on one computer and a year corrected on another are both in it after; so are a collection and the record of a file. **The files follow their records**: one that a record names and the home lacks is sent, one lacking here is fetched, one that no record names is taken off the server; all streamed, never whole in memory. A reference, a collection or a file changed on one computer while it was deleted on another is kept, as a project is.
+14. **What the application writes into a project by itself is no writing.** With the history of a project on, a window that opens it writes who is who into it. A window says with each change whether the writer wrote any of it, and two computers wrote apart only where the writer wrote on both. Found by the script that tries the synchronization in two running applications.
 
 ## What this does not do
 
@@ -31,4 +33,6 @@ Date: 2026-11-22. Status: being built from the plan `docs/plans/the-same-on-ever
 - **The key of a shared project is kept in the home**, so that every computer of the writer is the same collaborator. Whoever runs the server that synchronizes can read it.
 - **The server keeps no history.** Every computer keeps earlier versions of what it holds, and a version from before another computer's changes come in.
 - **Changes are not seen as they are typed** on the writer's other computer, and it shows no cursor.
+- ***Show the changes* needs the history of the project to be on**: the review compares with a moment, and only a project whose history is kept can be shown as it was then. Where it is off, the writer is offered the earlier versions, among which the project as it stood before is kept.
+- **A file larger than the server takes** stays on the computer that has it, which says so; the others know of the file and show it as missing.
 - **A deletion or a mistake is synchronized as faithfully as anything.** What covers a mistake is the trash and the earlier versions, on every computer.

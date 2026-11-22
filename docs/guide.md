@@ -3880,9 +3880,14 @@ What follows you from computer to computer:
 - The projects, their folders and favourites, and the folder each is in. A
   project you share is shared from each of your computers, as one and the
   same collaborator.
+- The library: the references, the collections, and the files with their
+  folders, names and bookmarks. The images of the figures of a project and
+  the files put in notes are among them.
 - The notebook.
 - Your settings: your name and details, the languages, the colours, the
   kinds you made, the defaults of new documents, how you like to write.
+- What you made your own: reference styles, formats and document types, the
+  words you added to spelling, and the words of the interface you changed.
 
 What stays on each computer:
 
@@ -3896,11 +3901,17 @@ What stays on each computer:
 - The full history of each project, and its earlier versions: each computer
   keeps its own. The trash, and the Org copies of the projects, too.
 
-Not synchronized yet: the library, with its references and files; the
-pictures of the figures of a project, and the files put in notes; the
-styles, formats and document types you made; and your own words for the
-interface. Until they are, bring them over as before, with a project as a
-`.glaukopis` file, or a copy of the folder of your data.
+**The library** is brought together reference by reference and field by
+field: a title corrected on one computer and a year corrected on another are
+both in the reference after. Where the same field was changed on both, one
+of the two stands. The same work entered on two computers before they were
+synchronized stays two references, which **Find duplicates…** in the
+library brings together. A reference or a file deleted on one computer is deleted on the
+others, unless it was changed there since: then it is kept, on all of them.
+
+**A file larger than the server takes** stays on the computer that has it,
+which says so; the others know of the file and show it as missing. Whoever
+runs the server can let it take larger files (see `server.md`).
 
 ### Written on two computers apart
 

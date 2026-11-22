@@ -183,8 +183,10 @@ In `crates/server/tests/homes.rs`, over HTTP, as `tests/server.rs` tries the roo
 | `whole.rs` | a document from its bytes on disk: the log first and then the state, so that a state saved meanwhile loses nothing; merged; what it holds beyond a state vector; the moment it is at |
 | `home.rs` | the home document, kept in `sync/home.bin`, and its maps |
 | `mirror.rs` | what is not a document brought to be the same as a map of the home document: three ways, with what both agreed on last |
-| `arrangement.rs`, `facts.rs`, `settings.rs` | the mirrors: folders, favourites and the folder of each project; what the list shows of a project, and how it is shared; the settings that follow |
-| `engine.rs` | a round: the home document, the projects, the notebook, the files |
+| `arrangement.rs`, `facts.rs`, `settings.rs`, `shelves.rs` | the mirrors: folders, favourites and the folder of each project; what the list shows of a project, and how it is shared; the settings that follow; the writer's own reference styles, formats, templates and words |
+| `library.rs`, `files.rs` | the library's document and its stores (references, collections, the record of the files, their folders); the files of the store sent, fetched and taken off as their records say, streamed |
+| `wrote.rs` | the mark of a project the writer wrote in since it was last exchanged |
+| `engine.rs` | a round: the home document, the projects, the notebook, the library and its files |
 
 ### What is kept of a document here
 
@@ -198,7 +200,7 @@ A document needs an exchange when its files are not what they were at the last, 
 2. The list of the home's documents (`?seen=`), unless nothing changed there and nothing here.
 3. Each project: on the server and not here, and not gone: fetched whole, and made (`create_with_id`, the state written with it, so that it is never here empty). Here and not on the server: sent. Both: exchanged where it needs it. Gone: see *Deleted*.
 4. The notebook.
-5. The files: those the projects and the notes use, sent where the server lacks them and fetched where they are lacking here.
+5. The library: its stores and the library's document, where either changed; then the files, as their records say.
 
 Whatever fails is said in the status and tried again; a round goes on with the next document.
 
@@ -216,6 +218,9 @@ A Yjs document of maps whose values are strings (JSON). It is made by the core, 
 | `shared` | `<project>` | how it is shared, with the key |
 | `gone` | `<project>` | deleted: when, and the digest the deleter last saw |
 | `settings` | the setting's name | its value |
+| `styles`, `formats`, `templates` | the name of a file of the writer's own | its text |
+| `words` | `<language>/<word>` | a word the writer added to spelling: each a name, so that words added apart are all kept |
+| `interface` | `<language>/<file>.ftl` | the words of the interface the writer changed, a file at a time |
 
 ### The mirror
 
@@ -306,12 +311,12 @@ Words in `locales/*/sync.ftl` and `locales/*/core-sync.ftl`, English and Bokmål
 
 ## The stages
 
-Each is committed when it is checked: the tests of the part, clippy, and the script that tries it in the running application.
+Each is committed when it is checked: the tests of the part, clippy, and the script that tries it in the running application. All seven were built on 2026-11-22, on the branch `sync`.
 
 1. **The server**: homes, computers and codes, the exchange, the list, the files; `docs/server.md`.
 2. **Projects**: the core's engine for projects, the folders, the favourites, what the list shows, deleted projects, shared projects; the commands; the section in the settings; `e2e/synchronization.mjs`: two applications and a server; a project made on one is on the other; what is written on one while the other is closed is there when it opens; a project open on both follows; a project deleted goes to the other's trash.
 3. **Written apart**: the version kept, the moment, the toast and the review; the script takes the server away, writes on both, and brings it back.
-4. **The notebook, the pictures and the settings**: the notebook's document; the files that projects and notes use; the settings that follow, the person among them.
+4. **The notebook, the pictures and the settings**: the notebook's document; the files that projects and notes use (first by a step of their own, then, with stage 5, as all files are: by their records); the settings that follow, the person among them.
 5. **The library**: the references, the collections, the record of the files, as the document `library`; all the files of the store.
 6. **Styles, formats, templates, and the writer's own words.**
 7. **The guide**, and the map in `CLAUDE.md`.

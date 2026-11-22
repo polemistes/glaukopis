@@ -3,7 +3,7 @@
 # to datamaskiner hver for seg. Se locales/README.md.
 
 sync-title = Synkronisering
-sync-about = Prosjektene, notatblokken og innstillingene dine, de samme på hver av datamaskinene dine, gjennom en server.
+sync-about = Prosjektene, biblioteket, notatblokken og innstillingene dine, de samme på hver av datamaskinene dine, gjennom en server.
 
 ## Før den er slått på.
 
