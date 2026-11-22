@@ -88,6 +88,16 @@ impl Computer {
         doc.get_or_insert_text("text").insert(&mut doc.transact_mut(), at, words);
         let change = doc.transact().encode_state_as_update_v1(&before);
         self.projects.append(id, &change).unwrap();
+        // As the shell marks a project that the writer wrote in.
+        sync::wrote::mark(&self.projects.dir(id).unwrap());
+    }
+
+    /// Writes into a project what the application writes by itself, as who is who in its history: no writing of the writer's.
+    fn write_quietly(&self, id: &str, words: &str) {
+        let doc = self.open(id);
+        let before = doc.transact().state_vector();
+        doc.get_or_insert_map("users").insert(&mut doc.transact_mut(), uuid(), words);
+        self.projects.append(id, &doc.transact().encode_state_as_update_v1(&before)).unwrap();
     }
 
     /// Takes words out of the text of a project.
@@ -97,6 +107,7 @@ impl Computer {
         doc.get_or_insert_text("text").remove_range(&mut doc.transact_mut(), at, len);
         let change = doc.transact().encode_state_as_update_v1(&before);
         self.projects.append(id, &change).unwrap();
+        sync::wrote::mark(&self.projects.dir(id).unwrap());
     }
 
     fn text(&self, id: &str) -> String {
@@ -568,6 +579,73 @@ async fn the_images_a_project_uses_are_on_every_computer_under_their_names() {
         // Nothing more is sent or fetched when the rounds go on.
         a.round();
         b.round();
+    })
+    .await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn the_writers_own_styles_templates_and_words_are_on_every_computer() {
+    with_server(|address, _| {
+        let (a, b) = two(&address);
+        std::fs::create_dir_all(a.data.styles()).unwrap();
+        std::fs::write(a.data.styles().join("my-style.csl"), "<style>mine</style>").unwrap();
+        std::fs::create_dir_all(a.data.templates()).unwrap();
+        std::fs::write(a.data.templates().join("thesis.json"), "{\"id\":\"thesis\"}").unwrap();
+        let words = |c: &Computer| glaukopis_core::spelling::own::OwnWords::new(c.data.words());
+        words(&a).add("en", "menis").unwrap();
+        words(&b).add("en", "aoidos").unwrap();
+        a.round();
+        b.round();
+        a.round();
+        assert_eq!(std::fs::read_to_string(b.data.styles().join("my-style.csl")).unwrap(), "<style>mine</style>");
+        assert!(b.data.templates().join("thesis.json").is_file());
+        for computer in [&a, &b] {
+            let mut list = words(computer).list("en").unwrap();
+            list.sort();
+            assert_eq!(list, vec!["aoidos".to_owned(), "menis".to_owned()], "words added on each are on both");
+        }
+        // Taken away on one, a style and a word go from the other.
+        std::fs::remove_file(b.data.styles().join("my-style.csl")).unwrap();
+        words(&b).remove("en", "menis").unwrap();
+        b.round();
+        a.round();
+        assert!(!a.data.styles().join("my-style.csl").exists());
+        assert_eq!(words(&a).list("en").unwrap(), vec!["aoidos".to_owned()]);
+    })
+    .await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn what_the_application_writes_by_itself_is_not_writing_apart() {
+    with_server(|address, _| {
+        let (a, b) = two(&address);
+        let iliad = a.project("The Iliad", "Sing, goddess");
+        a.round();
+        b.round();
+        // A window of the second opens the project and writes who is who into it; the writer writes on the first.
+        b.write_quietly(&iliad, "the writer, at the laptop");
+        a.write(&iliad, 13, ", the wrath");
+        b.round();
+        a.round();
+        b.round();
+        assert_eq!(a.text(&iliad), b.text(&iliad));
+        assert!(a.heard.lock().unwrap().apart.is_empty(), "the writer wrote on one computer only");
+        assert!(b.heard.lock().unwrap().apart.is_empty());
+        // And where the one that only opened it meets the server second.
+        a.write(&iliad, 0, "Wrath: ");
+        b.write_quietly(&iliad, "the writer, at the laptop again");
+        a.round();
+        b.round();
+        a.round();
+        assert_eq!(a.text(&iliad), b.text(&iliad));
+        assert!(a.heard.lock().unwrap().apart.is_empty() && b.heard.lock().unwrap().apart.is_empty());
+        // The writer writes on both: that is writing apart, on the one that meets the server second.
+        a.write(&iliad, 0, "A: ");
+        b.write(&iliad, 0, "B: ");
+        a.round();
+        b.round();
+        assert!(a.heard.lock().unwrap().apart.is_empty());
+        assert_eq!(b.heard.lock().unwrap().apart.len(), 1);
     })
     .await;
 }

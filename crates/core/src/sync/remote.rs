@@ -223,6 +223,9 @@ impl<'a> Home<'a> {
     /// sends the changes made here since, and is answered with what the
     /// server had beyond `since`. `form` is the form of the texts this
     /// version knows: the server sends nothing of a document in a later one.
+    /// `quiet` says that the writer wrote nothing of what is sent (`wrote`):
+    /// the server tells of writing apart only where the writer wrote on both.
+    #[allow(clippy::too_many_arguments, reason = "what an exchange says, each a thing of its own")]
     pub fn exchange(
         &self,
         kind: &str,
@@ -231,13 +234,14 @@ impl<'a> Home<'a> {
         since: Option<&[u8]>,
         changes: &[&[u8]],
         form: u32,
+        quiet: bool,
     ) -> Result<Answer> {
         let url = format!(
             "{}{}?form={form}",
             self.remote.server(),
             self.path(&format!("/docs/{}/{}", net::encode(kind), net::encode(id)))
         );
-        let head = json!({ "seen": seen, "since": since.map(hex) });
+        let head = json!({ "seen": seen, "since": since.map(hex), "quiet": quiet });
         let answer = self.client.post(&url, &self.token, &framed(&head, changes), MOST_NEWS)?;
         if !(200..300).contains(&answer.status) {
             let value = serde_json::from_slice(&answer.body).unwrap_or(Value::Null);

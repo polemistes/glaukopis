@@ -53,7 +53,9 @@ use super::library::{
 use super::mirror::{self, Store};
 use super::remote::{self, Answer, Home, Listing, NewCode, Told};
 use super::settings::Settings;
+use super::shelves::{Folder, InterfaceWords, SpellingWords};
 use super::whole::{self, Lies};
+use super::wrote;
 use super::{FORM, hex, unhex};
 
 /// How often the server is asked whether anything changed.
@@ -267,6 +269,11 @@ pub struct Sync {
     /// The library: held only while something is looked up or written, never while the network is waited for.
     library: Arc<Mutex<Library>>,
     settings: PathBuf,
+    /// The folders of the writer's own reference styles, formats, templates and words.
+    styles: PathBuf,
+    formats: PathBuf,
+    templates: PathBuf,
+    words: PathBuf,
     kept: Kept,
     client: Client,
     hears: Hears,
@@ -293,6 +300,21 @@ struct Got {
     before: Option<Vec<u8>>,
     /// How the document lay here before it was read.
     lies: Lies,
+}
+
+/// What the network said went wrong, as a sentence of its own: it is
+/// written to follow other words, and is shown alone here.
+fn sentence(said: &str) -> String {
+    let said = said.trim();
+    let mut letters = said.chars();
+    let mut out: String = match letters.next() {
+        Some(first) => first.to_uppercase().chain(letters).collect(),
+        None => String::new(),
+    };
+    if !out.ends_with(['.', '!', '?']) {
+        out.push('.');
+    }
+    out
 }
 
 fn held<T>(lock: &Mutex<T>) -> MutexGuard<'_, T> {
@@ -326,6 +348,10 @@ impl Sync {
             notebook,
             library,
             settings: data.settings_file(),
+            styles: data.styles(),
+            formats: data.formats(),
+            templates: data.templates(),
+            words: data.words(),
             kept,
             client: Client::new(),
             hears,
@@ -555,7 +581,7 @@ impl Sync {
                 tracing::warn!(%error, "the server lets this computer into its home no more");
                 self.say(State::Refused, Some(tr!("core-sync-refused")), false);
             }
-            Err(error @ Error::Network(_)) => self.say(State::Offline, Some(error.to_string()), false),
+            Err(Error::Network(why)) => self.say(State::Offline, Some(sentence(&why)), false),
             Err(error) => {
                 tracing::warn!(%error, "a round of the synchronization failed");
                 self.say(State::Idle, Some(error.to_string()), false);
@@ -635,6 +661,7 @@ impl Sync {
     /// One exchange. Where the server proves to hold less than it was
     /// thought to (it was put back as it was earlier, or lost a document),
     /// everything is sent again and everything asked for.
+    #[allow(clippy::too_many_arguments, reason = "what an exchange says, each a thing of its own")]
     fn ask(
         &self,
         home: &Home,
@@ -643,16 +670,17 @@ impl Sync {
         seen: Option<&str>,
         since: Option<&[u8]>,
         mine: Mine,
+        quiet: bool,
     ) -> Result<Answer> {
         let changes = mine(since)?;
         let changes: Vec<&[u8]> = changes.iter().map(Vec::as_slice).collect();
-        let answer = home.exchange(kind, id, seen, since, &changes, FORM)?;
+        let answer = home.exchange(kind, id, seen, since, &changes, FORM, quiet)?;
         match since {
             Some(since) if !whole::covers(&answer.now, since)? => {
                 tracing::warn!(kind, id, "the server holds less of a document than it did: everything is sent again");
                 let all = mine(None)?;
                 let all: Vec<&[u8]> = all.iter().map(Vec::as_slice).collect();
-                home.exchange(kind, id, None, None, &all, FORM)
+                home.exchange(kind, id, None, None, &all, FORM, quiet)
             }
             _ => Ok(answer),
         }
@@ -687,8 +715,15 @@ impl Sync {
         }
         let seen = cursor.as_ref().and_then(|c| c.seen.clone());
         let since = cursor.as_ref().and_then(|c| c.since.as_deref()).and_then(unhex);
-        let answer =
-            self.ask(home, maps.kind, "the", seen.as_deref(), since.as_deref(), &|since| doc.beyond(since).map(Some))?;
+        let answer = self.ask(
+            home,
+            maps.kind,
+            "the",
+            seen.as_deref(),
+            since.as_deref(),
+            &|since| doc.beyond(since).map(Some),
+            false,
+        )?;
         let news = !whole::nothing(&answer.news);
         if news {
             doc.take_in(&answer.news)?;
@@ -782,8 +817,27 @@ impl Sync {
         let facts = Facts { projects: &self.projects, met };
         let shared = SharedProjects { projects: &self.projects, met };
         let settings = Settings { path: self.settings.clone() };
-        // The folders before what is put in them.
-        let stores: [&dyn Store; 6] = [&folders, &places, &favourites, &facts, &shared, &settings];
+        // What the writer made their own: reference styles, formats, templates, and words.
+        let styles = Folder { map: "styles", dir: self.styles.clone(), ending: ".csl" };
+        let formats = Folder { map: "formats", dir: self.formats.clone(), ending: ".json" };
+        let templates = Folder { map: "templates", dir: self.templates.clone(), ending: ".json" };
+        let spelling = SpellingWords { own: crate::spelling::own::OwnWords::new(&self.words) };
+        let interface = InterfaceWords { dir: self.words.clone() };
+        // The folders before what is put in them; the styles, formats and
+        // templates before the settings that name those to begin with.
+        let stores: [&dyn Store; 11] = [
+            &folders,
+            &places,
+            &favourites,
+            &facts,
+            &shared,
+            &styles,
+            &formats,
+            &templates,
+            &spelling,
+            &interface,
+            &settings,
+        ];
         self.maps_round(home, joined, HOME, doc, docs, &stores, &Plain)?;
         Ok(())
     }
@@ -916,10 +970,24 @@ impl Sync {
     /// Exchanges the document kept in `dir`. Nothing is written by it: see `settle`.
     fn exchange_doc(&self, home: &Home, joined: &Joined, kind: &str, id: &str, dir: &Path) -> Result<Got> {
         let name = format!("{kind}/{id}");
+        // Whether the writer wrote in a project since it was last exchanged
+        // (`wrote`): the mark is taken before the project is read, so that
+        // what is written meanwhile marks it anew. Of what is no project,
+        // all that is written is the writer's.
+        let marked = kind == "project" && wrote::take(dir);
+        let wrote = marked || kind != "project";
         // How it lies is looked at before it is read: what is written
         // meanwhile makes it lie otherwise, and is sent the next time.
         let lies = whole::lies(dir);
-        let before = whole::read(dir)?;
+        let before = match whole::read(dir) {
+            Ok(before) => before,
+            Err(error) => {
+                if marked {
+                    wrote::mark(dir);
+                }
+                return Err(error);
+            }
+        };
         let mut cursor = kept::cursor(dir, &joined.home, &name);
         if let (Some(_), Some(here)) = (&cursor, &before)
             && let Some(had) = kept::had(dir).filter(|had| !had.is_empty())
@@ -934,12 +1002,21 @@ impl Sync {
         }
         let seen = cursor.as_ref().and_then(|c| c.seen.clone());
         let since = cursor.as_ref().and_then(|c| c.since.as_deref()).and_then(unhex);
-        let answer = self.ask(home, kind, id, seen.as_deref(), since.as_deref(), &|since| match (&before, since) {
+        let mine: Mine = &|since| match (&before, since) {
             (Some(here), Some(since)) => whole::beyond(here, since).map(Some),
             (Some(here), None) => Ok(Some(here.clone())),
             (None, _) => Ok(None),
-        })?;
-        Ok(Got { answer, before, lies })
+        };
+        match self.ask(home, kind, id, seen.as_deref(), since.as_deref(), mine, !wrote) {
+            Ok(answer) => Ok(Got { answer, before, lies }),
+            Err(error) => {
+                // Not told to the server: the mark stands for the next time.
+                if marked {
+                    wrote::mark(dir);
+                }
+                Err(error)
+            }
+        }
     }
 
     /// Keeps what was seen of the server's document, once what it sent is
@@ -1134,7 +1211,7 @@ impl Sync {
         id: &str,
     ) -> Result<()> {
         let name = format!("project/{id}");
-        let answer = home.exchange("project", id, None, None, &[], FORM)?;
+        let answer = home.exchange("project", id, None, None, &[], FORM, true)?;
         if whole::nothing(&answer.news) {
             return Ok(());
         }
