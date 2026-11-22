@@ -1,12 +1,14 @@
 # The collaboration server
 
 Glaukopis works on its own. A server is needed only when several people are to
-write in the same project at the same time. This is how to run one.
+write in the same project at the same time, or when one writer is to have the
+same things on more than one computer. This is how to run one.
 
 The server is one program, `glaukopis-server`, with one directory of data. It
 keeps the projects that are shared through it and passes changes between those
-who have them open. It has no accounts: whoever shares a project is its owner
-there, and admits others by codes.
+who have them open, and it keeps what a writer's computers synchronize through
+it. It has no accounts: whoever shares a project is its owner there, and admits
+others by codes; a writer's first computer admits the others by codes too.
 
 ## What you need
 
@@ -24,7 +26,8 @@ there, and admits others by codes.
 Install the package `glaukopis-server` (see `packaging/arch`), then:
 
 1. Set a password in `/etc/glaukopis-server.conf`. It is asked of those who
-   share projects through the server, not of those they invite. Without it,
+   share projects through the server, not of those they invite, and of the
+   first computer of a writer who synchronizes their computers through it. Without it,
    the server does not start behind a proxy, as anyone who could reach it
    could put projects on it; if that is what you want, say so with
    `GLAUKOPIS_SERVER_OPEN=true` there instead.
@@ -114,7 +117,10 @@ glaukopis-server --listen 127.0.0.1:8375 --data /var/lib/glaukopis-server --trus
 | `--max-file-mb` | `GLAUKOPIS_SERVER_MAX_FILE_MB` | The most one figure of a project may hold, in megabytes. `50` if not given. |
 | `--max-room-mb` | `GLAUKOPIS_SERVER_MAX_ROOM_MB` | The most the figures of one project may hold together, in megabytes. `1024` if not given. |
 | `--max-project-mb` | `GLAUKOPIS_SERVER_MAX_PROJECT_MB` | The most one project may hold without its figures, in megabytes: its text, maps, references and history. `64` if not given, which is far more than the text of a long book. |
-| `--open` | `GLAUKOPIS_SERVER_OPEN` | Let anyone who can reach the server publish projects on it, with no password. Without a password, the server does not start unless this is given, or it listens on this computer only and is not behind a proxy. |
+| `--max-homes` | `GLAUKOPIS_SERVER_MAX_HOMES` | The most writers whose computers the server will synchronize. |
+| `--max-home-mb` | `GLAUKOPIS_SERVER_MAX_HOME_MB` | The most the files of one writer's computers may hold together on the server, in megabytes: their pictures and the files of their library. `10240` if not given. |
+| `--max-home-file-mb` | `GLAUKOPIS_SERVER_MAX_HOME_FILE_MB` | The most one of those files may hold, in megabytes. `512` if not given. |
+| `--open` | `GLAUKOPIS_SERVER_OPEN` | Let anyone who can reach the server publish projects on it, and synchronize their computers through it, with no password. Without a password, the server does not start unless this is given, or it listens on this computer only and is not behind a proxy. |
 
 How much is written to the log is set with `GLAUKOPIS_SERVER_LOG`: `warn`,
 `info` (the default) or `debug`.
@@ -129,20 +135,49 @@ location / {
     proxy_set_header Connection "upgrade";
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_read_timeout 1h;
-    client_max_body_size 50m;
+    client_max_body_size 512m;
 }
 ```
 
 A proxy may have a limit of its own on how much may be sent to it at a time,
-and a figure is sent whole. Caddy has none unless it is given one. nginx
-takes 1 MB unless told otherwise, which is less than many figures hold: the
-last line above lets through what the server itself takes. If `--max-file-mb`
-is changed, change it there as well.
+and a figure, or a file of a writer's library, is sent whole. Caddy has none
+unless it is given one. nginx takes 1 MB unless told otherwise, which is less
+than many figures hold: the last line above lets through what the server itself
+takes, which is the larger of `--max-home-file-mb` (512) and `--max-file-mb`
+(50). If either is changed, change it there as well. A project, the notebook
+or the library is sent whole, too, the first time a computer brings it, and
+may be as large as `--max-project-mb`: keep the line above that.
 
 On a network of your own, at home or in a department, the server can be used
 without a proxy: start it with `--listen 0.0.0.0:8375` and a password (or
 `--open`), and give its address as `http://192.168.1.20:8375`. What is sent is
 then not encrypted, and Glaukopis says so to those who use it.
+
+## Synchronizing a writer's own computers
+
+The same server keeps one writer's computers the same: every project, the
+notebook, the library and its files, and the settings that are not of one
+computer alone. It is not sharing, and nothing of it is arranged project by
+project. The server calls what one writer's computers keep together a *home*.
+
+- The first computer makes the home. Where the server has a password, it is
+  asked then, as it is of those who share a project; and the homes are
+  counted as published projects are.
+- Another computer is let in with a code made on one that is in. A code is
+  good once, and for an hour. Each computer has a token of its own, and all
+  computers are equals: any of them can make codes, and rename or remove any
+  other. A home holds sixteen computers at the most.
+- When the last computer leaves, the home is taken off the server with all
+  it kept. What each computer holds stays on it.
+- Changes reach the server from each computer a few seconds after they are
+  written, and each computer asks every half minute whether anything came
+  from another. Nothing is kept open between them, and no WebSocket is
+  needed for it.
+
+The server keeps the latest of everything, not its history: each computer
+keeps its own earlier versions. Since every computer holds everything, a
+server that is lost takes nothing with it: synchronization is set up anew,
+from any of the computers.
 
 ## What is kept, and where
 
@@ -156,6 +191,18 @@ rooms/<id of the project>/files/       its figures, each named by the SHA-256 of
 ```
 
 A project that is taken off the server by its owner goes with all of this.
+
+What a writer's computers synchronize is kept apart from that, one directory
+for each writer, which the server calls a home:
+
+```
+homes/<id of the home>/home.json                     the computers, and the codes that admit them
+homes/<id of the home>/docs/<kind>/<id>/state.bin    a project, the notebook, the library or the rest, as rooms keep a project
+homes/<id of the home>/docs/<kind>/<id>/said.json    what the server knows of it without reading it
+homes/<id of the home>/files/                        the pictures and the files of the library, each named by its SHA-256
+```
+
+A home goes with all of this when the last of its computers leaves.
 
 To keep a copy of the server, copy the directory. To move the server, move
 the directory. Every collaborator also has each project whole on their own
@@ -180,8 +227,13 @@ shared anew from any copy.
   theirs to change: the server does not let one member speak for another.
 - Attempts with wrong codes or passwords are counted for each address. After
   ten in ten minutes, the address must wait.
-- Files attached to references are not sent to the server. References
-  themselves are part of the project, and are.
+- Files attached to references are not sent to the server when a project is
+  shared. References themselves are part of the project, and are.
+- A writer who synchronizes their computers through the server sends it
+  everything: every project, the notebook, the library with its files, the
+  settings, and the key of each project they share elsewhere. The server can
+  read all of it, as it can read the projects that are shared. Only hashes of
+  the computers' tokens, and of the codes that admit them, are kept.
 
 ## When something is wrong
 
@@ -191,6 +243,8 @@ shared anew from any copy.
 | Sharing works, but the project is never "connected" | The proxy does not pass WebSocket on. See the lines for nginx above. |
 | "Too many attempts have been made from here" for everyone at once | The server is behind a proxy and was started without `--trust-proxy`, so that all callers seem to be the proxy. |
 | A figure is refused as too large, or does not reach the others | The limits `--max-file-mb` and `--max-room-mb`. Behind nginx, `client_max_body_size`. |
+| A file is refused as too large between a writer's own computers | The limits `--max-home-file-mb` and `--max-home-mb`. Behind nginx, `client_max_body_size`, which must let through `--max-home-file-mb`. |
+| A computer says that the server no longer lets it in | It was removed by another of the writer's computers. It can join again with a code made on one of them. |
 | Glaukopis says that the server does not take the latest changes | The project would be larger than `--max-project-mb` lets it be. |
 | Glaukopis says that a project has been written in by a later version | Someone in the project has a later Glaukopis, and has used something in a text that this one does not know. The one who is told updates Glaukopis. See *The versions of Glaukopis* below. |
 | One of those who share a project is never "connected", with a version of Glaukopis up to 0.2.13 | The same: such a version is kept out and cannot say why. The log of the server says `one who does not know the form the texts are in now is let go`. |
