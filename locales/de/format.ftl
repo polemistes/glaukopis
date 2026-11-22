@@ -13,15 +13,6 @@ format-kind-poetry = Lyrik
 
 ## Layouts of the writer's own, kept from the changes of a document.
 
-format-name = Name des Layouts
-# The name a layout of one's own is first given, made from that of the layout it is made from.
-format-name-changed = { $name }, geändert
-format-saved = „{ $name }“ ist unter Ihren eigenen Layouts gespeichert
-format-save-failed = Das Layout konnte nicht gespeichert werden.
-format-delete-failed = Das Layout konnte nicht gelöscht werden.
-format-delete-title = Das Layout „{ $name }“ löschen?
-format-delete-message = Elemente, die es verwenden, verwenden stattdessen das allgemeine Layout für Manuskripte.
-format-delete-confirm = Layout löschen
 
 ## Words that stand in several parts.
 
@@ -319,7 +310,6 @@ format-item-text = Eigene Worte
 
 ## About the layout: where its requirements are from.
 
-format-description = Beschreibung
 format-source = Woher die Vorgaben stammen
 # The date the source was read on.
 format-source-read = Gelesen am { $date }.

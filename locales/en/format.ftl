@@ -13,16 +13,6 @@ format-kind-poetry = Poetry
 
 ## Layouts of the writer's own, kept from the changes of a document.
 
-format-name = Name of the layout
-# The name a layout of one's own is first given, made from that of the layout it is made from.
-format-name-changed = { $name }, changed
-format-saved = “{ $name }” is saved among your own layouts
-format-save-failed = The layout could not be saved.
-format-delete-failed = The layout could not be deleted.
-format-delete-title = Delete the layout “{ $name }”?
-format-delete-message = Elements that use it will use the general manuscript layout instead.
-format-delete-confirm = Delete layout
-
 ## Words that stand in several parts.
 
 format-size = Size
@@ -320,7 +310,6 @@ format-item-text = Words of my own
 
 ## About the layout: where its requirements are from.
 
-format-description = Description
 format-source = Where the requirements are from
 # The date the source was read on.
 format-source-read = Read { $date }.

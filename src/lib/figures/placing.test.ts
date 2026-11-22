@@ -209,10 +209,6 @@ describe('where something stands', () => {
     );
     expect(sides().map((s) => s.label)).toEqual(['Fra Utseende', 'Venstre', 'Midten', 'Høyre']);
     languages.current = 'en';
-    expect(flows().map((f) => f.label)).toEqual([
-      'From Look',
-      'Flows around it',
-      'Stands apart',
-    ]);
+    expect(flows().map((f) => f.label)).toEqual(['From Look', 'Flows around it', 'Stands apart']);
   });
 });

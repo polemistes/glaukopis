@@ -10,12 +10,7 @@ look-scope = Disse endringene gjelder for
 look-scope-document = Hele dokumentet: { $name }
 # Bare ett element under dokumentet, ved navnet.
 look-scope-only = Bare { $name }
-look-layout-line = Oppsett: { $layout }
 
-look-changes = { $count ->
-    [one] { $count } endring
-   *[other] { $count } endringer
-  }
 look-changed-here = Endret i dette dokumentet
 look-changed-in = Endret i «{ $name }»
 look-reset = Tilbakestill
@@ -40,11 +35,6 @@ look-first-headings-numbered = Overskriftene er nummerert
 look-at-citations = Kildehenvisninger
 look-at-bibliography = Litteraturliste
 
-look-keep = Behold disse endringene som et eget oppsett …
-look-keep-save = Behold
-look-put-into = Legg disse endringene inn i «{ $name }»
-look-delete-layout = Slett dette oppsettet mitt …
-
 ## Dokumenttypens deler, en del av Utseende: delene programmet lager selv og
 ## slagene elementer som får en egen plass, i én liste i den rekkefølgen de
 ## skrives ut, og hva som kreves. Det som endres der, holdes som dokumentets
@@ -67,7 +57,6 @@ look-from-with = { $what }, fra { $name }
 look-style = Referansestil
 look-style-change = Endre denne referansestilen …
 
-
 # The groups of the fonts to choose from.
 look-fonts-document = I dette dokumentet
 look-fonts-project = Andre steder i prosjektet
@@ -82,9 +71,6 @@ look-hide = Skjul utseendet
 
 look-section-line-numbers = Linjenummer
 look-section-type-parts = Deler
-look-section-the-layout = Oppsett
-look-choose-layout = Velg et oppsett
-look-layout-modifications = Endringer i oppsettet
 look-at-quotations-warning = Sitater
 look-at-paragraph-kinds = Avsnittstyper
 look-at-words-kinds = Ordtyper
@@ -95,3 +81,20 @@ look-kind-key = Tast
 look-kind-key-none = Ingen
 # A digit another kind has: choosing it here leaves that kind without.
 look-kind-key-taken = { $keys }, nå { $kind }
+
+## Ett skjema (planen fra 2026-11-22, trinn 2): øverst i Utseende står det dokumentet
+## setter annerledes enn typen, og den siste delen er dokumenttypen.
+
+look-changes-here = { $count ->
+    [one] { $count } endring i dette dokumentet
+   *[other] { $count } endringer i dette dokumentet
+  }
+look-save-to = Lagre i «{ $name }»
+look-save-as = Lagre som dokumenttype …
+look-save = Lagre
+look-type-name = Navnet på dokumenttypen
+look-editing = Redigerer dokumenttypen «{ $name }»
+look-done = Ferdig
+look-section-document-type = Dokumenttype
+look-taken-from = Utseende hentet fra
+look-changed-list = Endret i dette dokumentet

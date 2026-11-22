@@ -25,8 +25,6 @@
   import X from '@lucide/svelte/icons/x';
   import {
     formatKindLooks,
-    formatsDelete,
-    formatsSave,
     type DocumentFormat,
     type HeadingLevel,
     type KindFamily,
@@ -57,7 +55,6 @@
   import type { Project } from '$lib/project/model/project.svelte';
   import type { DocumentSettings, PassageKindRecord } from '$lib/project/model/types';
   import Button from '$lib/ui/Button.svelte';
-  import { confirm } from '$lib/ui/confirm.svelte';
   import IconButton from '$lib/ui/IconButton.svelte';
   import Settings from '$lib/ui/settings/Settings.svelte';
   import { rowsOf, type Choices, type Provenance, type Row } from '$lib/ui/settings/rows';
@@ -73,11 +70,14 @@
     type LookChanges,
     type LookPath,
   } from './changes';
-  import { formatGroups, layoutName, styleGroups, styleName } from './choosing.svelte';
+  import { layoutName, styleGroups, styleName } from './choosing.svelte';
   import { fonts } from './fonts.svelte';
   import { LOOK_SECTIONS, lookUi, type LookRequest, type LookSection } from './look.svelte';
   import { PAPERS } from './papers';
   import ContentsSection from './ContentsSection.svelte';
+  import LookHead from './LookHead.svelte';
+  import { changesOf, resetDocument, saveToType } from './to-type';
+  import TypeSection from './TypeSection.svelte';
   import { lookRows, lookWords, resolvedWords, setKindLook } from './rows.svelte';
 
   interface Props {
@@ -132,9 +132,7 @@
   const layout = $derived(documents.formatCached(choice.format));
   /** The changes of the document, with the element that makes each. */
   const changes = $derived(project.lookOf(target));
-  const changed = $derived(countOf(changes.changes));
   const nameOfLayout = $derived(layoutName(choice.format) || layout?.name || choice.format);
-  const ownLayout = $derived(layout?.kind === 'own');
 
   $effect(() => {
     documents.load();
@@ -339,14 +337,9 @@
     if (!who || who === target) return null;
     return nameOf(who);
   }
-  // What the first choice of the layout and of the style is, named with where
-  // it is from: the document type, or the writer's default.
+  // What the first choice of the reference style is, named with where it is
+  // from: the document type, the look in use, or the writer's default.
   const typeName = $derived(templateName(project, choice.template));
-  const broughtLayout = $derived(
-    template?.layout
-      ? t('look-from-type', { name: layoutName(template.layout), type: typeName })
-      : t('look-your-default', { name: layoutName(documents.usualFormat()) }),
-  );
   const broughtStyle = $derived.by(() => {
     if (template?.style)
       return t('look-from-type', { name: styleName(template.style), type: typeName });
@@ -356,88 +349,11 @@
       return t('look-from-type', { name: styleName(layout.style), type: nameOfLayout });
     return t('look-your-default', { name: styleName(documents.choice({}).style) });
   });
-  const formatFrom = $derived(own.format ? null : fromAbove('format'));
   const styleFrom = $derived(own.style ? null : fromAbove('style'));
 
   let browsing = $state(false);
   let editingStyle = $state<string | null>(null);
-
-  // ---- keeping the changes as a layout ----
-
-  let keeping = $state(false);
-  let keptName = $state('');
-  let saving = $state(false);
   let error = $state<string | null>(null);
-
-  /**
-   * The elements whose changes go into a layout made of them, and the one
-   * the layout is set on: the highest that makes a change, or this one.
-   */
-  function makers(): { on: string; clear: string[] } {
-    const way = project.pathTo(target);
-    const first = way.findIndex((id) => countOf(project.node(id)?.document.look) > 0);
-    const from = first < 0 ? way.length - 1 : first;
-    return { on: way[from], clear: way.slice(from) };
-  }
-
-  /** Makes a layout of the layout with the changes, and sets it where the changes were. */
-  async function keep(name: string | null) {
-    if (!effective || !layout || saving) return;
-    if (pending) write();
-    saving = true;
-    error = null;
-    try {
-      const made = $state.snapshot(effective) as DocumentFormat;
-      made.lineNumbers = layout.lineNumbers;
-      const saved = await formatsSave(
-        name === null
-          ? made
-          : { ...made, id: '', name: name.trim(), basedOn: layout.id, kind: 'own' },
-      );
-      documents.forgetFormat(saved.id);
-      await documents.reload();
-      const { on, clear } = makers();
-      project.checkpoint();
-      project.transact(() => {
-        for (const id of clear) {
-          const patch: Partial<DocumentSettings> = { look: undefined };
-          if (id === on || project.node(id)?.document.format) patch.format = saved.id;
-          project.setDocument(id, patch);
-        }
-      });
-      project.checkpoint();
-      notifyOk(t('format-saved', { name: saved.name }));
-      keeping = false;
-      keptName = '';
-    } catch (e) {
-      error = describeError(e) ?? t('format-save-failed');
-    } finally {
-      saving = false;
-    }
-  }
-
-  async function removeLayout() {
-    if (!layout || !ownLayout) return;
-    const ok = await confirm({
-      title: t('format-delete-title', { name: layout.name }),
-      message: t('format-delete-message'),
-      confirm: t('format-delete-confirm'),
-      danger: true,
-    });
-    if (!ok) return;
-    try {
-      const gone = layout;
-      await formatsDelete(gone.id);
-      documents.forgetFormat(gone.id);
-      await documents.reload();
-      const who = inherited.from.get('format') ?? target;
-      // Back to the layout it was made from; one made from nothing gives the
-      // element nothing of its own, so it takes the writer's usual again.
-      setOwnAt(who, { format: gone.basedOn });
-    } catch (e) {
-      error = describeError(e) ?? t('format-delete-failed');
-    }
-  }
 
   function setOwnAt(who: string, patch: Partial<DocumentSettings>) {
     project.checkpoint();
@@ -445,19 +361,77 @@
     project.checkpoint();
   }
 
-  /** Writes a new description of a layout of the writer's own, as it is left. */
-  async function describe(words: string) {
-    if (!layout || !ownLayout || words === layout.description) return;
+  // ---- the changes of the document, and its type ----
+
+  /** What the document sets otherwise than its type: the count at the top of the panel. */
+  const documentChanges = $derived(changesOf(project, at));
+
+  /** Takes every change of the document away, of the look and of what is required. */
+  function reset() {
+    if (pending) write();
+    resetDocument(project, at);
+  }
+
+  /** Whether the type is the writer's own, and the application has it: what is set can go into it. */
+  const ownType = $derived(
+    template?.group === 'own' && !!documents.templateSummary(choice.template)?.own,
+  );
+  /** Whether the type of the document is being edited: what is set goes into it at once. */
+  const editingType = $derived(ownType && lookUi.editing === choice.template);
+
+  let saving = $state(false);
+  /** A change written while a type was being saved: saved after it. */
+  let again = false;
+
+  /**
+   * Puts what the document sets otherwise into its type, or, with a name,
+   * into a new type of the writer's own made of it (`saveToType`).
+   */
+  async function saveType(name: string | null) {
+    if (pending) write();
+    if (saving) {
+      again = name === null;
+      return;
+    }
+    saving = true;
+    error = null;
     try {
-      const saved = await formatsSave({
-        ...($state.snapshot(layout) as DocumentFormat),
-        description: words,
-      });
-      documents.forgetFormat(saved.id);
+      const saved = await saveToType(project, at, name);
+      if (name !== null) notifyOk(t('template-saved', { name: saved.name }));
     } catch (e) {
-      error = describeError(e) ?? t('format-save-failed');
+      error = describeError(e) ?? t('template-save-failed');
+    } finally {
+      saving = false;
+    }
+    if (again) {
+      again = false;
+      void saveType(null);
     }
   }
+
+  // While the type is edited, what is written goes into it at once: the
+  // document carries no changes of its own.
+  $effect(() => {
+    if (!editingType) return;
+    const c = documentChanges;
+    if (!c.look && !c.requirements && !c.chosen) return;
+    const timer = setTimeout(() => void saveType(null), 250);
+    return () => clearTimeout(timer);
+  });
+
+  // The type stops being edited when the document's type becomes another,
+  // and when Look closes.
+  let typeWas: string | null = null;
+  $effect(() => {
+    const now = choice.template;
+    untrack(() => {
+      if (typeWas !== null && typeWas !== now && lookUi.editing === typeWas) lookUi.editing = null;
+      typeWas = now;
+    });
+  });
+  $effect(() => () => {
+    lookUi.editing = null;
+  });
 
   // ---- the parts, and finding a setting ----
 
@@ -583,7 +557,7 @@
     figures: t('look-section-figures'),
     front: t('look-section-front'),
     contents: t('look-section-type-parts'),
-    layout: t('look-section-the-layout'),
+    'document-type': t('look-section-document-type'),
   });
 
   // ---- the rows ----
@@ -1755,27 +1729,21 @@
   </header>
 
   <div class="through settings" bind:this={form} onscroll={follow}>
-    <!-- What the document is, with the button that opens Document properties at its type; and the layout, in a line. -->
-    <section class="whole" aria-label={t('look-whole')}>
-      <div class="type-line" data-template={choice.template}>
-        <span class="name">{templateName(project, choice.template)}</span>
-        <Button
-          size="sm"
-          data-document-type
-          onclick={() => aboutDocumentUi.open({ project, at, section: 'type' })}
-          >{t('look-document-type')}</Button
-        >
-      </div>
-      <button
-        type="button"
-        class="link layout-line"
-        data-layout={choice.format}
-        data-changes={changed}
-        onclick={() => form && bring(form, { section: 'layout' })}
-        >{t('look-layout-line', { layout: nameOfLayout })}{#if changed}{' · '}{t('look-changes', {
-            count: changed,
-          })}{/if}</button
-      >
+    <!-- What the document is, and what it sets otherwise than its type. -->
+    <LookHead
+      type={choice.template}
+      {typeName}
+      count={documentChanges.look + documentChanges.requirements}
+      differs={documentChanges.look + documentChanges.requirements > 0 || documentChanges.chosen}
+      own={ownType}
+      editing={editingType}
+      {saving}
+      ondocumenttype={() => aboutDocumentUi.open({ project, at, section: 'type' })}
+      onsaveto={() => void saveType(null)}
+      onsaveas={(name) => void saveType(name)}
+      onreset={reset}
+      ondone={() => (lookUi.editing = null)}
+    >
       <!-- Where the changes hold: the whole document, or only an element under it (ADR 0059). -->
       {#if candidates.length}
         <label class="scope-line">
@@ -1794,7 +1762,7 @@
           </select>
         </label>
       {/if}
-    </section>
+    </LookHead>
 
     <label class="search">
       <Search size={14} />
@@ -1961,119 +1929,18 @@
           <ContentsSection {project} {at} {ongo} />
         </section>
 
-        <!-- The layout itself: chosen here, with what this document changes of it. -->
-        <section class="part" data-part="layout">
-          <h3>{sectionWords.layout}</h3>
-          <label class="row">
-            <span class="what">{t('look-choose-layout')}</span>
-            <select
-              value={own.format ?? ''}
-              onchange={(e) => setOwn({ format: e.currentTarget.value || undefined })}
-            >
-              <option value="">
-                {formatFrom
-                  ? t('look-from-with', { name: formatFrom, what: nameOfLayout })
-                  : broughtLayout}
-              </option>
-              {#each formatGroups() as group (group.name)}
-                <optgroup label={group.name}>
-                  {#each group.formats as fm (fm.id)}
-                    <option value={fm.id}>{fm.name}</option>
-                  {/each}
-                </optgroup>
-              {/each}
-              {#if own.format && !documents.formatSummary(own.format)}
-                <option value={own.format}>{own.format}</option>
-              {/if}
-            </select>
-          </label>
-
-          {#if changed}
-            <h4>{t('look-layout-modifications')}</h4>
-            <ul class="changed">
-              {#each changeList as c (c.path)}
-                <li>
-                  <span>{c.words}</span>
-                  <small
-                    >{c.who === at
-                      ? t('look-changed-here')
-                      : t('look-changed-in', { name: nameOf(c.who) })}</small
-                  >
-                  <button type="button" class="again" onclick={() => takeAgain(c.who, c.path)}
-                    >{t('look-reset')}</button
-                  >
-                </li>
-              {/each}
-            </ul>
-          {/if}
-
-          <div class="keep">
-            {#if keeping}
-              <form
-                class="name"
-                onsubmit={(e) => {
-                  e.preventDefault();
-                  if (keptName.trim()) void keep(keptName);
-                }}
-              >
-                <input
-                  bind:value={keptName}
-                  placeholder={t('format-name')}
-                  aria-label={t('format-name')}
-                  class="kept-name"
-                />
-                <Button
-                  type="submit"
-                  size="sm"
-                  variant="primary"
-                  disabled={saving || !keptName.trim()}>{t('look-keep-save')}</Button
-                >
-                <Button size="sm" variant="ghost" onclick={() => (keeping = false)}
-                  >{t('common-cancel')}</Button
-                >
-              </form>
-            {:else}
-              <Button
-                size="sm"
-                disabled={!changed || saving}
-                onclick={() => {
-                  keeping = true;
-                  keptName = t('format-name-changed', { name: nameOfLayout });
-                }}>{t('look-keep')}</Button
-              >
-              {#if ownLayout}
-                <Button size="sm" disabled={!changed || saving} onclick={() => keep(null)}
-                  >{t('look-put-into', { name: nameOfLayout })}</Button
-                >
-              {/if}
-            {/if}
-          </div>
-
-          {#if layout}
-            {#if ownLayout}
-              <label class="row tall">
-                <span class="what">{t('format-description')}</span>
-                <textarea
-                  rows="3"
-                  value={layout.description}
-                  onchange={(e) => describe(e.currentTarget.value)}></textarea>
-              </label>
-            {:else if layout.description}
-              <p class="description">{layout.description}</p>
-            {/if}
-            {#if ownLayout}
-              <div class="actions">
-                <Button size="sm" variant="danger" onclick={removeLayout}
-                  >{t('look-delete-layout')}</Button
-                >
-              </div>
-            {/if}
-          {/if}
-          <div class="actions about">
-            <Button size="sm" onclick={() => aboutDocumentUi.open({ project, at })}
-              >{t('about-menu')}</Button
-            >
-          </div>
+        <!-- The document type: where the look is taken from, and what this document changes. -->
+        <section class="part" data-part="document-type">
+          <h3>{sectionWords['document-type']}</h3>
+          <TypeSection
+            {project}
+            {at}
+            {target}
+            {template}
+            changes={changeList}
+            onreset={takeAgain}
+            onchoose={(format) => setOwn({ format })}
+          />
         </section>
       {/if}
     {/if}
@@ -2182,40 +2049,6 @@
   .through :global(.row.check) {
     grid-template-columns: minmax(0, 1fr) auto;
   }
-  /* What the document is, and the layout in a line under it. */
-  .whole {
-    margin: 0 -16px 10px;
-    padding: 8px 16px 10px;
-    border-bottom: 1px solid var(--line);
-    background: var(--paper);
-  }
-  /* What the document is, by name, and the plain button that opens its type in Document properties. */
-  .type-line {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    min-width: 0;
-  }
-  .type-line .name {
-    flex: 1;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    color: var(--ink);
-    font-family: var(--font-text);
-    font-size: 16px;
-  }
-  .type-line :global(button) {
-    flex: none;
-  }
-  .layout-line {
-    font-size: var(--text-sm);
-    color: var(--ink-3);
-  }
-  .layout-line:hover {
-    color: var(--accent-strong);
-  }
   /* Where the changes hold: a line of its own under the layout. */
   .scope-line {
     display: flex;
@@ -2229,36 +2062,6 @@
   .scope-line select {
     flex: 1 1 12em;
     min-width: 0;
-  }
-  .link {
-    padding: 0;
-    border: none;
-    background: transparent;
-    color: inherit;
-    font: inherit;
-    text-align: left;
-    cursor: pointer;
-  }
-  .link:hover {
-    text-decoration: underline;
-  }
-  .changed {
-    margin: 0 0 8px;
-    padding: 6px 10px;
-    list-style: none;
-    border-radius: var(--radius-m);
-    background: var(--paper-sunken);
-    font-size: var(--text-sm);
-  }
-  .changed li {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 2px 8px;
-    padding: 3px 0;
-  }
-  .changed small {
-    color: var(--ink-3);
   }
   .again {
     padding: 0;
@@ -2420,10 +2223,6 @@
   details :global(.row:last-child) {
     border-bottom: none;
   }
-  .description {
-    margin: 0 0 10px;
-    line-height: 1.5;
-  }
   .error {
     padding: 8px 12px;
     margin-bottom: 12px;
@@ -2431,31 +2230,5 @@
     background: var(--danger-soft);
     color: var(--danger);
     white-space: pre-wrap;
-  }
-  .keep {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin: 10px 0 14px;
-  }
-  .keep .name {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    width: 100%;
-  }
-  .keep input {
-    flex: 1;
-    min-width: 140px;
-    height: 28px;
-    padding: 0 8px;
-    border: 1px solid var(--line-strong);
-    border-radius: var(--radius-s);
-    background: var(--paper-raised);
-    outline: none;
-  }
-  .keep input:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px var(--focus-ring);
   }
 </style>

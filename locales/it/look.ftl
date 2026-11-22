@@ -11,15 +11,7 @@ look-scope = Queste modifiche valgono per
 look-scope-document = Tutto il documento: { $name }
 # Only one element under the document, by its name.
 look-scope-only = Solo { $name }
-# The line under it, which goes down to the layout at the foot of Look; the count of changes follows it.
-look-layout-line = Impaginazione: { $layout }
 
-# After the name of the layout at the top of the panel: "Manuscript · 2 changes".
-look-changes = { $count ->
-    [one] { $count } modifica
-    [many] { $count } modifiche
-   *[other] { $count } modifiche
-  }
 # Under a setting the document sets otherwise than its layout.
 look-changed-here = Modificato qui
 # A change made on an element over this one, as a book over its chapters.
@@ -46,11 +38,6 @@ look-first-headings-numbered = I titoli sono numerati
 look-at-citations = Citazioni
 look-at-bibliography = Bibliografia
 
-look-keep = Tieni queste modifiche come un'impaginazione mia…
-look-keep-save = Tieni
-# Where the layout is one of the writer's own.
-look-put-into = Metti queste modifiche in «{ $name }»
-look-delete-layout = Elimina questa mia impaginazione…
 
 ## The parts of the document type, a section of Look: the parts the program
 ## makes itself and the kinds of elements given a place of their own, in one
@@ -86,9 +73,6 @@ look-hide = Nascondi l'aspetto
 
 look-section-line-numbers = Numeri di riga
 look-section-type-parts = Parti del tipo di documento
-look-section-the-layout = Impaginazione
-look-choose-layout = Scegli un'impaginazione
-look-layout-modifications = Modifiche all'impaginazione
 look-at-quotations-warning = Citazioni
 look-at-paragraph-kinds = Tipi di paragrafo
 look-at-words-kinds = Tipi di parole

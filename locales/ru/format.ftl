@@ -13,15 +13,6 @@ format-kind-poetry = Поэзия
 
 ## The format editor.
 
-format-name = Название формата
-# The name a format of one's own is first given, made from that of the format it is made from.
-format-name-changed = { $name }, изменённый
-format-saved = «{ $name }» сохранён среди ваших форматов
-format-save-failed = Не удалось сохранить формат.
-format-delete-failed = Не удалось удалить формат.
-format-delete-title = Удалить формат «{ $name }»?
-format-delete-message = Карты, которые им пользуются, перейдут на общий формат рукописи.
-format-delete-confirm = Удалить формат
 
 ## The parts of a format, as they are chosen at the left.
 
@@ -250,7 +241,6 @@ format-page-numbers-show = Страницы нумеруются
 
 ## About the format: where its requirements are from.
 
-format-description = Описание
 format-source = Откуда требования
 # The date the source was read on.
 format-source-read = Прочитано { $date }.

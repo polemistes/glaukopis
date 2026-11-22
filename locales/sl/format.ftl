@@ -13,15 +13,6 @@ format-kind-poetry = Poezija
 
 ## The format editor.
 
-format-name = Ime formata
-# The name a format of one's own is first given, made from that of the format it is made from.
-format-name-changed = { $name }, spremenjen
-format-saved = »{ $name }« je shranjen med vašimi lastnimi formati
-format-save-failed = Formata ni bilo mogoče shraniti.
-format-delete-failed = Formata ni bilo mogoče izbrisati.
-format-delete-title = Izbrisati format »{ $name }«?
-format-delete-message = Miselni vzorci, ki ga uporabljajo, bodo namesto njega uporabljali splošni format rokopisa.
-format-delete-confirm = Izbriši format
 
 ## The parts of a format, as they are chosen at the left.
 
@@ -250,7 +241,6 @@ format-page-numbers-show = Strani so oštevilčene
 
 ## About the format: where its requirements are from.
 
-format-description = Opis
 format-source = Od kod so zahteve
 # The date the source was read on.
 format-source-read = Prebrano { $date }.

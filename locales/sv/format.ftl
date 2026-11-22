@@ -13,15 +13,6 @@ format-kind-poetry = Poesi
 
 ## Layouts of the writer's own, kept from the changes of a document.
 
-format-name = Layoutens namn
-# The name a layout of one's own is first given, made from that of the layout it is made from.
-format-name-changed = { $name }, ändrad
-format-saved = ”{ $name }” är sparad bland dina egna layouter
-format-save-failed = Layouten kunde inte sparas.
-format-delete-failed = Layouten kunde inte raderas.
-format-delete-title = Radera layouten ”{ $name }”?
-format-delete-message = Element som använder den kommer att använda den allmänna manuskriptlayouten i stället.
-format-delete-confirm = Radera layouten
 
 ## Words that stand in several parts.
 
@@ -319,7 +310,6 @@ format-item-text = Egna ord
 
 ## About the layout: where its requirements are from.
 
-format-description = Beskrivning
 format-source = Var kraven kommer från
 # The date the source was read on.
 format-source-read = Läst { $date }.

@@ -17,7 +17,7 @@ export type LookSection =
   | 'figures'
   | 'front'
   | 'contents'
-  | 'layout';
+  | 'document-type';
 
 export const LOOK_SECTIONS: readonly LookSection[] = [
   'page',
@@ -29,7 +29,7 @@ export const LOOK_SECTIONS: readonly LookSection[] = [
   'figures',
   'front',
   'contents',
-  'layout',
+  'document-type',
 ];
 
 export interface LookRequest {
@@ -50,6 +50,12 @@ class LookUi {
   asked = $state(0);
   /** What it was last asked for. */
   request = $state.raw<LookRequest>({});
+  /**
+   * The document type of the writer's own being edited, by its id; nothing
+   * while none is. While it is the type of the document Look is on, every
+   * change written in Look goes into the type at once.
+   */
+  editing = $state<string | null>(null);
 
   open(request: LookRequest = {}) {
     this.request = request;

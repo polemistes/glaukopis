@@ -13,15 +13,6 @@ format-kind-poetry = Poesia
 
 ## Layouts of the writer's own, kept from the changes of a document.
 
-format-name = Nome dell'impaginazione
-# The name a layout of one's own is first given, made from that of the layout it is made from.
-format-name-changed = { $name }, modificato
-format-saved = «{ $name }» è salvata tra le tue impaginazioni
-format-save-failed = L'impaginazione non si è potuta salvare.
-format-delete-failed = L'impaginazione non si è potuta eliminare.
-format-delete-title = Eliminare l'impaginazione «{ $name }»?
-format-delete-message = Gli elementi che la usano useranno invece l'impaginazione generale da manoscritto.
-format-delete-confirm = Elimina l'impaginazione
 
 ## Words that stand in several parts.
 
@@ -319,7 +310,6 @@ format-item-text = Parole mie
 
 ## About the layout: where its requirements are from.
 
-format-description = Descrizione
 format-source = Da dove vengono i requisiti
 # The date the source was read on.
 format-source-read = Letta il { $date }.

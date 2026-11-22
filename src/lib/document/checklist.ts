@@ -19,6 +19,7 @@ import type { Project } from '$lib/project/model/project.svelte';
 import { inlineText } from '$lib/project/model/text';
 import type { PassageKindRecord } from '$lib/project/model/types';
 import { isDoubled, partOf, partSpec, type PartSpec } from '$lib/project/parts';
+import { partsStanding } from './stands';
 import { generatedPartWords } from './templates';
 
 export type RemarkKind =
@@ -205,14 +206,10 @@ export function checklist(
 
   // What the document is made of, as it stands under the element: each kind of
   // part once, where its first element stands, and the text where it begins.
-  const stands: string[] = [];
-  if ((project.node(at)?.words ?? 0) > 0) stands.push('body');
-  for (const child of children(at)) {
-    const part = partOf(project, project.node(child)?.kind);
-    if (part?.place === 'cover' || part?.place === 'none') continue;
-    const what = part?.id ?? 'body';
-    if (!stands.includes(what)) stands.push(what);
-  }
+  const stands = partsStanding(project, at).filter((what) => {
+    const place = partSpec(what)?.place;
+    return place !== 'cover' && place !== 'none';
+  });
 
   // Works cited, and no bibliography: none is printed where no element of the kind stands.
   if (

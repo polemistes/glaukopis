@@ -13,15 +13,6 @@ format-kind-poetry = 詩
 
 ## 書き手の独自のレイアウト。文書の変更を保存したもの。
 
-format-name = レイアウトの名前
-# 独自のレイアウトに最初に付く名前。もとにしたレイアウトの名前から作る。
-format-name-changed = { $name }（変更）
-format-saved = 「{ $name }」を独自のレイアウトに保存しました
-format-save-failed = レイアウトを保存できませんでした。
-format-delete-failed = レイアウトを削除できませんでした。
-format-delete-title = レイアウト「{ $name }」を削除しますか？
-format-delete-message = このレイアウトを使っている要素は、代わりに一般的な原稿のレイアウトを使います。
-format-delete-confirm = レイアウトを削除
 
 ## いくつかの部分に出る語。
 
@@ -319,7 +310,6 @@ format-item-text = 独自の文言
 
 ## レイアウトについて：その要件の出典。
 
-format-description = 説明
 format-source = 要件の出典
 # 出典を参照した日付。
 format-source-read = { $date }に参照。

@@ -13,16 +13,6 @@ format-kind-poetry = Lyrikk
 
 ## Redigeringen av et oppsett.
 
-format-name = Navnet på oppsettet
-# Navnet et eget oppsett først får, laget av navnet på oppsettet det lages av.
-format-name-changed = { $name }, endret
-format-saved = «{ $name }» er lagret blant dine egne oppsett
-format-save-failed = Oppsettet kunne ikke lagres.
-format-delete-failed = Oppsettet kunne ikke slettes.
-format-delete-title = Slette oppsettet «{ $name }»?
-format-delete-message = Elementer som bruker det, vil bruke det generelle manusoppsettet i stedet.
-format-delete-confirm = Slett oppsettet
-
 ## Delene av et oppsett, slik de velges til venstre.
 
 ## Ord som står i flere deler.
@@ -314,7 +304,6 @@ format-item-text = Egne ord
 
 ## Om oppsettet: hvor kravene kommer fra.
 
-format-description = Beskrivelse
 format-source = Hvor kravene kommer fra
 # Datoen kilden ble lest.
 format-source-read = Lest { $date }.

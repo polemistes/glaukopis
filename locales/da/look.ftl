@@ -11,14 +11,7 @@ look-scope = Disse ændringer gælder for
 look-scope-document = Hele dokumentet: { $name }
 # Only one element under the document, by its name.
 look-scope-only = Kun { $name }
-# The line under it, which goes down to the layout at the foot of Look; the count of changes follows it.
-look-layout-line = Opsætning: { $layout }
 
-# After the name of the layout at the top of the panel: "Manuscript · 2 changes".
-look-changes = { $count ->
-    [one] { $count } ændring
-   *[other] { $count } ændringer
-  }
 # Under a setting the document sets otherwise than its layout.
 look-changed-here = Ændret her
 # A change made on an element over this one, as a book over its chapters.
@@ -45,11 +38,6 @@ look-first-headings-numbered = Overskrifterne nummereres
 look-at-citations = Kildehenvisninger
 look-at-bibliography = Litteraturliste
 
-look-keep = Gem disse ændringer som min egen opsætning…
-look-keep-save = Gem
-# Where the layout is one of the writer's own.
-look-put-into = Læg disse ændringer ind i »{ $name }«
-look-delete-layout = Slet denne af mine opsætninger…
 
 ## The parts of the document type, a section of Look: the parts the program
 ## makes itself and the kinds of elements given a place of their own, in one
@@ -85,9 +73,6 @@ look-hide = Skjul udseendet
 
 look-section-line-numbers = Linjenumre
 look-section-type-parts = Dokumenttypens dele
-look-section-the-layout = Opsætning
-look-choose-layout = Vælg en opsætning
-look-layout-modifications = Ændringer i opsætningen
 look-at-quotations-warning = Citater
 look-at-paragraph-kinds = Arter af afsnit
 look-at-words-kinds = Arter af ord

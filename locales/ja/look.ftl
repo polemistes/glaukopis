@@ -11,13 +11,7 @@ look-scope = この変更の適用範囲
 look-scope-document = 文書全体：{ $name }
 # 文書の下の一つの要素だけ。その名前で。
 look-scope-only = { $name }のみ
-# その下の行。見た目の欄の末尾のレイアウトへ移る。変更の数が後に続く。
-look-layout-line = レイアウト：{ $layout }
 
-# 欄の上端のレイアウトの名前の後に：「原稿 · 2件の変更」。
-look-changes = { $count ->
-   *[other] { $count }件の変更
-  }
 # 文書がレイアウトと違う設定にしている項目の下に。
 look-changed-here = ここで変更
 # この要素より上の要素で行った変更。章に対する本のように。
@@ -44,11 +38,6 @@ look-first-headings-numbered = 見出しに番号を振る
 look-at-citations = 引用
 look-at-bibliography = 参考文献
 
-look-keep = これらの変更を独自のレイアウトとして保存…
-look-keep-save = 保存
-# レイアウトが書き手の独自のものであるとき。
-look-put-into = これらの変更を「{ $name }」に反映
-look-delete-layout = この独自のレイアウトを削除…
 
 ## 文書種別の部分。見た目の一部分：プログラムが自分で作る部分と、
 ## 自分の置き場所を与えられた要素の種類を、印刷される順に一つのリストで示し、
@@ -84,9 +73,6 @@ look-hide = 見た目を隠す
 
 look-section-line-numbers = 行番号
 look-section-type-parts = 文書種別の部分
-look-section-the-layout = レイアウト
-look-choose-layout = レイアウトを選択
-look-layout-modifications = レイアウトへの変更
 look-at-quotations-warning = 文中の引用
 look-at-paragraph-kinds = 段落の種類
 look-at-words-kinds = 語句の種類
