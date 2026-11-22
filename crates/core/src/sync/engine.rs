@@ -101,6 +101,27 @@ type HearsApart = Box<dyn Fn(&str, &str) + Send + std::marker::Sync>;
 /// there is none; nothing where there is no document.
 type Mine<'a> = &'a dyn Fn(Option<&[u8]>) -> Result<Option<Vec<u8>>>;
 
+/// A document of maps the core makes itself (`home`): what stands for no
+/// document on disk, made one for the journey.
+#[derive(Clone, Copy)]
+struct Maps {
+    /// Its kind, as the home keeps it; its id is `the`.
+    kind: &'static str,
+    /// The form of it this version writes and reads.
+    form: u32,
+    /// What is said where the home's is in a later form.
+    later: fn() -> String,
+}
+
+impl Maps {
+    fn name(&self) -> String {
+        format!("{}/the", self.kind)
+    }
+}
+
+/// The home document: the folders, the settings, what is said of each project.
+const HOME: Maps = Maps { kind: "home", form: HOME_FORM, later: || tr!("core-sync-later-home") };
+
 /// What the application does when the engine has something to tell.
 pub struct Hears {
     /// The status is another.
@@ -474,7 +495,7 @@ impl Sync {
             }
         }
         if round.home.as_ref().map(|(id, _)| id.as_str()) != Some(joined.home.as_str()) {
-            round.home = Some((joined.home.clone(), HomeDoc::load(self.kept.home()?.as_deref())?));
+            round.home = Some((joined.home.clone(), HomeDoc::load(self.kept.doc(HOME.kind)?.as_deref())?));
         }
         let Round { home: Some((_, doc)), docs, pictures, .. } = &mut *round else {
             unreachable!("the home document was read above")
@@ -495,8 +516,8 @@ impl Sync {
             Err(error) => problems.push(error.to_string()),
         }
         // What the projects wrote into the home document, that one is gone or is not, is sent.
-        if self.kept.unsent() {
-            self.exchange_home(&home, &joined, doc, docs)?;
+        if self.kept.unsent(HOME.kind) {
+            self.exchange_maps(&home, &joined, HOME, doc, docs)?;
         }
         Ok(problems)
     }
@@ -544,36 +565,111 @@ impl Sync {
         }
     }
 
-    // ---- the home document ----
+    // ---- the documents of maps: the home document, the library's ----
 
-    fn exchange_home(
+    /// One exchange of a document of maps: what it holds beyond what the
+    /// server was last seen to have is sent, and what came is taken in and
+    /// kept. Whether anything came.
+    fn exchange_maps(
         &self,
         home: &Home,
         joined: &Joined,
+        maps: Maps,
         doc: &HomeDoc,
         docs: &mut BTreeMap<String, String>,
-    ) -> Result<()> {
-        const NAME: &str = "home/the";
-        let cursor = kept::cursor(&self.kept.of_home()?, &joined.home, NAME);
+    ) -> Result<bool> {
+        let name = maps.name();
+        let of = self.kept.of_doc(maps.kind)?;
+        let mut cursor = kept::cursor(&of, &joined.home, &name);
+        // A document here that holds less than it was said to have had, lost
+        // or put back as it was earlier, asks for all of the server's: asked
+        // only for what lies beyond, it would never be given what it lost,
+        // and what its stores hold would be taken for what was taken out
+        // elsewhere.
+        if let Some(since) = cursor.as_ref().and_then(|c| c.since.as_deref()).and_then(unhex)
+            && !whole::covers(&doc.vector(), &since)?
+        {
+            tracing::warn!(document = %name, "a document of maps holds less than it did at the last exchange: all of it is asked for");
+            cursor = None;
+        }
         let seen = cursor.as_ref().and_then(|c| c.seen.clone());
         let since = cursor.as_ref().and_then(|c| c.since.as_deref()).and_then(unhex);
         let answer =
-            self.ask(home, "home", "the", seen.as_deref(), since.as_deref(), &|since| doc.beyond(since).map(Some))?;
-        if !whole::nothing(&answer.news) {
+            self.ask(home, maps.kind, "the", seen.as_deref(), since.as_deref(), &|since| doc.beyond(since).map(Some))?;
+        let news = !whole::nothing(&answer.news);
+        if news {
             doc.take_in(&answer.news)?;
         }
-        self.kept.keep_home(&doc.whole())?;
+        self.kept.keep_doc(maps.kind, &doc.whole())?;
         let seen = Cursor {
             home: joined.home.clone(),
-            doc: NAME.to_owned(),
+            doc: name.clone(),
             seen: Some(answer.digest.clone()),
             since: Some(hex(&answer.now)),
             lies: Lies::default(),
         };
-        kept::keep_cursor(&self.kept.of_home()?, &seen, &[])?;
-        self.kept.mark_unsent(false)?;
-        docs.insert(NAME.to_owned(), answer.digest);
-        Ok(())
+        kept::keep_cursor(&of, &seen, &[])?;
+        self.kept.mark_unsent(maps.kind, false)?;
+        docs.insert(name, answer.digest);
+        Ok(news)
+    }
+
+    /// Brings the stores of a document of maps and their maps to be the
+    /// same, and the document and the server's (`mirror`): what changed
+    /// elsewhere is taken in first, so that a store is compared with what
+    /// the map says now; what changed here is written into it; it is
+    /// exchanged; `between` is done with the document as it stands then; and
+    /// what changed elsewhere is written to the stores, in their order.
+    /// Whether the document changed in the round, here or elsewhere.
+    #[allow(clippy::too_many_arguments, reason = "what a round holds, handed on as it is")]
+    fn maps_round(
+        &self,
+        home: &Home,
+        joined: &Joined,
+        maps: Maps,
+        doc: &HomeDoc,
+        docs: &mut BTreeMap<String, String>,
+        stores: &[&dyn Store],
+        between: &mut dyn FnMut(&HomeDoc) -> Result<bool>,
+    ) -> Result<bool> {
+        let name = maps.name();
+        let cursor = kept::cursor(&self.kept.of_doc(maps.kind)?, &joined.home, &name);
+        let theirs = docs.get(&name).cloned();
+        let mut changed = false;
+        if theirs.is_some() && theirs != cursor.as_ref().and_then(|c| c.seen.clone()) {
+            changed |= self.exchange_maps(home, joined, maps, doc, docs)?;
+        }
+        if doc.form() > maps.form {
+            return Err(Error::invalid((maps.later)()));
+        }
+        // The computer that makes the document says its form.
+        if theirs.is_none() && cursor.is_none() && doc.begin(maps.form) {
+            self.kept.mark_unsent(maps.kind, true)?;
+        }
+        let mut outwards = Vec::with_capacity(stores.len());
+        let mut wrote = false;
+        for store in stores {
+            let (outward, written) = mirror::outward(doc, &self.kept, *store)?;
+            wrote |= written;
+            outwards.push(outward);
+        }
+        if wrote {
+            self.kept.keep_doc(maps.kind, &doc.whole())?;
+            self.kept.mark_unsent(maps.kind, true)?;
+            changed = true;
+        }
+        if self.kept.unsent(maps.kind) {
+            changed |= self.exchange_maps(home, joined, maps, doc, docs)?;
+        }
+        if between(doc)? {
+            self.kept.keep_doc(maps.kind, &doc.whole())?;
+            self.kept.mark_unsent(maps.kind, true)?;
+            changed = true;
+        }
+        for (store, outward) in stores.iter().zip(outwards) {
+            mirror::inward(doc, &self.kept, *store, outward)?;
+        }
+        Ok(changed)
     }
 
     fn home_round(
@@ -584,20 +680,6 @@ impl Sync {
         docs: &mut BTreeMap<String, String>,
         met: &BTreeSet<String>,
     ) -> Result<()> {
-        const NAME: &str = "home/the";
-        let cursor = kept::cursor(&self.kept.of_home()?, &joined.home, NAME);
-        let theirs = docs.get(NAME).cloned();
-        // What changed elsewhere is taken in first: a store is compared with what the home says now.
-        if theirs.is_some() && theirs != cursor.as_ref().and_then(|c| c.seen.clone()) {
-            self.exchange_home(home, joined, doc, docs)?;
-        }
-        if doc.form() > HOME_FORM {
-            return Err(Error::invalid(tr!("core-sync-later-home")));
-        }
-        // The computer that makes the home says the form of its document.
-        if theirs.is_none() && cursor.is_none() && doc.begin() {
-            self.kept.mark_unsent(true)?;
-        }
         let folders = Folders { projects: &self.projects };
         let places = Places { projects: &self.projects, met };
         let favourites = Favourites { projects: &self.projects, met };
@@ -606,31 +688,15 @@ impl Sync {
         let settings = Settings { path: self.settings.clone() };
         // The folders before what is put in them.
         let stores: [&dyn Store; 6] = [&folders, &places, &favourites, &facts, &shared, &settings];
-        let mut outwards = Vec::with_capacity(stores.len());
-        let mut wrote = false;
-        for store in stores {
-            let (outward, written) = mirror::outward(doc, &self.kept, store)?;
-            wrote |= written;
-            outwards.push(outward);
-        }
-        if wrote {
-            self.kept.keep_home(&doc.whole())?;
-            self.kept.mark_unsent(true)?;
-        }
-        if self.kept.unsent() {
-            self.exchange_home(home, joined, doc, docs)?;
-        }
-        for (store, outward) in stores.into_iter().zip(outwards) {
-            mirror::inward(doc, &self.kept, store, outward)?;
-        }
+        self.maps_round(home, joined, HOME, doc, docs, &stores, &mut |_| Ok(false))?;
         Ok(())
     }
 
-    /// Writes into the home document, to be sent at the end of the round.
-    fn note(&self, doc: &HomeDoc, map: &str, name: &str, value: Option<&str>) -> Result<()> {
+    /// Writes into a document of maps, to be sent at the end of the round.
+    fn note(&self, maps: Maps, doc: &HomeDoc, map: &str, name: &str, value: Option<&str>) -> Result<()> {
         if doc.put(map, name, value) {
-            self.kept.keep_home(&doc.whole())?;
-            self.kept.mark_unsent(true)?;
+            self.kept.keep_doc(maps.kind, &doc.whole())?;
+            self.kept.mark_unsent(maps.kind, true)?;
         }
         Ok(())
     }
@@ -783,7 +849,7 @@ impl Sync {
                     return Ok(());
                 }
                 // Written in since, here or elsewhere, or brought back here: it is kept, and not gone.
-                self.note(doc, "gone", id, None)?;
+                self.note(HOME, doc, "gone", id, None)?;
                 known.remove(id);
             }
             return self.exchange_project(home, joined, doc, docs, id);
@@ -808,7 +874,7 @@ impl Sync {
                     let dir = self.projects.trashed_dir(entry)?;
                     if let Some(cursor) = kept::cursor(&dir, &joined.home, &name) {
                         let gone = Gone { time: now_ms(), digest: cursor.seen };
-                        self.note(doc, "gone", id, Some(&serde_json::to_string(&gone)?))?;
+                        self.note(HOME, doc, "gone", id, Some(&serde_json::to_string(&gone)?))?;
                         known.insert(id.to_owned(), String::new());
                     }
                 }
@@ -986,7 +1052,7 @@ impl Sync {
             match here {
                 // What it is called here is told to the others, where they have not been told.
                 Some(name) if !name.is_empty() && doc.get("pictures", &picture.hash).is_none() => {
-                    self.note(doc, "pictures", &picture.hash, Some(&name))?;
+                    self.note(HOME, doc, "pictures", &picture.hash, Some(&name))?;
                     picture.name = name;
                 }
                 Some(name) => picture.name = name,
