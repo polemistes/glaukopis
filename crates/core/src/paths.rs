@@ -158,6 +158,12 @@ impl DataDir {
         self.root.join("words")
     }
 
+    /// What this computer keeps of being synchronized with the writer's
+    /// others (record 0119): made when it is first written to.
+    pub fn sync(&self) -> PathBuf {
+        self.root.join("sync")
+    }
+
     pub fn settings_file(&self) -> PathBuf {
         self.root.join("settings.json")
     }

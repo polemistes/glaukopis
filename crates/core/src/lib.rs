@@ -34,6 +34,7 @@ mod shelf;
 pub mod sidefile;
 pub mod spelling;
 pub mod styles;
+pub mod sync;
 pub mod templates;
 #[cfg(test)]
 pub(crate) mod testing;
