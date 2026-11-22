@@ -131,6 +131,8 @@
     return status.last ? t('sync-last', { when: ago(status.last) }) : t('sync-never');
   });
   const well = $derived(status?.state === 'idle' && !status.problem && !!status.last);
+  /** Nothing is wrong, and nothing was brought to be the same yet: the first round is on its way. */
+  const beginning = $derived(status?.state === 'idle' && !status.problem && !status.last);
 
   async function makeCode() {
     if (making) return;
@@ -320,7 +322,7 @@
       <div class="state">
         {#if well}
           <span class="mark ok"><Check size={13} /></span>
-        {:else if status.state === 'working'}
+        {:else if status.state === 'working' || beginning}
           <span class="mark busy"><Spinner size={12} /></span>
         {:else}
           <span class="mark"><TriangleAlert size={13} /></span>
