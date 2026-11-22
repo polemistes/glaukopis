@@ -6,7 +6,11 @@
 //! sync/home.bin           the home document, as one update (`home`)
 //! sync/home.unsent        there while it holds what the server was not sent
 //! sync/home/sync.json     what was last seen of the server's home document
+//! sync/library.bin        the library's document, and the same of it (`library`)
+//! sync/library.unsent
+//! sync/library/sync.json
 //! sync/base/<name>.json   what a store and its map agreed on when they last met (`mirror`)
+//! sync/<name>.json        what a round keeps from one run to the next (`note`)
 //! ```
 //!
 //! and, with each document that is synchronized, in its own folder:
@@ -36,10 +40,7 @@ use super::whole::Lies;
 
 const JOINED: &str = "sync.json";
 const TOKEN: &str = "sync.key";
-const HOME: &str = "home.bin";
 const BASE: &str = "base";
-const UNSENT: &str = "home.unsent";
-const OF_HOME: &str = "home";
 
 /// The home this computer is in, and who it is there.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
@@ -142,35 +143,37 @@ impl Kept {
         }
     }
 
-    /// The home document as it was last written; nothing before the first time.
-    pub fn home(&self) -> Result<Option<Vec<u8>>> {
-        match fs::read(self.dir.join(HOME)) {
+    /// A document of maps the core makes itself, by its kind (`home`,
+    /// `library`), as it was last written; nothing before the first time.
+    pub fn doc(&self, kind: &str) -> Result<Option<Vec<u8>>> {
+        let path = self.dir.join(format!("{kind}.bin"));
+        match fs::read(&path) {
             Ok(bytes) => Ok(Some(bytes)),
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(None),
-            Err(e) => Err(e).context(|| tr!("io-reading", path = &self.dir.join(HOME))),
+            Err(e) => Err(e).context(|| tr!("io-reading", path = &path)),
         }
     }
 
-    pub fn keep_home(&self, state: &[u8]) -> Result<()> {
+    pub fn keep_doc(&self, kind: &str, state: &[u8]) -> Result<()> {
         fs::create_dir_all(&self.dir).context(|| tr!("io-creating", path = &self.dir))?;
-        write_atomic(&self.dir.join(HOME), state)
+        write_atomic(&self.dir.join(format!("{kind}.bin")), state)
     }
 
-    /// Where what was last seen of the server's home document is kept, as
-    /// a document's is kept in its folder: a folder of its own, since what
-    /// says which home this computer is in has the same name.
-    pub fn of_home(&self) -> Result<PathBuf> {
-        let dir = self.dir.join(OF_HOME);
+    /// Where what was last seen of the server's document of this kind is
+    /// kept, as a document's is kept in its folder: a folder of its own,
+    /// since what says which home this computer is in has the same name.
+    pub fn of_doc(&self, kind: &str) -> Result<PathBuf> {
+        let dir = self.dir.join(kind);
         fs::create_dir_all(&dir).context(|| tr!("io-creating", path = &dir))?;
         Ok(dir)
     }
 
-    /// Notes that the home document holds something the server was not
+    /// Notes that a document of maps holds something the server was not
     /// sent, or that it was sent: kept on disk, since a name taken out of a
     /// map shows in no state vector, and the application may end between
     /// the writing and the sending.
-    pub fn mark_unsent(&self, unsent: bool) -> Result<()> {
-        let path = self.dir.join(UNSENT);
+    pub fn mark_unsent(&self, kind: &str, unsent: bool) -> Result<()> {
+        let path = self.dir.join(format!("{kind}.unsent"));
         if unsent {
             fs::create_dir_all(&self.dir).context(|| tr!("io-creating", path = &self.dir))?;
             write_atomic(&path, b"")
@@ -179,8 +182,18 @@ impl Kept {
         }
     }
 
-    pub fn unsent(&self) -> bool {
-        self.dir.join(UNSENT).is_file()
+    pub fn unsent(&self, kind: &str) -> bool {
+        self.dir.join(format!("{kind}.unsent")).is_file()
+    }
+
+    /// What a round keeps from one run to the next under a name; nothing
+    /// where nothing was kept, or what was kept cannot be read.
+    pub fn noted<T: DeserializeOwned>(&self, name: &str) -> Option<T> {
+        read_json(&self.dir.join(format!("{name}.json"))).ok().flatten()
+    }
+
+    pub fn note<T: Serialize>(&self, name: &str, value: &T) -> Result<()> {
+        write_json(&self.dir.join(format!("{name}.json")), value)
     }
 
     fn base_file(&self, name: &str) -> PathBuf {
@@ -195,6 +208,13 @@ impl Kept {
 
     pub fn keep_base(&self, name: &str, agreed: &BTreeMap<String, String>) -> Result<()> {
         write_json(&self.base_file(name), agreed)
+    }
+
+    /// Forgets what a store and its map agreed on: they meet the next time
+    /// as for the first time, where what the map says stands and nothing is
+    /// taken out of either.
+    pub fn forget_base(&self, name: &str) -> Result<()> {
+        remove(&self.base_file(name))
     }
 }
 
@@ -311,15 +331,25 @@ mod tests {
         }
         kept.rename("The desk").unwrap();
         assert_eq!(kept.joined().unwrap().unwrap().0.name, "The desk");
-        kept.keep_home(b"state").unwrap();
+        kept.keep_doc("home", b"state").unwrap();
+        kept.keep_doc("library", b"another").unwrap();
+        assert_eq!(kept.doc("home").unwrap().as_deref(), Some(&b"state"[..]));
+        kept.mark_unsent("library", true).unwrap();
+        assert!(kept.unsent("library") && !kept.unsent("home"), "each document says it of itself");
         kept.keep_base("folders", &BTreeMap::from([("a".to_owned(), "1".to_owned())])).unwrap();
         assert_eq!(kept.base("folders").unwrap().unwrap().len(), 1);
         assert_eq!(kept.base("settings").unwrap(), None);
+        kept.note("lies", &[1, 2]).unwrap();
+        assert_eq!(kept.noted::<Vec<u8>>("lies"), Some(vec![1, 2]));
+        kept.keep_base("files", &BTreeMap::new()).unwrap();
+        kept.forget_base("files").unwrap();
+        assert_eq!(kept.base("files").unwrap(), None);
 
         // Joining another home forgets what was kept of the first.
         let other = Joined { home: "other".into(), ..joined() };
         kept.join(&other, "t").unwrap();
-        assert_eq!(kept.home().unwrap(), None);
+        assert_eq!(kept.doc("home").unwrap(), None);
+        assert_eq!(kept.doc("library").unwrap(), None);
         assert_eq!(kept.base("folders").unwrap(), None);
 
         kept.leave().unwrap();

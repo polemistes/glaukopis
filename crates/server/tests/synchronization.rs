@@ -560,7 +560,7 @@ async fn the_images_a_project_uses_are_on_every_computer_under_their_names() {
         a.projects.update_info(&iliad, |info| info.pictures = vec![vase.hash.clone()]).unwrap();
         a.round();
         b.round();
-        // What the list shows of the project came with it, and by that the other computer knows the image; a round fetches it.
+        // The image is a file of the library: its record came with the library's document, and the file followed its record.
         b.round();
         let (there, path) = b.library.lock().unwrap().image(&vase.hash).expect("the image is on the other computer");
         assert_eq!(there.name, "vase.png", "under the name it has on the first");

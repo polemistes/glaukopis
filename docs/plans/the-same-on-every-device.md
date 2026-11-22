@@ -228,6 +228,36 @@ For each store that is not a document: what it holds, flat, as names and values;
 
 At the first meeting with a home that holds something, what the map has stands, and the store adds only the names the map lacks.
 
+### The library's document
+
+A document of the kind the home document is, kept beside it in `sync/library.bin` and exchanged by the same steps (`sync/library.rs`): a library may hold thousands of references, and is not put into the home document. Its stores are mirrors as the others are, written in this order: the folders of the files, the record of the files, the references, the collections.
+
+| Map | Key | Value |
+| --- | --- | --- |
+| `meta` | `form` | `"1"` |
+| `file-folders` | `<folder>/name`, `<folder>/parent`, `<folder>/order` | a folder of the files, field by field |
+| `files` | `<hash>/added` | the record of a file of the store: when it was taken in |
+| | `<hash>/name`, `/folder`, `/origin`, `/width`, `/height`, `/alt`, `/from`, `/notebook` | the rest of the record, field by field |
+| | `<hash>/mark/<id>` | a bookmark in the file: `{page, at, name}` |
+| `references` | `<id>/=added` | a reference: when it was added |
+| | `<id>/=type`, `/=key`, `/=modified`, `/=merged`, `/=zotero` | the entry's own parts |
+| | `<id>/<field>` | each field of the entry but `file` (a field's name holds no `=`) |
+| | `<id>/=file/<hash>` | a file of the store it has, by its place among them |
+| `collections` | `<collection>/created` | a collection: when it was made |
+| | `<collection>/name`, `/parent` | |
+| | `<collection>/in/<entry>` | an entry in it, by its place among them |
+| `stored` | `<hash>` | that the home holds the file, and its size |
+
+A reference, a collection and a record are each there by a name that never changes once it is made (`=added`, `created`, `added`). Deleted on one computer while another changed it, what the other wrote stands without that name, and every computer that holds the thing, in its store or in what it last agreed, puts back what the map lacks; deleted here after it was changed elsewhere, it is taken back. It is kept, then, on every computer, as a project is. A folder of the files is there by its name, as a folder of projects is.
+
+What lies only on this disk stays: where a file lies in the store (the record's path, and the paths of the `file` field, which follows as hashes); a path in that field outside the store; what `library.bib` holds besides its entries; the small pictures of the files. Two entries with one key: the one whose id comes first keeps it, the other is given one made from it, and that is written into the map at the next round, so that every computer comes to give the same. Where the library found one of its files amiss when it read it (set aside, read in part, a store with files the record did not know), that store meets its map as for the first time. An entry held in text of `library.bib` that could not be read is neither written nor taken out. A file whose record was taken out elsewhere and that the notes here hold stays, held by the notebook alone, and its record is told again.
+
+The library's round reads nothing where its three files lie as they did when it was last brought to be the same (how much each holds and when it was written, kept in `sync/library-lies.json`) and the server's document is the one last seen. The library counts how often it writes its files, so that what the round wrote itself is told from what was written meanwhile. A library that holds nothing, of a home that has none, is sent to no one.
+
+### The files
+
+The files of the store follow their records (`sync/files.rs`): every file of the store has one, the library's, the images of the projects, the files the notes hold. After the records, by those of the library's document: a file a record names that is here and that `stored` does not name is sent, and `stored` says so; one a record names that `stored` names and that is not here is fetched; one `stored` names that no record names is taken off the server. A file is sent from the disk and fetched to the disk a piece at a time, never held whole; what is fetched is written beside where it is to stand, under a name the store takes for a copy being made, and becomes the file of the store when it is whole and holds what its name says (`Library::keep_arrived`). A file larger than the server takes is not sent, and is said once in a run; a file the server says it has not is taken out of `stored`, so that whoever has it sends it again. The files are looked at only at the first round of a run, after the library's document changed in the round, or where something was left to try again: a round in which nothing changed asks nothing of the server beyond the list.
+
 ## The shell and the interface
 
 ### Commands (`src-tauri/src/commands/sync.rs`, `src/lib/api/sync.ts`)

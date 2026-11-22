@@ -13,6 +13,9 @@
 //!    one last seen; one that was deleted goes to the trash, or is kept
 //!    where this computer holds more of it than the deleter saw.
 //! 4. The notebook.
+//! 5. The library (`library`): its stores and the library's document, where
+//!    either changed; then the files of the store follow their records
+//!    (`files`), where they are due.
 //!
 //! What fails for one document is said and the round goes on with the next;
 //! what fails for the server as a whole ends the round, which is tried again.
@@ -20,6 +23,7 @@
 //! The thread is woken when something was written here (`touched`), and
 //! otherwise asks the server every half minute.
 
+use std::cell::Cell;
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Condvar, Mutex, MutexGuard, PoisonError};
@@ -30,19 +34,22 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::{Error, Result};
 use crate::history::{Record, now_ms};
-use crate::library::figures::Images;
 use crate::library::{Library, now};
 use crate::net::Client;
 use crate::notebook::Notebook;
 use crate::paths::DataDir;
 use crate::projects::{Projects, keep_whole};
-use crate::sharing::Used;
 use crate::tr;
 
 use super::arrangement::{Favourites, Folders, Places};
 use super::facts::{Facts, SharedProjects};
+use super::files;
 use super::home::{HOME_FORM, HomeDoc};
 use super::kept::{self, Apart, Cursor, Joined, Kept};
+use super::library::{
+    Collections, FileFolders, LIBRARY_FORM, OF_COLLECTIONS, OF_RECORDS, OF_REFERENCES, Records, References, STORED,
+    Things, forget_agreed, keys_made_here, put_back, take_back,
+};
 use super::mirror::{self, Store};
 use super::remote::{self, Answer, Home, Listing, NewCode, Told};
 use super::settings::Settings;
@@ -101,6 +108,100 @@ type HearsApart = Box<dyn Fn(&str, &str) + Send + std::marker::Sync>;
 /// there is none; nothing where there is no document.
 type Mine<'a> = &'a dyn Fn(Option<&[u8]>) -> Result<Option<Vec<u8>>>;
 
+/// A document of maps the core makes itself (`home`): what stands for no
+/// document on disk, made one for the journey.
+#[derive(Clone, Copy)]
+struct Maps {
+    /// Its kind, as the home keeps it; its id is `the`.
+    kind: &'static str,
+    /// The form of it this version writes and reads.
+    form: u32,
+    /// What is said where the home's is in a later form.
+    later: fn() -> String,
+}
+
+impl Maps {
+    fn name(&self) -> String {
+        format!("{}/the", self.kind)
+    }
+}
+
+/// The home document: the folders, the settings, what is said of each project.
+const HOME: Maps = Maps { kind: "home", form: HOME_FORM, later: || tr!("core-sync-later-home") };
+
+/// The library's document: the references, the collections, the record of the files (`library`).
+const LIBRARY: Maps = Maps { kind: "library", form: LIBRARY_FORM, later: || tr!("core-sync-later-library") };
+
+/// What a round of a document of maps does beyond the mirror (`maps_round`).
+trait Meeting {
+    /// Before what changed here is written into the maps; `news` says
+    /// whether what changed elsewhere was taken in just before.
+    fn before(&self, _doc: &HomeDoc, _news: bool) -> Result<()> {
+        Ok(())
+    }
+
+    /// After the exchange, before what changed elsewhere is written to the
+    /// stores. Whether it wrote into the document.
+    fn between(&self, _doc: &HomeDoc) -> Result<bool> {
+        Ok(false)
+    }
+}
+
+/// A round of the mirror and nothing more.
+struct Plain;
+
+impl Meeting for Plain {}
+
+/// The library's stores whose things are many names each: a thing deleted
+/// on one computer while another changed it is kept (`library`).
+struct OfLibrary<'a> {
+    kept: &'a Kept,
+    things: [(&'a dyn Store, Things); 3],
+}
+
+impl Meeting for OfLibrary<'_> {
+    fn before(&self, doc: &HomeDoc, news: bool) -> Result<()> {
+        // Where nothing came, the maps say what the stores agreed on last.
+        if news {
+            for (store, things) in self.things {
+                take_back(doc, self.kept, store, things)?;
+            }
+        }
+        Ok(())
+    }
+
+    fn between(&self, doc: &HomeDoc) -> Result<bool> {
+        let mut wrote = false;
+        for (store, things) in self.things {
+            wrote |= put_back(doc, self.kept, store, things)?;
+        }
+        Ok(wrote)
+    }
+}
+
+/// Under what name the round keeps how the library's files lay (`LibraryLies`).
+const LIBRARY_LIES: &str = "library-lies";
+
+/// How the files of the library lay when it was last brought to be the
+/// same: how much each holds and when it was written. Where all three are
+/// as they were, nothing was written to the library since.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+struct LibraryLies {
+    references: (u64, i64),
+    collections: (u64, i64),
+    files: (u64, i64),
+}
+
+impl LibraryLies {
+    fn of(dir: &Path) -> Self {
+        LibraryLies {
+            references: whole::lying(&dir.join("library.bib")),
+            collections: whole::lying(&dir.join("collections.json")),
+            files: whole::lying(&dir.join(crate::library::files::FILE)),
+        }
+    }
+}
+
 /// What the application does when the engine has something to tell.
 pub struct Hears {
     /// The status is another.
@@ -134,8 +235,14 @@ struct Round {
     stamp: Option<String>,
     /// The digests of the home's documents, by kind and id.
     docs: BTreeMap<String, String>,
-    /// The images known to be both here and in the home: not asked about again in this run.
-    pictures: BTreeSet<String>,
+    /// The library's document, of the home whose id is with it.
+    library: Option<(String, HomeDoc)>,
+    /// What is kept in memory of the files of the store between rounds.
+    told: files::Told,
+    /// Whether the files of the store were last found the same here and in
+    /// the home, with nothing left to try again: until the library's
+    /// document changes, they are not looked at. Not at the first round of a run.
+    files_settled: bool,
 }
 
 #[derive(Default)]
@@ -157,7 +264,7 @@ struct Said {
 pub struct Sync {
     projects: Projects,
     notebook: Arc<Notebook>,
-    /// The library, for the images of the projects: held only while one is looked up or kept.
+    /// The library: held only while something is looked up or written, never while the network is waited for.
     library: Arc<Mutex<Library>>,
     settings: PathBuf,
     kept: Kept,
@@ -474,10 +581,14 @@ impl Sync {
             }
         }
         if round.home.as_ref().map(|(id, _)| id.as_str()) != Some(joined.home.as_str()) {
-            round.home = Some((joined.home.clone(), HomeDoc::load(self.kept.home()?.as_deref())?));
+            round.home = Some((joined.home.clone(), HomeDoc::load(self.kept.doc(HOME.kind)?.as_deref())?));
         }
-        let Round { home: Some((_, doc)), docs, pictures, .. } = &mut *round else {
-            unreachable!("the home document was read above")
+        if round.library.as_ref().map(|(id, _)| id.as_str()) != Some(joined.home.as_str()) {
+            round.library = Some((joined.home.clone(), HomeDoc::load(self.kept.doc(LIBRARY.kind)?.as_deref())?));
+        }
+        let Round { home: Some((_, doc)), library: Some((_, library)), docs, told, files_settled, .. } = &mut *round
+        else {
+            unreachable!("the documents of maps were read above")
         };
 
         let met = self.met(&joined, docs)?;
@@ -489,14 +600,17 @@ impl Sync {
             }
             problems.push(tr!("core-sync-problem-notebook", why = error.to_string()));
         }
-        match self.pictures_round(&home, doc, pictures) {
-            Ok(said) => problems.extend(said),
-            Err(error) if of_the_server(&error) => return Err(error),
-            Err(error) => problems.push(error.to_string()),
+        // After the notebook, whose notes hold files of the store.
+        if let Err(error) = self.library_round(&home, &joined, library, docs, told, files_settled, &mut problems) {
+            if of_the_server(&error) {
+                return Err(error);
+            }
+            tracing::warn!(%error, "the library could not be synchronized");
+            problems.push(tr!("core-sync-problem-library", why = error.to_string()));
         }
         // What the projects wrote into the home document, that one is gone or is not, is sent.
-        if self.kept.unsent() {
-            self.exchange_home(&home, &joined, doc, docs)?;
+        if self.kept.unsent(HOME.kind) {
+            self.exchange_maps(&home, &joined, HOME, doc, docs)?;
         }
         Ok(problems)
     }
@@ -544,36 +658,114 @@ impl Sync {
         }
     }
 
-    // ---- the home document ----
+    // ---- the documents of maps: the home document, the library's ----
 
-    fn exchange_home(
+    /// One exchange of a document of maps: what it holds beyond what the
+    /// server was last seen to have is sent, and what came is taken in and
+    /// kept. Whether anything came.
+    fn exchange_maps(
         &self,
         home: &Home,
         joined: &Joined,
+        maps: Maps,
         doc: &HomeDoc,
         docs: &mut BTreeMap<String, String>,
-    ) -> Result<()> {
-        const NAME: &str = "home/the";
-        let cursor = kept::cursor(&self.kept.of_home()?, &joined.home, NAME);
+    ) -> Result<bool> {
+        let name = maps.name();
+        let of = self.kept.of_doc(maps.kind)?;
+        let mut cursor = kept::cursor(&of, &joined.home, &name);
+        // A document here that holds less than it was said to have had, lost
+        // or put back as it was earlier, asks for all of the server's: asked
+        // only for what lies beyond, it would never be given what it lost,
+        // and what its stores hold would be taken for what was taken out
+        // elsewhere.
+        if let Some(since) = cursor.as_ref().and_then(|c| c.since.as_deref()).and_then(unhex)
+            && !whole::covers(&doc.vector(), &since)?
+        {
+            tracing::warn!(document = %name, "a document of maps holds less than it did at the last exchange: all of it is asked for");
+            cursor = None;
+        }
         let seen = cursor.as_ref().and_then(|c| c.seen.clone());
         let since = cursor.as_ref().and_then(|c| c.since.as_deref()).and_then(unhex);
         let answer =
-            self.ask(home, "home", "the", seen.as_deref(), since.as_deref(), &|since| doc.beyond(since).map(Some))?;
-        if !whole::nothing(&answer.news) {
+            self.ask(home, maps.kind, "the", seen.as_deref(), since.as_deref(), &|since| doc.beyond(since).map(Some))?;
+        let news = !whole::nothing(&answer.news);
+        if news {
             doc.take_in(&answer.news)?;
         }
-        self.kept.keep_home(&doc.whole())?;
+        self.kept.keep_doc(maps.kind, &doc.whole())?;
         let seen = Cursor {
             home: joined.home.clone(),
-            doc: NAME.to_owned(),
+            doc: name.clone(),
             seen: Some(answer.digest.clone()),
             since: Some(hex(&answer.now)),
             lies: Lies::default(),
         };
-        kept::keep_cursor(&self.kept.of_home()?, &seen, &[])?;
-        self.kept.mark_unsent(false)?;
-        docs.insert(NAME.to_owned(), answer.digest);
-        Ok(())
+        kept::keep_cursor(&of, &seen, &[])?;
+        self.kept.mark_unsent(maps.kind, false)?;
+        docs.insert(name, answer.digest);
+        Ok(news)
+    }
+
+    /// Brings the stores of a document of maps and their maps to be the
+    /// same, and the document and the server's (`mirror`): what changed
+    /// elsewhere is taken in first, so that a store is compared with what
+    /// the map says now; what changed here is written into it; it is
+    /// exchanged; and what changed elsewhere is written to the stores, in
+    /// their order. What a `meeting` does beyond that is done at its two
+    /// moments. Whether the document changed in the round, here or elsewhere.
+    #[allow(clippy::too_many_arguments, reason = "what a round holds, handed on as it is")]
+    fn maps_round(
+        &self,
+        home: &Home,
+        joined: &Joined,
+        maps: Maps,
+        doc: &HomeDoc,
+        docs: &mut BTreeMap<String, String>,
+        stores: &[&dyn Store],
+        meeting: &dyn Meeting,
+    ) -> Result<bool> {
+        let name = maps.name();
+        let cursor = kept::cursor(&self.kept.of_doc(maps.kind)?, &joined.home, &name);
+        let theirs = docs.get(&name).cloned();
+        let mut changed = false;
+        let mut news = false;
+        if theirs.is_some() && theirs != cursor.as_ref().and_then(|c| c.seen.clone()) {
+            news = self.exchange_maps(home, joined, maps, doc, docs)?;
+            changed |= news;
+        }
+        if doc.form() > maps.form {
+            return Err(Error::invalid((maps.later)()));
+        }
+        // The computer that makes the document says its form.
+        if theirs.is_none() && cursor.is_none() && doc.begin(maps.form) {
+            self.kept.mark_unsent(maps.kind, true)?;
+        }
+        meeting.before(doc, news)?;
+        let mut outwards = Vec::with_capacity(stores.len());
+        let mut wrote = false;
+        for store in stores {
+            let (outward, written) = mirror::outward(doc, &self.kept, *store)?;
+            wrote |= written;
+            outwards.push(outward);
+        }
+        if wrote {
+            self.kept.keep_doc(maps.kind, &doc.whole())?;
+            self.kept.mark_unsent(maps.kind, true)?;
+            changed = true;
+        }
+        if self.kept.unsent(maps.kind) {
+            changed |= self.exchange_maps(home, joined, maps, doc, docs)?;
+        }
+        if meeting.between(doc)? {
+            self.kept.keep_doc(maps.kind, &doc.whole())?;
+            self.kept.mark_unsent(maps.kind, true)?;
+            changed = true;
+        }
+        for (store, outward) in stores.iter().zip(outwards) {
+            mirror::inward(doc, &self.kept, *store, outward)?;
+        }
+        Ok(changed)
     }
 
     fn home_round(
@@ -584,20 +776,6 @@ impl Sync {
         docs: &mut BTreeMap<String, String>,
         met: &BTreeSet<String>,
     ) -> Result<()> {
-        const NAME: &str = "home/the";
-        let cursor = kept::cursor(&self.kept.of_home()?, &joined.home, NAME);
-        let theirs = docs.get(NAME).cloned();
-        // What changed elsewhere is taken in first: a store is compared with what the home says now.
-        if theirs.is_some() && theirs != cursor.as_ref().and_then(|c| c.seen.clone()) {
-            self.exchange_home(home, joined, doc, docs)?;
-        }
-        if doc.form() > HOME_FORM {
-            return Err(Error::invalid(tr!("core-sync-later-home")));
-        }
-        // The computer that makes the home says the form of its document.
-        if theirs.is_none() && cursor.is_none() && doc.begin() {
-            self.kept.mark_unsent(true)?;
-        }
         let folders = Folders { projects: &self.projects };
         let places = Places { projects: &self.projects, met };
         let favourites = Favourites { projects: &self.projects, met };
@@ -606,31 +784,129 @@ impl Sync {
         let settings = Settings { path: self.settings.clone() };
         // The folders before what is put in them.
         let stores: [&dyn Store; 6] = [&folders, &places, &favourites, &facts, &shared, &settings];
-        let mut outwards = Vec::with_capacity(stores.len());
-        let mut wrote = false;
-        for store in stores {
-            let (outward, written) = mirror::outward(doc, &self.kept, store)?;
-            wrote |= written;
-            outwards.push(outward);
+        self.maps_round(home, joined, HOME, doc, docs, &stores, &Plain)?;
+        Ok(())
+    }
+
+    // ---- the library ----
+
+    /// The library: its stores and the library's document, where either
+    /// changed; then its files, where they are due. Where the files of the
+    /// library lie as they did when it was last brought to be the same, and
+    /// the server's document is the one last seen, nothing of it is read.
+    #[allow(clippy::too_many_arguments, reason = "what a round holds, handed on as it is")]
+    fn library_round(
+        &self,
+        home: &Home,
+        joined: &Joined,
+        doc: &HomeDoc,
+        docs: &mut BTreeMap<String, String>,
+        told: &mut files::Told,
+        files_settled: &mut bool,
+        problems: &mut Vec<String>,
+    ) -> Result<()> {
+        let name = LIBRARY.name();
+        let cursor = kept::cursor(&self.kept.of_doc(LIBRARY.kind)?, &joined.home, &name);
+        // How its files lie, with how often the library wrote them, under one hold of it.
+        let (dir, empty, lies, writes, damaged) = {
+            let mut library = held(&self.library);
+            let empty = library.is_empty()
+                && library.collections.list.is_empty()
+                && library.files.files().is_empty()
+                && library.files.folders().is_empty();
+            let dir = library.dir().to_owned();
+            let lies = LibraryLies::of(&dir);
+            (dir, empty, lies, library.writes(), library.take_damaged())
+        };
+        // A library that holds nothing, of a home that has none, is nobody's to send.
+        if empty && cursor.is_none() && !docs.contains_key(&name) {
+            return Ok(());
         }
-        if wrote {
-            self.kept.keep_home(&doc.whole())?;
-            self.kept.mark_unsent(true)?;
+        // How often the round wrote the library's files itself.
+        let own = Cell::new(0);
+        let quiet = !damaged.any()
+            && !self.kept.unsent(LIBRARY.kind)
+            && cursor.is_some_and(|c| c.seen.as_ref() == docs.get(&name))
+            && self.kept.noted::<LibraryLies>(LIBRARY_LIES).as_ref() == Some(&lies);
+        let mut changed = false;
+        if !quiet {
+            // What was read from a damaged file is no change made here: the store meets its map as for the first time.
+            for (amiss, store) in [
+                (damaged.references, "references"),
+                (damaged.collections, "collections"),
+                (damaged.files, "files"),
+                (damaged.files, "file-folders"),
+            ] {
+                if amiss {
+                    tracing::warn!(
+                        store,
+                        "a file of the library was found amiss: it meets the home as for the first time"
+                    );
+                    self.kept.forget_base(store)?;
+                }
+            }
+            let held_by_notes: BTreeSet<String> = self.notebook.held().into_iter().collect();
+            let folders = FileFolders { library: &self.library, written: Cell::new(0) };
+            let records = Records {
+                library: &self.library,
+                doc,
+                held: &held_by_notes,
+                kept_for_notes: Default::default(),
+                written: Cell::new(0),
+            };
+            let references = References { library: &self.library, doc, written: Cell::new(0) };
+            let collections = Collections { library: &self.library, doc, written: Cell::new(0) };
+            // A folder before what is put in it, a record before the reference that names its file, a reference before its collection.
+            let stores: [&dyn Store; 4] = [&folders, &records, &references, &collections];
+            let meeting = OfLibrary {
+                kept: &self.kept,
+                things: [(&records, OF_RECORDS), (&references, OF_REFERENCES), (&collections, OF_COLLECTIONS)],
+            };
+            changed = self.maps_round(home, joined, LIBRARY, doc, docs, &stores, &meeting)?;
+            // What the library's rules made otherwise than the map said is told at the next round.
+            let keys = keys_made_here(&self.library, doc);
+            forget_agreed(&self.kept, references.name(), |name| keys.contains(name))?;
+            let kept = records.kept_for_notes.take();
+            forget_agreed(&self.kept, records.name(), |name| {
+                name.split_once('/').is_some_and(|(hash, _)| kept.contains(hash))
+            })?;
+            own.set(
+                folders.written.get() + records.written.get() + references.written.get() + collections.written.get(),
+            );
         }
-        if self.kept.unsent() {
-            self.exchange_home(home, joined, doc, docs)?;
+        if changed || !*files_settled {
+            let note = |hash: &str, size: Option<&str>| self.note(LIBRARY, doc, STORED, hash, size);
+            let done = files::bring(home, &self.library, doc, told, &note, &own)?;
+            problems.extend(done.problems);
+            *files_settled = !done.again;
         }
-        for (store, outward) in stores.into_iter().zip(outwards) {
-            mirror::inward(doc, &self.kept, store, outward)?;
+        // Where only the round wrote the library's files since they were
+        // looked at, they lie as it left them, and that is what is kept:
+        // nothing was changed here that the next round must read. Where
+        // anything else wrote them meanwhile, how they lay before is kept,
+        // and the next round reads them.
+        let (now, written) = {
+            let library = held(&self.library);
+            (LibraryLies::of(&dir), library.writes() - writes)
+        };
+        if written == own.get() {
+            if written > 0 || !quiet {
+                self.kept.note(LIBRARY_LIES, &now)?;
+            }
+        } else if !quiet {
+            self.kept.note(LIBRARY_LIES, &lies)?;
+        }
+        if self.kept.unsent(LIBRARY.kind) {
+            self.exchange_maps(home, joined, LIBRARY, doc, docs)?;
         }
         Ok(())
     }
 
-    /// Writes into the home document, to be sent at the end of the round.
-    fn note(&self, doc: &HomeDoc, map: &str, name: &str, value: Option<&str>) -> Result<()> {
+    /// Writes into a document of maps, to be sent at the end of the round.
+    fn note(&self, maps: Maps, doc: &HomeDoc, map: &str, name: &str, value: Option<&str>) -> Result<()> {
         if doc.put(map, name, value) {
-            self.kept.keep_home(&doc.whole())?;
-            self.kept.mark_unsent(true)?;
+            self.kept.keep_doc(maps.kind, &doc.whole())?;
+            self.kept.mark_unsent(maps.kind, true)?;
         }
         Ok(())
     }
@@ -783,7 +1059,7 @@ impl Sync {
                     return Ok(());
                 }
                 // Written in since, here or elsewhere, or brought back here: it is kept, and not gone.
-                self.note(doc, "gone", id, None)?;
+                self.note(HOME, doc, "gone", id, None)?;
                 known.remove(id);
             }
             return self.exchange_project(home, joined, doc, docs, id);
@@ -808,7 +1084,7 @@ impl Sync {
                     let dir = self.projects.trashed_dir(entry)?;
                     if let Some(cursor) = kept::cursor(&dir, &joined.home, &name) {
                         let gone = Gone { time: now_ms(), digest: cursor.seen };
-                        self.note(doc, "gone", id, Some(&serde_json::to_string(&gone)?))?;
+                        self.note(HOME, doc, "gone", id, Some(&serde_json::to_string(&gone)?))?;
                         known.insert(id.to_owned(), String::new());
                     }
                 }
@@ -961,45 +1237,6 @@ impl Sync {
         self.settle(joined, NAME, &dir, &got, appended)?;
         docs.insert(NAME.to_owned(), got.answer.digest.clone());
         Ok(())
-    }
-
-    // ---- the images of the projects ----
-
-    /// The images the projects use are brought to be the same here and in
-    /// the home. What each is called goes with it in the home document,
-    /// since a file says nothing of its name. Returns what could not be
-    /// done, in words.
-    fn pictures_round(&self, home: &Home, doc: &HomeDoc, known: &mut BTreeSet<String>) -> Result<Vec<String>> {
-        let mut used: Vec<Used> = Vec::new();
-        for info in self.projects.list()? {
-            for hash in info.pictures {
-                if !known.contains(&hash) && !used.iter().any(|u| u.hash == hash) {
-                    used.push(Used { hash, ..Default::default() });
-                }
-            }
-        }
-        if used.is_empty() {
-            return Ok(Vec::new());
-        }
-        for picture in &mut used {
-            let here = held(&self.library).image(&picture.hash).map(|(image, _)| image.name);
-            match here {
-                // What it is called here is told to the others, where they have not been told.
-                Some(name) if !name.is_empty() && doc.get("pictures", &picture.hash).is_none() => {
-                    self.note(doc, "pictures", &picture.hash, Some(&name))?;
-                    picture.name = name;
-                }
-                Some(name) => picture.name = name,
-                None => picture.name = doc.get("pictures", &picture.hash).unwrap_or_default(),
-            }
-        }
-        let synced = home.pictures(&*self.library, &used)?;
-        if synced.problems.is_empty() {
-            // Those that are here now are in the home as well: sent now, or there before.
-            let library = held(&self.library);
-            known.extend(used.into_iter().map(|u| u.hash).filter(|hash| library.image(hash).is_some()));
-        }
-        Ok(synced.problems)
     }
 
     // ---- what was written apart ----

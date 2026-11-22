@@ -563,7 +563,7 @@ pub struct Synced {
 }
 
 impl Remote<'_> {
-    fn refusal(&self, status: u16, body: &[u8]) -> Error {
+    pub(crate) fn refusal(&self, status: u16, body: &[u8]) -> Error {
         let host = net::host(&self.server);
         let value: Value = serde_json::from_slice(body).unwrap_or(Value::Null);
         let message = value.get("message").and_then(Value::as_str).unwrap_or("");
@@ -590,13 +590,13 @@ impl Remote<'_> {
     /// a project (`/api/rooms/<room>`), or the home of the writer's
     /// computers (`/api/homes/<home>`, record 0119), which keeps its files
     /// as a room does.
-    fn files_in(&self, store: &str, token: &str) -> Result<(Vec<RemoteFile>, u64)> {
+    pub(crate) fn files_in(&self, store: &str, token: &str) -> Result<(Vec<RemoteFile>, u64)> {
         let value = self.ask("GET", &format!("{store}/files"), Some(token), None)?;
         let most = value.get("maxFileBytes").and_then(Value::as_u64).unwrap_or(figures::MAX_BYTES);
         Ok((self.read(value.get("files").cloned().unwrap_or(Value::Null))?, most))
     }
 
-    fn file_url(&self, store: &str, hash: &str) -> String {
+    pub(crate) fn file_url(&self, store: &str, hash: &str) -> String {
         format!("{}{store}/files/{}", self.server, net::encode(hash))
     }
 

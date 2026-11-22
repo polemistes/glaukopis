@@ -165,6 +165,25 @@ pub fn store_bytes(library_dir: &Path, bytes: &[u8], name: &str) -> Result<Strin
     Ok(format!("{dir}/{name}"))
 }
 
+/// The stored path content with this hash is given under a name: where a
+/// file that comes from elsewhere is kept (`Library::keep_arrived`).
+pub fn path_for(hash: &str, name: &str) -> String {
+    format!("{}/{}", hash_dir(hash), safe_file_name(name, "file"))
+}
+
+/// Where a file with this hash that is arriving from elsewhere is written
+/// until it is whole: in the folder where it is to stand, under a name the
+/// store takes for a copy being made, so that what is left of one cut short
+/// is cleared away as such a copy is (`find_by_hash`). The folder is made.
+pub fn arriving(library_dir: &Path, hash: &str) -> Result<PathBuf> {
+    if !is_hash(hash) {
+        return Err(Error::invalid(tr!("core-pictures-not-as-asked")));
+    }
+    let dir = library_dir.join(hash_dir(hash));
+    fs::create_dir_all(&dir).context(|| tr!("io-creating", path = &dir))?;
+    Ok(dir.join(format!(".tmp-{}", uuid::Uuid::new_v4())))
+}
+
 /// The name to store under: the one asked for, with the extension of the source.
 fn file_name_for(name: &str, source: &Path) -> String {
     let ext = source.extension().map(|e| e.to_string_lossy().to_lowercase()).filter(|e| !e.is_empty() && e.len() <= 8);

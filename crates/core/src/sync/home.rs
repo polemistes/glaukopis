@@ -23,6 +23,10 @@
 //! of the application, as the interface has one for each document it opens:
 //! a client kept from run to run would write over its own changes should
 //! the folder of the data ever be put back as it was earlier.
+//!
+//! The library's document (`library`) is a document of the same kind, kept
+//! beside this one and exchanged by the same steps: the library may hold
+//! thousands of references, and is not put into the home document.
 
 use std::collections::BTreeMap;
 
@@ -145,17 +149,17 @@ impl HomeDoc {
         self.set(name, &BTreeMap::from([(key.to_owned(), value.map(str::to_owned))]))
     }
 
-    /// The form the home document says it is in; the first where it says none.
+    /// The form the document says it is in; the first where it says none.
     pub fn form(&self) -> u32 {
         self.get("meta", "form").and_then(|f| f.parse().ok()).unwrap_or(1).max(1)
     }
 
-    /// Says the form of the home document, where none is said: done by the
-    /// computer that makes the home.
-    pub fn begin(&self) -> bool {
+    /// Says the form of the document, where none is said: done by the
+    /// computer that makes it (`HOME_FORM` of the home document).
+    pub fn begin(&self, form: u32) -> bool {
         match self.get("meta", "form") {
             Some(_) => false,
-            None => self.put("meta", "form", Some(&HOME_FORM.to_string())),
+            None => self.put("meta", "form", Some(&form.to_string())),
         }
     }
 }
@@ -171,8 +175,8 @@ mod tests {
     #[test]
     fn what_is_written_into_a_map_is_read_and_kept() {
         let home = HomeDoc::new();
-        assert!(home.begin());
-        assert!(!home.begin(), "said once");
+        assert!(home.begin(HOME_FORM));
+        assert!(!home.begin(HOME_FORM), "said once");
         assert_eq!(home.form(), 1);
         assert!(home.set("settings", &changes(&[("theme", Some("\"dark\"")), ("language", Some("\"nb\""))])));
         assert!(!home.set("settings", &changes(&[("theme", Some("\"dark\""))])), "what it says already is not written");

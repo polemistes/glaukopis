@@ -1,5 +1,7 @@
 //! Fetching from the network. One client, which says who is asking.
 
+use std::io::{Read, Write};
+use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
@@ -211,6 +213,70 @@ impl Client {
         let status = response.status().as_u16();
         let body = bounded(response.body_mut(), 1024 * 1024).map_err(|e| Error::Network(describe(url, &e)))?;
         Ok(Bytes { status, body })
+    }
+
+    /// Sends a file to a server of our own as it is read from the disk, a
+    /// piece at a time, saying how much it holds: a file of any size is
+    /// never held in memory whole.
+    pub fn send_file(&self, url: &str, bearer: &str, path: &Path) -> Result<Bytes> {
+        let file = std::fs::File::open(path).map_err(|e| Error::io(tr!("io-reading", path = path), e))?;
+        let mut response = self
+            .patient
+            .put(url)
+            .header("User-Agent", &self.user_agent)
+            .header("Authorization", &format!("Bearer {bearer}"))
+            .header("Content-Type", "application/octet-stream")
+            .send(file)
+            .map_err(|e| Error::Network(describe(url, &e)))?;
+        let status = response.status().as_u16();
+        let body = bounded(response.body_mut(), 1024 * 1024).map_err(|e| Error::Network(describe(url, &e)))?;
+        Ok(Bytes { status, body })
+    }
+
+    /// Fetches a file from a server of our own into `into`, which writes to
+    /// the file at `path`, as it comes, a piece at a time, no more than
+    /// `limit`: a file of any size is never held in memory whole. What
+    /// another answer than a success holds is given back, as `fetch` gives
+    /// it, and nothing is written.
+    pub fn fetch_into(&self, url: &str, bearer: &str, into: &mut dyn Write, path: &Path, limit: u64) -> Result<Bytes> {
+        let mut response = self
+            .patient
+            .get(url)
+            .header("User-Agent", &self.user_agent)
+            .header("Authorization", &format!("Bearer {bearer}"))
+            .call()
+            .map_err(|e| Error::Network(describe(url, &e)))?;
+        let status = response.status().as_u16();
+        if !(200..300).contains(&status) {
+            let body = bounded(response.body_mut(), 1024 * 1024).map_err(|e| Error::Network(describe(url, &e)))?;
+            return Ok(Bytes { status, body });
+        }
+        // The library of the network refuses to read on once its limit is
+        // reached, even at the end: it is given one more, and what came is
+        // counted here.
+        let mut reader = response.body_mut().with_config().limit(limit.saturating_add(1)).reader();
+        let mut piece = vec![0u8; 1 << 16];
+        let mut came: u64 = 0;
+        loop {
+            let read = reader.read(&mut piece).map_err(|e| {
+                // What the library of the network found wrong comes wrapped in an error of reading.
+                match e.into_inner().map(|inner| inner.downcast::<ureq::Error>()) {
+                    Some(Ok(error)) => Error::Network(describe(url, &error)),
+                    Some(Err(other)) => Error::Network(describe(url, &ureq::Error::Io(std::io::Error::other(other)))),
+                    None => Error::Network(tr!("network-stalled", host = host(url))),
+                }
+            })?;
+            if read == 0 {
+                break;
+            }
+            came += read as u64;
+            // More than was asked for is a fault of this file, not of the server as a whole.
+            if came > limit {
+                return Err(Error::invalid(describe(url, &ureq::Error::BodyExceedsLimit(limit))));
+            }
+            into.write_all(&piece[..read]).map_err(|e| Error::io(tr!("io-writing", path = path), e))?;
+        }
+        Ok(Bytes { status, body: Vec::new() })
     }
 
     /// Sends bytes to a server of our own and takes bytes back, to at most

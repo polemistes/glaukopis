@@ -71,6 +71,13 @@ impl Collections {
         }
     }
 
+    /// Puts these in the stead of the collections there are, as they came
+    /// from elsewhere (`Library::put_collections`): mended as when they are read.
+    pub fn replace_all(&mut self, list: Vec<Collection>) {
+        self.list = list;
+        self.repair();
+    }
+
     pub fn get(&self, id: &str) -> Option<&Collection> {
         self.list.iter().find(|c| c.id == id)
     }

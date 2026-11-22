@@ -30,7 +30,9 @@ pub struct Lies {
     pub log: (u64, i64),
 }
 
-fn lying(path: &Path) -> (u64, i64) {
+/// How much a file holds, and when it was written, in nanoseconds since
+/// 1970; nothing where there is no file.
+pub fn lying(path: &Path) -> (u64, i64) {
     let Ok(meta) = fs::metadata(path) else { return (0, 0) };
     let written = meta
         .modified()
