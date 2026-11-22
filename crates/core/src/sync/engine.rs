@@ -45,7 +45,7 @@ use super::arrangement::{Favourites, Folders, Places};
 use super::facts::{Facts, SharedProjects};
 use super::files;
 use super::home::{HOME_FORM, HomeDoc};
-use super::kept::{self, Apart, Cursor, Joined, Kept};
+use super::kept::{self, Apart, Cursor, Joined, Kept, Takes};
 use super::library::{
     Collections, FileFolders, LIBRARY_FORM, OF_COLLECTIONS, OF_RECORDS, OF_REFERENCES, Records, References, STORED,
     Things, forget_agreed, keys_made_here, put_back, take_back,
@@ -275,6 +275,10 @@ pub struct Sync {
     templates: PathBuf,
     words: PathBuf,
     kept: Kept,
+    /// What the role that made the engine takes of a home: the application
+    /// everything, the phone the notes. What a round does is the narrower
+    /// of this and what the device joined as (`Takes::narrower`).
+    takes: Takes,
     client: Client,
     hears: Hears,
     round: Mutex<Round>,
@@ -334,15 +338,30 @@ fn refused_entry(error: &Error) -> bool {
 }
 
 impl Sync {
+    /// The engine of the device whose data is in `data`. `takes` is what
+    /// the role that makes it takes of a home: the application everything,
+    /// the phone the notes.
     pub fn new(
         data: &DataDir,
         projects: Projects,
         notebook: Arc<Notebook>,
         library: Arc<Mutex<Library>>,
+        takes: Takes,
         hears: Hears,
     ) -> Self {
         let kept = Kept::new(data);
-        let on = kept.joined().ok().flatten().is_some();
+        let joined = kept.joined().ok().flatten();
+        let on = joined.is_some();
+        if let Some((joined, _)) = &joined
+            && joined.takes != takes
+        {
+            // It does not happen to a device that is used as it was set up, and the writer is told nothing.
+            tracing::warn!(
+                role = ?takes,
+                joined = ?joined.takes,
+                "this device joined its home as another kind of device than it runs as: it does no more than both allow"
+            );
+        }
         Sync {
             projects,
             notebook,
@@ -353,6 +372,7 @@ impl Sync {
             templates: data.templates(),
             words: data.words(),
             kept,
+            takes,
             client: Client::new(),
             hears,
             round: Mutex::new(Round::default()),
@@ -400,7 +420,13 @@ impl Sync {
     }
 
     fn enter(&self, server: String, entered: remote::Entered, name: &str) -> Result<Status> {
-        let joined = Joined { server, home: entered.home, device: entered.device, name: name.to_owned() };
+        let joined = Joined {
+            server,
+            home: entered.home,
+            device: entered.device,
+            name: name.to_owned(),
+            takes: self.takes,
+        };
         self.kept.join(&joined, &entered.token)?;
         *held(&self.round) = Round::default();
         {
