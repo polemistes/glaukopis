@@ -3843,6 +3843,105 @@ the pane, to be read, without the field; **Delete the conversation**, at
 the head of the pane, takes every message out of the project, after it has
 asked.
 
+## Your computers, the same
+
+If you write on more than one computer, Glaukopis can keep them the same:
+what you make or write on one is on the others too. This goes through a
+server, the same kind as for working together (see `server.md`), and it is
+turned on once for each computer, under **Synchronization** in the settings.
+
+It is not sharing. Nobody else is let in, and nothing is chosen project by
+project: every project is on every computer, those you make later too. It
+is also a kind of backup, since the server and every computer hold
+everything.
+
+**On the first computer**, enter the address of the server and a name for
+the computer (the name the system gives it is offered), keep **Start here**,
+and press **Start synchronizing**. Where the server asks for a password,
+the field for it comes up.
+
+**To add another computer**, press **Add a computer…** on one that is
+synchronized already. It shows a code, which can be used once, within an
+hour. On the new computer, enter the same server and a name, choose **Join
+with a code**, enter the code, and press **Join**. What each held before is
+kept: the projects of both are on both after. Where both had a setting
+of their own, the one the others had stands.
+
+From then on, what is written on one computer reaches the others within
+half a minute, and a few seconds after it was written on the one. A project
+that is open on two computers follows along, though you do not see the
+other computer's cursor. Without the network, or without the server, you
+work as before, and what was written meanwhile is brought along when the
+server is reached again. **Synchronize now**, in the settings, does it at
+once; beside it the settings say when it was last done, or what is wrong.
+
+What follows you from computer to computer:
+
+- The projects, their folders and favourites, and the folder each is in. A
+  project you share is shared from each of your computers, as one and the
+  same collaborator.
+- The notebook.
+- Your settings: your name and details, the languages, the colours, the
+  kinds you made, the defaults of new documents, how you like to write.
+
+What stays on each computer:
+
+- What belongs to its screen: the size and place of the window, the size of
+  the interface and of the text, the widths of the panes.
+- Where you left things: the place you were at, the projects opened last,
+  where you left each project and the files beside it, how the notebook and
+  the files were looked at.
+- What is installed on it: the font of the editor, Pandoc, Tesseract, the
+  languages of spelling and of text read from scans.
+- The full history of each project, and its earlier versions: each computer
+  keeps its own. The trash, and the Org copies of the projects, too.
+
+Not synchronized yet: the library, with its references and files; the
+pictures of the figures of a project, and the files put in notes; the
+styles, formats and document types you made; and your own words for the
+interface. Until they are, bring them over as before, with a project as a
+`.glaukopis` file, or a copy of the folder of your data.
+
+### Written on two computers apart
+
+When two computers were both written in while they could not reach each
+other, nothing is lost: when they meet, each is given what the other wrote,
+and the project holds both. Before it is brought together, the project as it
+stood is kept among its earlier versions, and you are told: **“Name” was
+written in on two computers while they were apart.** **Show the changes**
+opens the project, with the changes since the two met in the document pane,
+to be gone through as in **Reviewing changes** below, those of your other
+computer among them. The review needs the history of the project; where it
+is not kept, the message offers **Earlier versions** instead, where the
+project as it was before can be opened as a project of its own. If you
+leave the message, it comes again the next time you open the project.
+
+What lands where it is not seen is what to look for: a sentence rewritten
+on both computers stands twice, and what was written in a paragraph that
+the other computer deleted is gone with it.
+
+### Deleted, removed, stopped
+
+**A project deleted** on one computer goes to the trash of the others,
+unless it was written in on one of them since: then it is kept, on all of
+them. Brought back from the trash, it comes back on the others too.
+Emptying the trash is done on each computer.
+
+**The computers** are listed in the settings, with when each was last seen.
+Any of them can **Rename** any, and **Remove** another, as one that was
+lost. What is on a removed computer stays there; it is synchronized no more,
+and says so in its settings.
+
+**Stop synchronizing on this computer** takes this computer out, after it
+has asked. What is on it stays as it is. Where it is the last computer,
+nothing is left on the server. It can join again later with a code, as a new
+computer does.
+
+The server keeps everything that is synchronized, and whoever runs it can
+read it. A deletion or a mistake is synchronized as faithfully as anything
+else: what covers it is the trash and the earlier versions, which every
+computer keeps of its own.
+
 ## The history of a project
 
 A project can keep its whole history: every change, with who made it and
