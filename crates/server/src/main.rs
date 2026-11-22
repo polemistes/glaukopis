@@ -22,9 +22,10 @@ struct Args {
     #[arg(long, env = "GLAUKOPIS_SERVER_DATA", default_value_os_t = default_data())]
     data: PathBuf,
 
-    /// A password asked of those who publish projects on the server. Those who
-    /// join by a code need none. Without it, anyone who can reach the server
-    /// can publish on it.
+    /// A password asked of those who publish projects on the server, and of
+    /// the first computer of a writer who synchronizes their computers
+    /// through it. Those who join by a code need none. Without it, anyone who
+    /// can reach the server can publish on it.
     #[arg(long, env = "GLAUKOPIS_SERVER_PASSWORD", hide_env_values = true)]
     password: Option<String>,
 
