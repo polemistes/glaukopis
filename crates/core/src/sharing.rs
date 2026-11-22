@@ -372,7 +372,7 @@ impl<'a> Remote<'a> {
         &self.server
     }
 
-    fn ask(&self, method: &str, path: &str, token: Option<&str>, body: Option<Value>) -> Result<Value> {
+    pub(crate) fn ask(&self, method: &str, path: &str, token: Option<&str>, body: Option<Value>) -> Result<Value> {
         let url = format!("{}{path}", self.server);
         let response = self.client.send(method, &url, token, body.as_ref())?;
         let host = net::host(&url);
@@ -389,22 +389,29 @@ impl<'a> Remote<'a> {
         if (200..300).contains(&response.status) {
             return Ok(value);
         }
+        Err(self.refused(response.status, &value))
+    }
+
+    /// What an answer that is no success says went wrong: the refusal the
+    /// server names, in the words of the interface, or what stands between
+    /// the application and a server. For what is asked in bytes as well
+    /// (`sync::remote`), whose refusals come as these do.
+    pub(crate) fn refused(&self, status: u16, value: &Value) -> Error {
+        let host = net::host(&self.server);
         let named = value.get("error").and_then(Value::as_str);
         let message = value.get("message").and_then(Value::as_str).unwrap_or("");
         match named {
             Some(named) => {
-                let kind = kind(named, response.status);
-                Err(Error::Refused { kind, message: explain(kind, message, &host) })
+                let kind = kind(named, status);
+                Error::Refused { kind, message: explain(kind, message, &host) }
             }
-            None if response.status == 404 => Err(not_a_server(&host)),
-            None if matches!(response.status, 502..=504) => {
-                Err(Error::Network(tr!("core-sharing-no-answer-behind", host = &host)))
-            }
-            None => Err(Error::Network(tr!("network-status", host = &host, status = response.status))),
+            None if status == 404 => not_a_server(&host),
+            None if matches!(status, 502..=504) => Error::Network(tr!("core-sharing-no-answer-behind", host = &host)),
+            None => Error::Network(tr!("network-status", host = &host, status = status)),
         }
     }
 
-    fn read<T: serde::de::DeserializeOwned>(&self, value: Value) -> Result<T> {
+    pub(crate) fn read<T: serde::de::DeserializeOwned>(&self, value: Value) -> Result<T> {
         serde_json::from_value(value).map_err(|_| not_a_server(&net::host(&self.server)))
     }
 

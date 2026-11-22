@@ -213,6 +213,23 @@ impl Client {
         Ok(Bytes { status, body })
     }
 
+    /// Sends bytes to a server of our own and takes bytes back, to at most
+    /// `limit`: a document exchanged with the home of the writer's computers
+    /// (`sync::remote`). It takes the time it takes, as a file does.
+    pub fn post(&self, url: &str, bearer: &str, content: &[u8], limit: u64) -> Result<Bytes> {
+        let mut response = self
+            .patient
+            .post(url)
+            .header("User-Agent", &self.user_agent)
+            .header("Authorization", &format!("Bearer {bearer}"))
+            .header("Content-Type", "application/octet-stream")
+            .send(content)
+            .map_err(|e| Error::Network(describe(url, &e)))?;
+        let status = response.status().as_u16();
+        let body = bounded(response.body_mut(), limit).map_err(|e| Error::Network(describe(url, &e)))?;
+        Ok(Bytes { status, body })
+    }
+
     /// Gets a page. `accept` says which form is wanted, where the service
     /// offers several. A service in `SERVICES` is asked one request at a
     /// time and no oftener than it allows; a service that says it is asked

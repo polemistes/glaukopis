@@ -12,7 +12,10 @@
 //!
 //! What the computer keeps of all this is in `kept`.
 
+pub mod home;
 pub mod kept;
+pub mod mirror;
+pub mod remote;
 pub mod whole;
 
 /// The form of the texts this version of the application writes and reads
