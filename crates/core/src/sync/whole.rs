@@ -85,6 +85,12 @@ pub fn read(dir: &Path) -> Result<Option<Vec<u8>>> {
     merged(parts).map(Some)
 }
 
+/// Whether a change holds nothing at all: what a server answers that has
+/// nothing of a document.
+pub fn nothing(update: &[u8]) -> bool {
+    update.is_empty() || change(update).is_ok_and(|update| update.is_empty())
+}
+
 /// What `whole` holds beyond what one who is at the state vector `since`
 /// has. What was deleted is in it always: a state vector does not say what
 /// its holder knows to be deleted.
@@ -256,6 +262,16 @@ pub(crate) mod tests {
         assert!(holds(&deleted, &moment(&deleted).unwrap()).unwrap());
         assert!(!holds(&early, &moment(&written).unwrap()).unwrap(), "words are missing");
         assert!(!holds(&written, &moment(&deleted).unwrap()).unwrap(), "a deletion alone is missed too");
+    }
+
+    #[test]
+    fn a_change_that_holds_nothing_is_known() {
+        assert!(nothing(&[]));
+        assert!(nothing(Update::EMPTY_V1));
+        assert!(nothing(&Written::new().whole()));
+        let written = Written::new();
+        written.write(0, "a");
+        assert!(!nothing(&written.whole()));
     }
 
     #[test]

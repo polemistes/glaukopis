@@ -137,6 +137,30 @@ pub fn inward(home: &HomeDoc, kept: &Kept, store: &dyn Store, outward: Outward) 
     kept.keep_base(store.name(), &agreed)
 }
 
+/// Takes what the map says of some names as agreed at once: for a project
+/// that has just come to this computer, or been met here for the first
+/// time. What the store happens to say of it is no change made here, and
+/// must not be written over what the home says. Where the store and its map
+/// have never met, nothing is kept as agreed: that is `outward`'s to begin.
+pub fn adopt(home: &HomeDoc, kept: &Kept, store: &dyn Store, names: &[String]) -> Result<()> {
+    let map = home.map(store.name());
+    let said: BTreeMap<String, Option<String>> =
+        names.iter().filter_map(|name| Some((name.clone(), Some(map.get(name)?.clone())))).collect();
+    if said.is_empty() {
+        return Ok(());
+    }
+    store.write(&said)?;
+    let Some(mut agreed) = kept.base(store.name())? else { return Ok(()) };
+    let after = store.read()?;
+    for name in said.keys() {
+        match after.get(name) {
+            Some(value) => agreed.insert(name.clone(), value.clone()),
+            None => agreed.remove(name),
+        };
+    }
+    kept.keep_base(store.name(), &agreed)
+}
+
 #[cfg(test)]
 pub(crate) mod tests {
     use super::*;
@@ -304,6 +328,26 @@ pub(crate) mod tests {
         a.shelf.silent.borrow_mut().insert("project".to_owned());
         a.meet(&server);
         assert_eq!(server.get("shelf", "project").as_deref(), Some("in a folder"));
+    }
+
+    #[test]
+    fn what_the_home_says_of_a_project_that_has_just_come_stands() {
+        let server = HomeDoc::new();
+        let (a, b) = (Computer::new(), Computer::new());
+        a.shelf.put("other", "x");
+        a.shelf.put("project", "in a folder");
+        a.meet(&server);
+        // The project is not on the other computer yet.
+        b.shelf.silent.borrow_mut().insert("project".to_owned());
+        b.meet(&server);
+        // It comes, and says of itself what a project just made says.
+        b.shelf.silent.borrow_mut().clear();
+        b.shelf.put("project", "at the top");
+        adopt(&b.home, &b.kept, &b.shelf, &["project".to_owned()]).unwrap();
+        assert_eq!(b.shelf.get("project").as_deref(), Some("in a folder"));
+        b.meet(&server);
+        a.meet(&server);
+        assert_eq!(a.shelf.get("project").as_deref(), Some("in a folder"), "and was not written over");
     }
 
     #[test]

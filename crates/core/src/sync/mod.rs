@@ -13,6 +13,7 @@
 //! What the computer keeps of all this is in `kept`.
 
 pub mod arrangement;
+pub mod engine;
 pub mod facts;
 pub mod home;
 pub mod kept;
@@ -20,6 +21,8 @@ pub mod mirror;
 pub mod remote;
 pub mod settings;
 pub mod whole;
+
+pub use engine::{Hears, State, Status, Sync};
 
 /// The form of the texts this version of the application writes and reads
 /// (record 0111), as the interface says it in `src/lib/editor/form.ts`; a
@@ -47,7 +50,7 @@ pub fn unhex(text: &str) -> Option<Vec<u8>> {
         _ => None,
     };
     let bytes = text.as_bytes();
-    if bytes.len() % 2 != 0 {
+    if !bytes.len().is_multiple_of(2) {
         return None;
     }
     bytes.chunks(2).map(|pair| Some(digit(pair[0])? << 4 | digit(pair[1])?)).collect()
