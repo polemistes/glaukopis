@@ -3053,20 +3053,43 @@ titled as the book. See *What you are writing*, *The look of a document* and
 An element can also be a **part** of the document: the abstract, the
 dedication, an appendix, the acknowledgements, the cover. Such an element is
 of one of the kinds that come with Glaukopis (see *Kinds of elements*), and
-is written in the tree as any other; the kind says where it is printed. The
-**front matter** is printed before the text and the body, the **back
-matter** after the last part of the body, each where its own place says, and
-the **cover** on no page of the document: an element of the kind **Cover** is
-what the e-book takes its cover from, and a cover of its own is made by a
-later version. A part belongs to the element it stands directly under: the
-abstract under the book is the book's, and the abstract under chapter three
-is chapter three's, printed at the head of the chapter when the book is
-printed and as the abstract of the document when the chapter is printed
-alone. Of a kind a document has one of, such as the abstract, the first
-among the elements beside one another is used; the others are marked on
-their label, and the checklist of *Document properties* names them. Nothing
-is lost: a part the template has no place for is printed all the same, after
-the parts the template lists in front or at the back.
+is written in the tree as any other. Its kind says what it is and how it is
+set, a dedication on a page of its own, an appendix with a letter, and not
+where it goes: **every element is printed where it stands in the tree**.
+Move it, and it moves on the page. Only the **cover** is on no page: an
+element of the kind **Cover** is what the e-book takes its cover from.
+
+What Glaukopis makes itself is placed the same way, as an element of a kind:
+the **title page**, the **half title**, the **keywords**, the **table of
+contents**, the **list of figures**, the **list of tables** and the
+**bibliography**. Each is printed where its element stands, and **not at all
+where there is none**: a new document is its text and nothing else, with no
+title page until you add one, and no bibliography, though it cites, until
+you add that. The name of the element is the heading over the table of
+contents, the lists and the bibliography, so *Works cited* is a bibliography
+named so; the title page, the half title and the keywords print no name.
+Text written in such an element is printed after what it makes.
+
+A part belongs to the element it stands directly under: the abstract under
+the book is the book's, and the abstract under chapter three is chapter
+three's, printed in the chapter where it stands when the book is printed
+and as the abstract of the document when the chapter is printed alone. A
+title page or a bibliography under chapter three is likewise the chapter's:
+it is printed when the chapter is the document, and not in the book. So a
+chapter printed alone has a title page only if it has one of its own. Of a
+kind a document has one of, such as the abstract, the first among the
+elements beside one another is used; the others are marked on their label,
+and the checklist of *Document properties* names them.
+
+The text written on an element itself comes before everything under it. An
+abstract under an article therefore comes after text written on the article;
+write the text in an element after the abstract instead.
+
+**Parts**, in Look, lists what the document type suggests, in its usual
+order, and adds them (see *Parts*, under *The look of a document*). The
+order is yours all the same: where the parts stand otherwise than the type
+has them, the checklist says in what order the type has them, and nothing is
+moved.
 
 ## What you are writing
 
@@ -3258,12 +3281,14 @@ element in view, opens the window at this part.
 
 **Checklist** is what the document's template requires, against the text
 and the tree; nothing is cut. What is required is changed for one document
-under *Parts of the document type*, in Look. It says the words of the text against the limit, with the
+under *Parts*, in Look. It says the words of the text against the limit, with the
 template's note on what the limits count, and whether the contributors are to be
 left out, for review; then what there is to remark on: more words than the
 template allows, more words in the abstract, more keywords, a second element
 of a kind the document has one of, beside the first, elements of the
-kind **Cover** where the template makes no cover, a front page that names
+kind **Cover** where the template makes no cover, works cited where the
+document has no bibliography, the order the document type has the parts in
+where they stand otherwise, a front page that names
 the contributors where the document type asks for an anonymous document, and,
 where the layout warns about long inline quotations, every paragraph of
 text with a quotation between quotation marks of so many words or lines.
@@ -3548,15 +3573,15 @@ you scroll, mark the part you are in, and go to each:
   that stands at a side stands at that side. Gathered at the end, as many
   journals ask of a manuscript, each leaves a line in the text, in which
   {} stands for its word and number. A size of 0 is that of the text.
-- **Front page**: first **A title page**, whether the document has one at
-  all, the same switch as under *Parts of the document type*; then
-  **Include**: **Anonymize the front page**, the authors, their affiliations,
+- **Front page**: how the title page looks, where the document has one
+  (it has one where an element of the kind **Title page** stands: see
+  *Parts*). **Include**: **Anonymize the front page**, the authors, their affiliations,
   the **Editors and translators**, the date, the abstract; then
   **Formatting**, where the title stands, its size and its letters. An
   anonymous front page leaves every contributor out everywhere: the running
   head, and the properties of every file made.
-- **Parts of the document type**: the parts it is made of, and what it
-  requires (below).
+- **Parts**: the parts the document type suggests, and what it requires
+  (below).
 - **Layout**: the layout itself (below).
 
 Under **Paragraph kinds**, and again under **Words kinds**, every kind is listed: first those
@@ -3590,31 +3615,29 @@ reference style…** has the changes publishers most often ask for as simple
 choices, and the whole style, part by part, for the rest; what you change
 in it is kept as a style of your own.
 
-### Parts of the document type
+### Parts
 
-What you are writing says what the document consists of, and this part of
-Look shows it, in one list, in the order the document is printed, to change
-for one document. The order is the document type's: where its parts stand,
-the abstract before the text or the acknowledgements after the preface, is
-what the type says. In the list stand the parts Glaukopis makes itself, the
-half title, the title page, the keywords, the table of contents and the
-lists of figures and of tables, each with a switch, which holds in every
-document that is made, as in the preview, and a part turned on is printed
-where it stands; the text, the notes and the bibliography, which are always
-there wherever there is something to make them of; and the kinds of
-elements the type gives a place to, the abstract or the dedication, each
-with the elements directly under this one that fill it, or **None yet**. A
-kind the type names without giving it a place is printed before the text
-where it belongs at the front, as a dedication does, and at the end
-otherwise; one printed on the cover only says so. **Make one** makes an
-element of the kind under this one, named after the kind; pressing an
-element goes to it in the text. Where a document has one of a
-kind and more are there, the second and the later say **Only the first is
-used**. **Requirements of the document type** are the words of the text, the words of the
+What you are writing suggests what a document consists of, and this part of
+Look lists it, in the type's usual order: the kinds of elements it names,
+the abstract or the dedication, and what Glaukopis makes itself, the title
+page, the table of contents, the bibliography. Under each stand the elements
+of that kind directly under this one, and pressing one goes to it in the
+text. **Add** makes an element of the kind, last under this one, named
+after the kind, and for a table of contents, a list or a bibliography with
+the word documents print over it, in the language of the document. It is
+printed where it stands: move it in the tree to where you want it. Of a kind
+a document has one of, **Add** is offered until there is one; where more are
+there, the second and the later say **Only the first is used**. **Another
+part…** adds one of any other kind there is; a part the document has that
+the type does not suggest is listed after the others. Nothing is turned on
+or off here: to take a part away, delete its element or leave it out of the
+document.
+
+**Requirements of the document type** are the words of the text, the words of the
 abstract and the keywords, each at most, an empty field for no limit, and
 whether it is **Anonymous**, for review; the checklist of
 *Document properties* and the typesetting count against them, and nothing is
-cut. A part turned on or off, or a limit changed, holds for the element it
+cut. A limit changed holds for the element it
 is changed on and those under it, says **Changed here** under its row, and
 is taken back by **take … again**, as a change of the look is.
 
