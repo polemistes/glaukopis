@@ -11,6 +11,10 @@
 //! it is to stand, and is given its own name when all of it has come and it
 //! has been found to be what it should: no one is ever given half a file.
 //!
+//! The files of a home, which a writer's computers keep the same, are a store
+//! of the same kind, in `homes/<home>/files/`, with limits of their own
+//! (`Files::of_homes`).
+//!
 //! Nothing here knows of HTTP, or of who may do what. That is for those who
 //! call, and so is keeping a room from being taken off the server while a
 //! file of it is begun or given its name.
@@ -23,6 +27,7 @@ use std::sync::Mutex;
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 
+use crate::homes::home_dir;
 use crate::registry::{room_dir, valid_room_id};
 use crate::secrets;
 
@@ -32,10 +37,18 @@ pub const MAX_FILE_BYTES: u64 = 50 << 20;
 /// The most the files of one room may hold together where nothing else is said: 1 GiB.
 pub const MAX_ROOM_BYTES: u64 = 1 << 30;
 
+/// The most one file of a home may hold where nothing else is said: 512 MiB.
+pub const MAX_HOME_FILE_BYTES: u64 = 512 << 20;
+
+/// The most the files of one home may hold together where nothing else is said: 10 GiB.
+pub const MAX_HOME_BYTES: u64 = 10 << 30;
+
 #[derive(Debug, thiserror::Error)]
 pub enum Refused {
     #[error("there is no such project on this server")]
     NoRoom,
+    #[error("there is no such home on this server")]
+    NoHome,
     #[error("the project has no such file on this server")]
     NoFile,
     #[error("a file is named by the SHA-256 of what it holds: 64 characters, each of 0 to 9 or a to f")]
@@ -49,6 +62,11 @@ pub enum Refused {
         in_words(*.0)
     )]
     RoomFull(u64),
+    #[error(
+        "there is not room for the file: the files of a home may hold {} together at the most on this server",
+        in_words(*.0)
+    )]
+    HomeFull(u64),
     #[error("the server could not use its disk: {0}")]
     Io(#[from] io::Error),
 }
@@ -84,8 +102,42 @@ pub struct Kept {
     pub size: u64,
 }
 
+/// Whose files a store keeps.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Store {
+    Rooms,
+    Homes,
+}
+
+impl Store {
+    /// What is told of a room or a home that is not on the server.
+    fn absent(self) -> Refused {
+        match self {
+            Store::Rooms => Refused::NoRoom,
+            Store::Homes => Refused::NoHome,
+        }
+    }
+
+    /// What is told when the files of one may hold no more than `most` together.
+    fn full(self, most: u64) -> Refused {
+        match self {
+            Store::Rooms => Refused::RoomFull(most),
+            Store::Homes => Refused::HomeFull(most),
+        }
+    }
+
+    /// The directory under the data where those of this store are kept.
+    fn under(self) -> &'static str {
+        match self {
+            Store::Rooms => "rooms",
+            Store::Homes => "homes",
+        }
+    }
+}
+
 pub struct Files {
     data: PathBuf,
+    store: Store,
     max_file_bytes: u64,
     max_room_bytes: u64,
     /// Held while a file is given its name, so that two that arrive at the
@@ -108,6 +160,7 @@ pub struct Arriving {
     file: File,
     hasher: Sha256,
     size: u64,
+    store: Store,
     max_file_bytes: u64,
     /// The room that was left when the file began to arrive, and the limit it comes from.
     left: u64,
@@ -122,7 +175,7 @@ impl Arriving {
             return Err(Refused::FileTooLarge(self.max_file_bytes));
         }
         if self.size > self.left {
-            return Err(Refused::RoomFull(self.max_room_bytes));
+            return Err(self.store.full(self.max_room_bytes));
         }
         self.hasher.update(piece);
         self.file.write_all(piece)?;
@@ -140,14 +193,34 @@ impl Drop for Arriving {
 
 impl Files {
     pub fn new(data: PathBuf, max_file_bytes: u64, max_room_bytes: u64) -> Self {
-        Files { data, max_file_bytes, max_room_bytes, naming: Mutex::new(()) }
+        Files { data, store: Store::Rooms, max_file_bytes, max_room_bytes, naming: Mutex::new(()) }
+    }
+
+    /// The store of the files of homes: `room` is then the id of a home,
+    /// and `max_room_bytes` the most the files of one home may hold.
+    pub fn of_homes(data: PathBuf, max_file_bytes: u64, max_home_bytes: u64) -> Self {
+        Files { data, store: Store::Homes, max_file_bytes, max_room_bytes: max_home_bytes, naming: Mutex::new(()) }
+    }
+
+    /// The most one file may hold here.
+    pub fn max_file_bytes(&self) -> u64 {
+        self.max_file_bytes
+    }
+
+    /// The most the files of one room, or one home, may hold together here.
+    pub fn max_together_bytes(&self) -> u64 {
+        self.max_room_bytes
     }
 
     fn dir(&self, room: &str) -> Result<PathBuf, Refused> {
         if !valid_room_id(room) {
-            return Err(Refused::NoRoom);
+            return Err(self.store.absent());
         }
-        Ok(room_dir(&self.data, room).join("files"))
+        Ok(match self.store {
+            Store::Rooms => room_dir(&self.data, room),
+            Store::Homes => home_dir(&self.data, room),
+        }
+        .join("files"))
     }
 
     fn path(&self, room: &str, hash: &str) -> Result<PathBuf, Refused> {
@@ -208,6 +281,15 @@ impl Files {
         Ok((file, size))
     }
 
+    /// Removes a file.
+    pub fn remove(&self, room: &str, hash: &str) -> Result<(), Refused> {
+        match std::fs::remove_file(self.path(room, hash)?) {
+            Ok(()) => Ok(()),
+            Err(e) if e.kind() == io::ErrorKind::NotFound => Err(Refused::NoFile),
+            Err(e) => Err(e.into()),
+        }
+    }
+
     /// Makes ready to receive a file. `announced` is how much the sender says
     /// it holds, if it says: what is too large by that is refused before any
     /// of it has come.
@@ -221,7 +303,7 @@ impl Files {
                 return Err(Refused::FileTooLarge(self.max_file_bytes));
             }
             if size > left {
-                return Err(Refused::RoomFull(self.max_room_bytes));
+                return Err(self.store.full(self.max_room_bytes));
             }
         }
         let dir = self.dir(room)?;
@@ -230,7 +312,7 @@ impl Files {
         match std::fs::create_dir(&dir) {
             Ok(()) => {}
             Err(e) if e.kind() == io::ErrorKind::AlreadyExists => {}
-            Err(e) if e.kind() == io::ErrorKind::NotFound => return Err(Refused::NoRoom),
+            Err(e) if e.kind() == io::ErrorKind::NotFound => return Err(self.store.absent()),
             Err(e) => return Err(e.into()),
         }
         // A name of its own for each arriving: the same file may be sent by two at once.
@@ -243,6 +325,7 @@ impl Files {
             file,
             hasher: Sha256::new(),
             size: 0,
+            store: self.store,
             max_file_bytes: self.max_file_bytes,
             left,
             max_room_bytes: self.max_room_bytes,
@@ -262,12 +345,12 @@ impl Files {
         }
         // Counted again: others may have arrived since this one began.
         if self.used(&arriving.room)?.saturating_add(arriving.size) > self.max_room_bytes {
-            return Err(Refused::RoomFull(self.max_room_bytes));
+            return Err(self.store.full(self.max_room_bytes));
         }
         match std::fs::rename(&arriving.tmp, self.path(&arriving.room, &arriving.hash)?) {
             Ok(()) => Ok((Kept { hash: arriving.hash.clone(), size: arriving.size }, true)),
             // The room was taken off the server while the file arrived.
-            Err(e) if e.kind() == io::ErrorKind::NotFound => Err(Refused::NoRoom),
+            Err(e) if e.kind() == io::ErrorKind::NotFound => Err(self.store.absent()),
             Err(e) => Err(e.into()),
         }
     }
@@ -275,7 +358,7 @@ impl Files {
     /// Removes what was arriving when the server last stopped: no one comes
     /// back to send the rest of it.
     pub fn sweep(&self) {
-        let Ok(rooms) = std::fs::read_dir(self.data.join("rooms")) else { return };
+        let Ok(rooms) = std::fs::read_dir(self.data.join(self.store.under())) else { return };
         for room in rooms.flatten() {
             let Ok(files) = std::fs::read_dir(room.path().join("files")) else { continue };
             for file in files.flatten() {

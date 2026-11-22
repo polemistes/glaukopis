@@ -2,7 +2,9 @@ use std::net::SocketAddr;
 use std::path::PathBuf;
 
 use clap::Parser;
-use glaukopis_server::{Config, MAX_DOCUMENT_BYTES, MAX_FILE_BYTES, MAX_ROOM_BYTES, Server, serve};
+use glaukopis_server::{
+    Config, MAX_DOCUMENT_BYTES, MAX_FILE_BYTES, MAX_HOME_BYTES, MAX_HOME_FILE_BYTES, MAX_ROOM_BYTES, Server, serve,
+};
 
 /// The collaboration server of Glaukopis.
 ///
@@ -50,6 +52,19 @@ struct Args {
     /// The most one project may hold, without its files, in megabytes.
     #[arg(long, env = "GLAUKOPIS_SERVER_MAX_PROJECT_MB", value_name = "MB", default_value_t = MAX_DOCUMENT_BYTES >> 20)]
     max_project_mb: usize,
+
+    /// The most homes the server will hold: one for each writer whose
+    /// computers are synchronized through it.
+    #[arg(long, env = "GLAUKOPIS_SERVER_MAX_HOMES")]
+    max_homes: Option<usize>,
+
+    /// The most the files of one home may hold together, in megabytes.
+    #[arg(long, env = "GLAUKOPIS_SERVER_MAX_HOME_MB", value_name = "MB", default_value_t = MAX_HOME_BYTES >> 20)]
+    max_home_mb: u64,
+
+    /// The most one file of a home may hold, in megabytes.
+    #[arg(long, env = "GLAUKOPIS_SERVER_MAX_HOME_FILE_MB", value_name = "MB", default_value_t = MAX_HOME_FILE_BYTES >> 20)]
+    max_home_file_mb: u64,
 
     /// Let anyone who can reach the server publish projects on it, with no
     /// password, though it can be reached from beyond this computer (it
@@ -121,6 +136,9 @@ fn settings(args: &Args) -> Result<Config, String> {
         max_file_bytes: args.max_file_mb.saturating_mul(1 << 20),
         max_room_bytes: args.max_room_mb.saturating_mul(1 << 20),
         max_document_bytes: args.max_project_mb.saturating_mul(1 << 20),
+        max_homes: args.max_homes,
+        max_home_file_bytes: args.max_home_file_mb.saturating_mul(1 << 20),
+        max_home_bytes: args.max_home_mb.saturating_mul(1 << 20),
     };
     // Open to all who can reach it from elsewhere only where that is said to be meant.
     let reached_from_beyond = !args.listen.ip().is_loopback() || args.trust_proxy;
