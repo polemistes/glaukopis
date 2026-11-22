@@ -536,7 +536,7 @@ impl Sync {
         docs: &mut BTreeMap<String, String>,
     ) -> Result<()> {
         const NAME: &str = "home/the";
-        let cursor = kept::cursor(self.kept.dir(), &joined.home, NAME);
+        let cursor = kept::cursor(&self.kept.of_home()?, &joined.home, NAME);
         let seen = cursor.as_ref().and_then(|c| c.seen.clone());
         let since = cursor.as_ref().and_then(|c| c.since.as_deref()).and_then(unhex);
         let answer =
@@ -552,7 +552,7 @@ impl Sync {
             since: Some(hex(&answer.now)),
             lies: Lies::default(),
         };
-        kept::keep_cursor(self.kept.dir(), &seen, &[])?;
+        kept::keep_cursor(&self.kept.of_home()?, &seen, &[])?;
         self.kept.mark_unsent(false)?;
         docs.insert(NAME.to_owned(), answer.digest);
         Ok(())
@@ -567,7 +567,7 @@ impl Sync {
         met: &BTreeSet<String>,
     ) -> Result<()> {
         const NAME: &str = "home/the";
-        let cursor = kept::cursor(self.kept.dir(), &joined.home, NAME);
+        let cursor = kept::cursor(&self.kept.of_home()?, &joined.home, NAME);
         let theirs = docs.get(NAME).cloned();
         // What changed elsewhere is taken in first: a store is compared with what the home says now.
         if theirs.is_some() && theirs != cursor.as_ref().and_then(|c| c.seen.clone()) {

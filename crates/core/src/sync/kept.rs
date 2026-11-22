@@ -5,6 +5,7 @@
 //! sync/sync.key           the token that admits it, readable by the user alone
 //! sync/home.bin           the home document, as one update (`home`)
 //! sync/home.unsent        there while it holds what the server was not sent
+//! sync/home/sync.json     what was last seen of the server's home document
 //! sync/base/<name>.json   what a store and its map agreed on when they last met (`mirror`)
 //! ```
 //!
@@ -38,6 +39,7 @@ const TOKEN: &str = "sync.key";
 const HOME: &str = "home.bin";
 const BASE: &str = "base";
 const UNSENT: &str = "home.unsent";
+const OF_HOME: &str = "home";
 
 /// The home this computer is in, and who it is there.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
@@ -154,10 +156,13 @@ impl Kept {
         write_atomic(&self.dir.join(HOME), state)
     }
 
-    /// Where what is last seen of the server's home document is kept: the
-    /// folder itself, as a document's is kept with the document.
-    pub fn dir(&self) -> &Path {
-        &self.dir
+    /// Where what was last seen of the server's home document is kept, as
+    /// a document's is kept in its folder: a folder of its own, since what
+    /// says which home this computer is in has the same name.
+    pub fn of_home(&self) -> Result<PathBuf> {
+        let dir = self.dir.join(OF_HOME);
+        fs::create_dir_all(&dir).context(|| tr!("io-creating", path = &dir))?;
+        Ok(dir)
     }
 
     /// Notes that the home document holds something the server was not
