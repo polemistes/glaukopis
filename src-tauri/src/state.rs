@@ -45,7 +45,9 @@ pub struct AppState {
     pub templates: Templates,
     /// The dictionaries, and the writer's own words.
     pub spelling: Spelling,
-    library: Mutex<Library>,
+    /// Shared with the engine of the synchronization, which keeps in it the
+    /// images that come from the writer's other computers.
+    library: Arc<Mutex<Library>>,
     tools: RwLock<Tools>,
     /// One preview or sample is made at a time: they share a place to work in.
     pub making: Mutex<()>,
@@ -172,7 +174,7 @@ impl AppState {
             formats,
             templates,
             spelling,
-            library: Mutex::new(library),
+            library: Arc::new(Mutex::new(library)),
             tools: RwLock::new(Tools::default()),
             making: Mutex::new(()),
             writing: Mutex::new(()),
@@ -200,6 +202,11 @@ impl AppState {
     /// talks to a server between.
     pub fn library_lock(&self) -> &Mutex<Library> {
         &self.library
+    }
+
+    /// The library, for what goes on holding it after the command that asked: the engine of the synchronization.
+    pub fn library_shared(&self) -> Arc<Mutex<Library>> {
+        self.library.clone()
     }
 
     /// Runs `work` on the copy of the Zotero database at `path` (its data

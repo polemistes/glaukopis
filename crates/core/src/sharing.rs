@@ -583,17 +583,29 @@ impl Remote<'_> {
 
     /// The pictures the server has of a project, and the most it lets one hold.
     pub fn files(&self, room: &str, token: &str) -> Result<(Vec<RemoteFile>, u64)> {
-        let value = self.ask("GET", &format!("{}/files", Self::room_path(room)), Some(token), None)?;
+        self.files_in(&Self::room_path(room), token)
+    }
+
+    /// The files of a store of the server, by the path of what holds it:
+    /// a project (`/api/rooms/<room>`), or the home of the writer's
+    /// computers (`/api/homes/<home>`, record 0119), which keeps its files
+    /// as a room does.
+    fn files_in(&self, store: &str, token: &str) -> Result<(Vec<RemoteFile>, u64)> {
+        let value = self.ask("GET", &format!("{store}/files"), Some(token), None)?;
         let most = value.get("maxFileBytes").and_then(Value::as_u64).unwrap_or(figures::MAX_BYTES);
         Ok((self.read(value.get("files").cloned().unwrap_or(Value::Null))?, most))
     }
 
-    fn file_url(&self, room: &str, hash: &str) -> String {
-        format!("{}{}/files/{}", self.server, Self::room_path(room), net::encode(hash))
+    fn file_url(&self, store: &str, hash: &str) -> String {
+        format!("{}{store}/files/{}", self.server, net::encode(hash))
     }
 
     pub fn fetch_file(&self, room: &str, token: &str, hash: &str) -> Result<Vec<u8>> {
-        let answer = self.client.fetch(&self.file_url(room, hash), token, figures::MAX_BYTES)?;
+        self.fetch_file_in(&Self::room_path(room), token, hash)
+    }
+
+    fn fetch_file_in(&self, store: &str, token: &str, hash: &str) -> Result<Vec<u8>> {
+        let answer = self.client.fetch(&self.file_url(store, hash), token, figures::MAX_BYTES)?;
         if (200..300).contains(&answer.status) {
             Ok(answer.body)
         } else {
@@ -602,7 +614,11 @@ impl Remote<'_> {
     }
 
     pub fn send_file(&self, room: &str, token: &str, hash: &str, content: &[u8]) -> Result<()> {
-        let answer = self.client.put(&self.file_url(room, hash), token, content)?;
+        self.send_file_in(&Self::room_path(room), token, hash, content)
+    }
+
+    fn send_file_in(&self, store: &str, token: &str, hash: &str, content: &[u8]) -> Result<()> {
+        let answer = self.client.put(&self.file_url(store, hash), token, content)?;
         if (200..300).contains(&answer.status) { Ok(()) } else { Err(self.refusal(answer.status, &answer.body)) }
     }
 
@@ -613,7 +629,20 @@ impl Remote<'_> {
     /// from being seen to. The library is held only while one is looked up
     /// or kept, never while one is sent or fetched.
     pub fn sync_pictures(&self, room: &str, token: &str, images: &impl KeepImages, used: &[Used]) -> Result<Synced> {
-        let (there, most) = self.files(room, token)?;
+        self.sync_pictures_in(&Self::room_path(room), token, images, used)
+    }
+
+    /// As `sync_pictures`, with a store of the server by its path (see
+    /// `files_in`): the images of the writer's projects are brought to be
+    /// the same as those their home keeps by the same steps.
+    pub(crate) fn sync_pictures_in(
+        &self,
+        store: &str,
+        token: &str,
+        images: &impl KeepImages,
+        used: &[Used],
+    ) -> Result<Synced> {
+        let (there, most) = self.files_in(store, token)?;
         let mut done = Synced::default();
         let mut problems: Vec<String> = Vec::new();
         let mut say = |problem: String| {
@@ -641,7 +670,7 @@ impl Remote<'_> {
             }
             let sending = std::fs::read(&path)
                 .map_err(|e| Error::io(tr!("io-reading", path = &path), e))
-                .and_then(|content| self.send_file(room, token, &picture.hash, &content));
+                .and_then(|content| self.send_file_in(store, token, &picture.hash, &content));
             match sending {
                 Ok(()) => done.sent += 1,
                 Err(Error::Refused { message, .. }) => say(message),
@@ -653,7 +682,7 @@ impl Remote<'_> {
                 continue;
             }
             let name = used.iter().find(|u| u.hash == file.hash).map(|u| u.name.as_str()).unwrap_or("");
-            let content = match self.fetch_file(room, token, &file.hash) {
+            let content = match self.fetch_file_in(store, token, &file.hash) {
                 Ok(content) => content,
                 Err(Error::Refused { message, .. }) => {
                     say(message);

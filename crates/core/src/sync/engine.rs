@@ -30,11 +30,13 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::{Error, Result};
 use crate::history::{Record, now_ms};
-use crate::library::now;
+use crate::library::figures::Images;
+use crate::library::{Library, now};
 use crate::net::Client;
 use crate::notebook::Notebook;
 use crate::paths::DataDir;
 use crate::projects::{Projects, keep_whole};
+use crate::sharing::Used;
 use crate::tr;
 
 use super::arrangement::{Favourites, Folders, Places};
@@ -132,6 +134,8 @@ struct Round {
     stamp: Option<String>,
     /// The digests of the home's documents, by kind and id.
     docs: BTreeMap<String, String>,
+    /// The images known to be both here and in the home: not asked about again in this run.
+    pictures: BTreeSet<String>,
 }
 
 #[derive(Default)]
@@ -153,6 +157,8 @@ struct Said {
 pub struct Sync {
     projects: Projects,
     notebook: Arc<Notebook>,
+    /// The library, for the images of the projects: held only while one is looked up or kept.
+    library: Arc<Mutex<Library>>,
     settings: PathBuf,
     kept: Kept,
     client: Client,
@@ -199,12 +205,19 @@ fn refused_entry(error: &Error) -> bool {
 }
 
 impl Sync {
-    pub fn new(data: &DataDir, projects: Projects, notebook: Arc<Notebook>, hears: Hears) -> Self {
+    pub fn new(
+        data: &DataDir,
+        projects: Projects,
+        notebook: Arc<Notebook>,
+        library: Arc<Mutex<Library>>,
+        hears: Hears,
+    ) -> Self {
         let kept = Kept::new(data);
         let on = kept.joined().ok().flatten().is_some();
         Sync {
             projects,
             notebook,
+            library,
             settings: data.settings_file(),
             kept,
             client: Client::new(),
@@ -463,7 +476,7 @@ impl Sync {
         if round.home.as_ref().map(|(id, _)| id.as_str()) != Some(joined.home.as_str()) {
             round.home = Some((joined.home.clone(), HomeDoc::load(self.kept.home()?.as_deref())?));
         }
-        let Round { home: Some((_, doc)), docs, .. } = &mut *round else {
+        let Round { home: Some((_, doc)), docs, pictures, .. } = &mut *round else {
             unreachable!("the home document was read above")
         };
 
@@ -475,6 +488,11 @@ impl Sync {
                 return Err(error);
             }
             problems.push(tr!("core-sync-problem-notebook", why = error.to_string()));
+        }
+        match self.pictures_round(&home, doc, pictures) {
+            Ok(said) => problems.extend(said),
+            Err(error) if of_the_server(&error) => return Err(error),
+            Err(error) => problems.push(error.to_string()),
         }
         // What the projects wrote into the home document, that one is gone or is not, is sent.
         if self.kept.unsent() {
@@ -943,6 +961,45 @@ impl Sync {
         self.settle(joined, NAME, &dir, &got, appended)?;
         docs.insert(NAME.to_owned(), got.answer.digest.clone());
         Ok(())
+    }
+
+    // ---- the images of the projects ----
+
+    /// The images the projects use are brought to be the same here and in
+    /// the home. What each is called goes with it in the home document,
+    /// since a file says nothing of its name. Returns what could not be
+    /// done, in words.
+    fn pictures_round(&self, home: &Home, doc: &HomeDoc, known: &mut BTreeSet<String>) -> Result<Vec<String>> {
+        let mut used: Vec<Used> = Vec::new();
+        for info in self.projects.list()? {
+            for hash in info.pictures {
+                if !known.contains(&hash) && !used.iter().any(|u| u.hash == hash) {
+                    used.push(Used { hash, ..Default::default() });
+                }
+            }
+        }
+        if used.is_empty() {
+            return Ok(Vec::new());
+        }
+        for picture in &mut used {
+            let here = held(&self.library).image(&picture.hash).map(|(image, _)| image.name);
+            match here {
+                // What it is called here is told to the others, where they have not been told.
+                Some(name) if !name.is_empty() && doc.get("pictures", &picture.hash).is_none() => {
+                    self.note(doc, "pictures", &picture.hash, Some(&name))?;
+                    picture.name = name;
+                }
+                Some(name) => picture.name = name,
+                None => picture.name = doc.get("pictures", &picture.hash).unwrap_or_default(),
+            }
+        }
+        let synced = home.pictures(&*self.library, &used)?;
+        if synced.problems.is_empty() {
+            // Those that are here now are in the home as well: sent now, or there before.
+            let library = held(&self.library);
+            known.extend(used.into_iter().map(|u| u.hash).filter(|hash| library.image(hash).is_some()));
+        }
+        Ok(synced.problems)
     }
 
     // ---- what was written apart ----

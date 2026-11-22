@@ -13,6 +13,8 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use glaukopis_core::history::now_ms;
+use glaukopis_core::library::Library;
+use glaukopis_core::library::figures::Images;
 use glaukopis_core::notebook::Notebook;
 use glaukopis_core::paths::DataDir;
 use glaukopis_core::projects::Projects;
@@ -38,6 +40,7 @@ struct Computer {
     data: DataDir,
     projects: Projects,
     notebook: Arc<Notebook>,
+    library: Arc<Mutex<Library>>,
     sync: Sync,
     heard: Arc<Mutex<Heard>>,
 }
@@ -58,8 +61,9 @@ impl Computer {
             notebook: Box::new(move |update| of_notebook.lock().unwrap().notebook.push(update.to_vec())),
             apart: Box::new(move |id, name| of_apart.lock().unwrap().apart.push((id.to_owned(), name.to_owned()))),
         };
-        let sync = Sync::new(&data, projects.clone(), notebook.clone(), hears);
-        Computer { _tmp: tmp, data, projects, notebook, sync, heard }
+        let library = Arc::new(Mutex::new(Library::open(&data).unwrap()));
+        let sync = Sync::new(&data, projects.clone(), notebook.clone(), library.clone(), hears);
+        Computer { _tmp: tmp, data, projects, notebook, library, sync, heard }
     }
 
     /// A round, in which nothing is to go wrong.
@@ -538,6 +542,34 @@ async fn a_server_that_cannot_be_reached_is_said_and_what_was_written_meanwhile_
     })
     .await
     .unwrap();
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn the_images_a_project_uses_are_on_every_computer_under_their_names() {
+    /// A picture of four points by three, in one colour.
+    const PNG: [u8; 73] = [
+        137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82, 0, 0, 0, 4, 0, 0, 0, 3, 8, 2, 0, 0, 0, 59, 150,
+        57, 145, 0, 0, 0, 16, 73, 68, 65, 84, 120, 218, 99, 56, 17, 160, 1, 71, 12, 56, 57, 0, 44, 54, 15, 1, 74, 169,
+        232, 210, 0, 0, 0, 0, 73, 69, 78, 68, 174, 66, 96, 130,
+    ];
+    with_server(|address, _| {
+        let (a, b) = two(&address);
+        let vase = a.library.lock().unwrap().add_image("vase.png", &PNG, None, None).unwrap().0;
+        let iliad = a.project("The Iliad", "Sing, goddess");
+        // As the interface says it when it saves the project: the images of its figures.
+        a.projects.update_info(&iliad, |info| info.pictures = vec![vase.hash.clone()]).unwrap();
+        a.round();
+        b.round();
+        // What the list shows of the project came with it, and by that the other computer knows the image; a round fetches it.
+        b.round();
+        let (there, path) = b.library.lock().unwrap().image(&vase.hash).expect("the image is on the other computer");
+        assert_eq!(there.name, "vase.png", "under the name it has on the first");
+        assert_eq!(std::fs::read(path).unwrap(), PNG);
+        // Nothing more is sent or fetched when the rounds go on.
+        a.round();
+        b.round();
+    })
+    .await;
 }
 
 /// What the home keeps of a writer's settings and arrangement is in one

@@ -61,7 +61,7 @@ pub fn engine(app: &AppHandle, state: &AppState) -> Arc<Sync> {
             told(of_apart.emit(PROJECT_APART, passed), "a project written in apart");
         }),
     };
-    Arc::new(Sync::new(&state.data, state.projects.clone(), state.notebook.clone(), hears))
+    Arc::new(Sync::new(&state.data, state.projects.clone(), state.notebook.clone(), state.library_shared(), hears))
 }
 
 /// Something was written on this computer: the engine sends it in a moment.
