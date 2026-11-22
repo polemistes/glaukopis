@@ -41,6 +41,7 @@
   import { PROJECT } from '$lib/project/model/types';
   import { panes } from '$lib/project/panes.svelte';
   import SettingsDialog from '$lib/settings/SettingsDialog.svelte';
+  import ApartHost from '$lib/sync/ApartHost.svelte';
   import { settingsUi } from '$lib/settings/settings-ui.svelte';
   import HelpView from '$lib/help/HelpView.svelte';
   import { HELP_OFFERED, helpUi } from '$lib/help/help-ui.svelte';
@@ -420,6 +421,8 @@
   <ReferenceHost />
   <ConfirmHost />
   <PickerHost />
+  <!-- What is told of a project written in on two computers apart (record 0119). -->
+  <ApartHost />
   {#if keysUi.sheet}<KeySheet onclose={() => (keysUi.sheet = false)} />{/if}
   {#if keysUi.palette}<Palette onclose={() => (keysUi.palette = false)} />{/if}
   <SettingsDialog />
