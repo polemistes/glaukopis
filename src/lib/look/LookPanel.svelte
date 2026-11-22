@@ -1942,7 +1942,7 @@
 
         <section class="part" data-part="contents">
           <h3>{sectionWords.contents}</h3>
-          <ContentsSection {project} {at} {ongo} />
+          <ContentsSection {project} {at} {ongo} editing={editingType ? template : null} />
         </section>
 
         <!-- The document type: where the look is taken from, and what this document changes. -->

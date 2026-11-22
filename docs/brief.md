@@ -1939,6 +1939,12 @@ one form proposed for a document and for a document type:
   document type alike, in which every detail can be decided; a layout is no
   thing of its own to the writer.
 
+Asked, once the one form was built, whether the parts a document type of
+one's own suggests should be changed in Parts while the type is edited,
+each with a way to take it out and a way to add one:
+
+> Yes build that.
+
 ## 2026-11-22 — the same on every device
 
 Of working on more than one computer:

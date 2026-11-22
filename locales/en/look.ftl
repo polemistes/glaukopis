@@ -48,6 +48,8 @@ look-at-bibliography = Bibliography
 look-parts-add = Add
 # Under the parts the type suggests: a menu of the other kinds there are.
 look-parts-another = Another part…
+# Beside a part, while a document type of the writer's own is edited: takes it out of the parts the type suggests.
+look-parts-take-out = Take out of “{ $name }”
 # On the second element of a kind a document has one of.
 look-contents-kinds-doubled = Only the first is used
 look-contents-limit-words = Words of the text, at most
