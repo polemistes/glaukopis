@@ -2003,3 +2003,11 @@ The assistant's answer was yes: what an app asked of the server on
 writer's computers. The plan is `docs/plans/an-app-for-android.md`. It says
 what the assistant proposes and the owner has not confirmed. Nothing is
 built.
+
+Asked when the plan had been read:
+
+> How hard would it be to implement the ocr functions in the phone? Mostly for photos of text, but it could also be good to be able to ocr pdfs from the phone.
+
+Answered in the plan (*Text read on the phone*): a stage of its own after
+the app is given out, not decided; photographs of pages are measured on a
+computer before anything is built for it.

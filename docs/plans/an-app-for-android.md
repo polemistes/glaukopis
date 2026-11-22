@@ -75,7 +75,7 @@ Read on 2026-11-22.
 - **The same role on a computer**, `glaukopis --phone`, for trying only: a window as narrow as a phone, the phone's commands, the phone's page. It is in no launcher and not in the guide. Through it the harness that is there reaches nearly all of the phone's page.
 - **The Android project** (`src-tauri/gen/android`) is made by `tauri android init` and committed, without what a build leaves in it: the manifest and the Kotlin of this plan live there.
 - **The page.** `src/main.ts` mounts `src/lib/phone/mount.ts` where the window is labelled `phone`, as it mounts the window of a note: nothing of the projects, the diagram or the typesetting is loaded. Vite is told of the web view of Android beside `safari15`.
-- **The core for Android.** TLS as the eighth choice says. Whether typesetting, the reading of scans and the reading of PDFs are left out of the phone's build behind a feature of the core is decided by measure in stage 0: they are never called there, and what they add to the file is weighed against a core in two shapes.
+- **The core for Android.** TLS as the eighth choice says. Whether typesetting is left out of the phone's build behind a feature of the core is decided by measure in stage 0: it is never called there, and what it adds to the file is weighed against a core in two shapes. The reading of text stays in (see *Text read on the phone*).
 
 ### A phone among the writer's computers
 
@@ -140,6 +140,29 @@ One column, three places: the notes, a note, the settings. Each is a step of the
 - **Google's verification of developers** (read on 2026-11-22, mostly in what others write of it; to be read again before stage 4). Since 30 September 2026 in Brazil, Indonesia, Singapore and Thailand, and in every other country in 2027, a phone with Google's services installs an app only from a developer Google has registered. Left open are `adb`, and a longer way for those who say they know what they do. Registering is free for up to 20 phones, with a Google account that has a payments profile in one's legal name, or 25 dollars and an identity check for more. F-Droid is not among the stores of the first phase and objects to the whole. **The owner's to decide before 2027**: the longer way and F-Droid, or the free registration.
 - The plugin for Firefox has no part on a phone: Firefox for Android starts no helper. Share serves.
 
+### Text read on the phone
+
+Asked by the owner when the plan had been read (2026-11-22): mostly photographs of text, and PDFs too. A stage of its own, after *Given out*. Not decided.
+
+What stands in the code:
+
+- **Tesseract is a program the core starts** (`ocr/tesseract.rs`), given the picture, the languages and what it is to make. Windows and macOS bring it along beside the application (`resources/bin`); nobody offers one built for Android.
+- **A picture is read as one page**, by Tesseract. **A PDF is taken apart only in a process of its own**, within limits (`isolated.rs`), and that process is the application started again. An app on Android cannot do that: it is no program, but a library in a process of Android's. The child has a program of its own for the tests (`crates/core/src/bin/glaukopis-isolated.rs`).
+- **The data of a language** comes as a language package, 3 to 13 MB each, through the core (`languages.rs`).
+- **The words read from a picture of a note** are kept with the notebook's record of its file, and so follow the notebook to every device. They are read when asked for, never by themselves (`src/lib/notebook/reading.svelte.ts`).
+- **A picture can be turned by quarters, cut, and made lighter or darker** (`library/figures.rs`). Nothing straightens a page photographed aslant, and nothing is done about shadow.
+
+What it takes:
+
+1. **Tesseract and Leptonica built for Android** from their sources (Apache-2.0 and BSD), with the NDK, as a program that lies among the app's native libraries: the one place Android lets an app start a program from. The core is told that folder, as it is told of the one beside the application. Tried on the emulator before anything is built on it. The main thread's.
+2. **The language packages in the phone's settings**: the list there is, made to fit. None comes in the file.
+3. ***Read the text* on a picture of a note**, as on a computer.
+4. **For PDFs, the child's program built for Android** and brought along the same way. Android may end what an app does once it leaves the front, so an article is read while one waits, and a book is for a computer. A phone holds no PDF of the library (the third choice): what is read there is a PDF that came to the phone, in a note.
+
+**Photographs are measured first**, before any of this is built: ten or twenty pages photographed with the owner's phone as they would be, read on this machine with the models there are: as they are, cut to the text, and with Tesseract's own ways with uneven light. Tesseract is trained on flat scans. The measure says whether photographs read well enough, and what the phone must do to one before it is read: cut by finger, straightened, its corners pulled square.
+
+**For nothing, from stage 2**: a photograph taken on the phone is on the computer, where its text is read as today, and the words are then on the phone and found there.
+
 ## Trying it
 
 1. **Tests beside the code** (vitest; `cargo test`), as always.
@@ -156,9 +179,10 @@ Each is committed when it is checked. Stages 0 to 4 are the app the owner asked 
 2. **The notes shown, found and written; the synchronization set up.** The page of the phone. From here the owner has an app to use: a note written on the phone is on the computer.
 3. **Collecting.** Share, the selection's menu, the photograph, pictures and files, *New note* on the icon; sent when closed.
 4. **Given out.** The signed file, the job of the workflow, the newer version told, the website's folder, the chapter of the guide, the other languages in a round.
-5. *Later:* the rest of the notebook by finger: the surface of a box, Join and Divide, links.
-6. *Later:* **maps shown.** The tree of projects from the home document; a project fetched when it is opened and kept from then on; read as text and as the diagram.
-7. *Later:* **maps edited.**
+5. *Later, should the owner want it:* **text read on the phone.** Photographs measured first; then Tesseract brought along, the languages, *Read the text*; PDFs after.
+6. *Later:* the rest of the notebook by finger: the surface of a box, Join and Divide, links.
+7. *Later:* **maps shown.** The tree of projects from the home document; a project fetched when it is opened and kept from then on; read as text and as the diagram.
+8. *Later:* **maps edited.**
 
 ## Who builds what
 
