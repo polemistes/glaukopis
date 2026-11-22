@@ -74,7 +74,8 @@ letter (Alt+Shift+N; in 1.0.1 Alt+Shift+P too). Firefox takes those for the
 letters of its own menus, which differ with its language (Alt+Shift+P opens
 its menu of profiles), so no key of the plugin is of that family any more:
 1.0.2, signed on 2026-11-17, has Ctrl+Alt+N and Ctrl+Alt+P, and is the one
-that is offered. Try a new key in Firefox with the plugin loaded unsigned,
+that is offered. 1.0.3 has the second version of the owl for its icon and
+is to be signed. Try a new key in Firefox with the plugin loaded unsigned,
 as above, before a version is signed for it. The
 signed file is kept in `packaging/firefox/`,
 whose README says where it goes at a release and what Mozilla's check said

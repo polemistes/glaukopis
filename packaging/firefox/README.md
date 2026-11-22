@@ -21,6 +21,9 @@ Firefox takes Alt+Shift and a letter for the letters of its own menus:
 Ctrl+Alt+N for the selection or the page, and Ctrl+Alt+P for a part of the
 page.
 
+**1.0.3** is the same with the second version of the owl for its icon
+(2026-11-22); it is to be signed, and offered from then on.
+
 ## At a release
 
 The file goes into the release's folder with the packages
