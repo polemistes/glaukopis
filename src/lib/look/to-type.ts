@@ -162,11 +162,16 @@ function clone<T>(value: T): T {
  *    were, the highest of them, and what the elements from there down to
  *    the document set of the look, the style and what is required is taken
  *    away, in one step of undo; the project keeps a copy of the type.
+ *
+ * Where `parts` is false the type keeps the parts and the kinds it has:
+ * a type that is edited is written as the look is changed, and a look
+ * changed is no change of what the type suggests.
  */
 export async function saveToType(
   project: Project,
   at: string,
   name: string | null = null,
+  parts = true,
 ): Promise<Template> {
   const inherited = project.documentOf(at);
   const choice = await documents.choiceRead(inherited.settings, project);
@@ -188,7 +193,9 @@ export async function saveToType(
 
   // 2. The type.
   const chose = !!inherited.settings.style || !!type.style;
-  const { contents, kinds } = typeContents(partsStanding(project, at), type);
+  const { contents, kinds } = parts
+    ? typeContents(partsStanding(project, at), type)
+    : { contents: type.contents, kinds: type.kinds };
   const next: Template = {
     ...composed(type, project.compositionOf(at).changes),
     layout: pages.id,

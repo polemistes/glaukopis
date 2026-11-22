@@ -384,23 +384,26 @@
   const editingType = $derived(ownType && lookUi.editing === choice.template);
 
   let saving = $state(false);
-  /** A change written while a type was being saved: saved after it. */
-  let again = false;
+  /** A change written while a type was being saved: saved after it, with the parts of the document where one asked for them. */
+  let again: { parts: boolean } | null = null;
 
   /**
    * Puts what the document sets otherwise into its type, or, with a name,
-   * into a new type of the writer's own made of it (`saveToType`).
+   * into a new type of the writer's own made of it (`saveToType`). `parts`
+   * says whether the parts the document has go into the type too: they do
+   * where the writer says where the document goes, and not while a type is
+   * edited, when it is the look that is written.
    */
-  async function saveType(name: string | null) {
+  async function saveType(name: string | null, parts = true) {
     if (pending) write();
     if (saving) {
-      again = name === null;
+      if (name === null) again = { parts: parts || !!again?.parts };
       return;
     }
     saving = true;
     error = null;
     try {
-      const saved = await saveToType(project, at, name);
+      const saved = await saveToType(project, at, name, parts);
       if (name !== null) notifyOk(t('template-saved', { name: saved.name }));
     } catch (e) {
       error = describeError(e) ?? t('template-save-failed');
@@ -408,8 +411,9 @@
       saving = false;
     }
     if (again) {
-      again = false;
-      void saveType(null);
+      const next = again;
+      again = null;
+      void saveType(null, next.parts);
     }
   }
 
@@ -419,7 +423,7 @@
     if (!editingType) return;
     const c = changesOf(project, at);
     if (!c.look && !c.requirements && !c.chosen) return;
-    const timer = setTimeout(() => void saveType(null), 250);
+    const timer = setTimeout(() => void saveType(null, false), 250);
     return () => clearTimeout(timer);
   });
 
