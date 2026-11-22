@@ -9,7 +9,7 @@ use base64::engine::general_purpose::STANDARD as B64;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use tauri::ipc::{InvokeBody, Request, Response};
-use tauri::{Emitter, EventTarget, State, WebviewWindow};
+use tauri::{Emitter, EventTarget, Manager, State, WebviewWindow};
 
 use glaukopis_core::i18n::tr;
 use glaukopis_core::projects::{Folder, HistoryEntry, Place, ProjectInfo, Summary};
@@ -150,6 +150,8 @@ pub fn project_append(window: WebviewWindow, state: State<'_, AppState>, request
     if let Err(error) = window.emit_filter(PROJECT_UPDATE, passed, others) {
         tracing::warn!(%error, "a change was not passed to the other windows");
     }
+    // And, in a moment, to the writer's other computers (record 0119).
+    super::sync::touched(window.app_handle());
     Ok(())
 }
 
@@ -175,9 +177,15 @@ struct SaveHead {
 /// says of itself. With `keep`, where the full history of the project is on,
 /// what the log held is kept in it.
 #[tauri::command(async)]
-pub fn project_save_state(state: State<'_, AppState>, request: Request<'_>) -> CommandResult<ProjectInfo> {
+pub fn project_save_state(
+    app: tauri::AppHandle,
+    state: State<'_, AppState>,
+    request: Request<'_>,
+) -> CommandResult<ProjectInfo> {
     let (head, document) = with_head::<SaveHead>(&request)?;
-    Ok(state.projects.save_state_keeping(&head.id, &document, head.summary, head.keep.unwrap_or(false))?)
+    let info = state.projects.save_state_keeping(&head.id, &document, head.summary, head.keep.unwrap_or(false))?;
+    super::sync::touched(&app);
+    Ok(info)
 }
 
 /// Remembers where the user was in the project.

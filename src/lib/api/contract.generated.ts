@@ -20,6 +20,7 @@ import type * as viewer from './viewer';
 import type * as math from './math';
 import type * as tables from './tables';
 import type * as sharing from './sharing';
+import type * as sync from './sync';
 import type * as printing from './printing';
 import type * as words from './words';
 import type * as languages from './languages';
@@ -6914,6 +6915,51 @@ export const readInvitation: sharing.ReadInvitation = {
 
 export const ticket: sharing.SharingTicket = {
   "url": "wss://example.org/rooms/r1/socket?ticket=t"
+};
+
+export const syncStatus: sync.SyncStatus = {
+  "last": "2026-01-01T00:00:00Z",
+  "name": "The desk",
+  "on": true,
+  "problem": "A remark.",
+  "server": "https://example.org",
+  "state": "idle"
+};
+
+export const syncHome: sync.SyncHome = {
+  "codes": [
+    {
+      "created": 1700000000,
+      "expires": 1700003600,
+      "id": "c1"
+    }
+  ],
+  "devices": [
+    {
+      "id": "d1",
+      "joined": 1700000000,
+      "lastSeen": 1700000500,
+      "name": "The desk",
+      "you": true
+    }
+  ],
+  "usedBytes": 12
+};
+
+export const syncCode: sync.SyncCode = {
+  "code": "ABCD-EFGH-JKMN",
+  "expires": 1700003600
+};
+
+export const apart: sync.Apart = {
+  "kept": "kept.bin",
+  "moment": "AAA=",
+  "time": 1700000000000
+};
+
+export const projectApart: sync.ProjectApart = {
+  "id": "p1",
+  "name": "The Iliad"
 };
 
 export const pagesOf: documents.PagesOf = {

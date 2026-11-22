@@ -120,6 +120,8 @@ pub fn run() {
             let handle = app.handle().clone();
             glaukopis_core::changes::on_changed(move |area| {
                 let _ = handle.emit("changed", area);
+                // And what was written here is sent to the writer's other computers (record 0119).
+                commands::sync::touched(&handle);
             });
             let start = Start { log: log_file.clone(), resources: app.path().resource_dir().ok() };
             match &root {
@@ -284,6 +286,18 @@ pub fn run() {
             commands::history::history_archive_read,
             commands::math::math_render,
             commands::tables::table_read,
+            commands::sync::sync_status,
+            commands::sync::sync_computer,
+            commands::sync::sync_start,
+            commands::sync::sync_join,
+            commands::sync::sync_home,
+            commands::sync::sync_code,
+            commands::sync::sync_rename,
+            commands::sync::sync_remove,
+            commands::sync::sync_stop,
+            commands::sync::sync_now,
+            commands::sync::project_apart,
+            commands::sync::project_apart_seen,
             commands::sharing::sharing_server,
             commands::sharing::sharing_read_invitation,
             commands::sharing::sharing_publish,
@@ -543,7 +557,12 @@ impl Start {
         match opening(root.clone(), chosen, self.resources.clone(), speak_as_chosen) {
             Opening::Ready(mut state) => {
                 state.data_folder_chosen = chosen;
+                // The engine that keeps this computer the same as the
+                // writer's others (record 0119): made with the stores it
+                // shares with the commands, and started once the windows are.
+                let sync = commands::sync::engine(app, &state);
                 app.manage(*state);
+                app.manage(sync.clone());
                 // The windows are made only now that what their commands ask
                 // for is there (they are not made by Tauri from the
                 // configuration, where `create` is false): a page that ran
@@ -555,6 +574,9 @@ impl Start {
                 // What the plugin for Firefox hands over while the
                 // application runs is told to a window as it comes.
                 commands::notebook::look_at_the_inbox(app.clone());
+                if let Err(error) = sync.run() {
+                    tracing::error!(%error, "the thread of the synchronization could not be started");
+                }
             }
             Opening::InUse(root) => {
                 // Another is at work in the same data: this one says so, and goes.

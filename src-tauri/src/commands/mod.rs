@@ -20,6 +20,7 @@ pub mod reading;
 pub mod sharing;
 pub mod sources;
 pub mod spelling;
+pub mod sync;
 pub mod system;
 pub mod tables;
 pub mod templates;

@@ -476,6 +476,37 @@ fn what_is_sent_is_what_the_interface_declares() {
         }],
         invitations: vec![glaukopis_core::sharing::Invitation { code: None, ..invitation.clone() }],
     };
+    // The synchronization between the writer's computers (record 0119).
+    let sync_status = glaukopis_core::sync::Status {
+        on: true,
+        server: Some("https://example.org".into()),
+        name: Some("The desk".into()),
+        state: glaukopis_core::sync::State::Idle,
+        last: Some("2026-01-01T00:00:00Z".into()),
+        problem: Some("A remark.".into()),
+    };
+    let sync_home = glaukopis_core::sync::remote::Told {
+        devices: vec![glaukopis_core::sync::remote::Device {
+            id: "d1".into(),
+            name: "The desk".into(),
+            joined: 1_700_000_000,
+            last_seen: 1_700_000_500,
+            you: true,
+        }],
+        codes: vec![glaukopis_core::sync::remote::OpenCode {
+            id: "c1".into(),
+            created: 1_700_000_000,
+            expires: 1_700_003_600,
+        }],
+        used_bytes: 12,
+    };
+    let sync_code = glaukopis_core::sync::remote::NewCode { code: "ABCD-EFGH-JKMN".into(), expires: 1_700_003_600 };
+    let apart = glaukopis_core::sync::kept::Apart {
+        time: 1_700_000_000_000,
+        moment: "AAA=".into(),
+        kept: Some("kept.bin".into()),
+    };
+    let project_apart = crate::commands::sync::ProjectApart { id: "p1".into(), name: "The Iliad".into() };
     let read_invitation = crate::commands::sharing::ReadInvitation {
         server: Some("https://example.org".into()),
         code: Some("ABCD-EFGH-JKMN".into()),
@@ -858,6 +889,11 @@ fn what_is_sent_is_what_the_interface_declares() {
     put("room", "sharing.Room", &room);
     put("readInvitation", "sharing.ReadInvitation", &read_invitation);
     put("ticket", "sharing.SharingTicket", &ticket);
+    put("syncStatus", "sync.SyncStatus", &sync_status);
+    put("syncHome", "sync.SyncHome", &sync_home);
+    put("syncCode", "sync.SyncCode", &sync_code);
+    put("apart", "sync.Apart", &apart);
+    put("projectApart", "sync.ProjectApart", &project_apart);
     put("pagesOf", "documents.PagesOf", &pages_of);
     put("printPages", "documents.PrintPage[]", &print_pages);
     put("paper", "printing.Paper", &paper);

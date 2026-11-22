@@ -30,6 +30,27 @@ pub use engine::{Hears, State, Status, Sync};
 /// exchange, and sends nothing of a project in a later form.
 pub const FORM: u32 = 2;
 
+/// What the system calls this computer: offered as its name among the
+/// writer's computers, which the writer may change before it is sent
+/// anywhere. Nothing where the system says none.
+pub fn computer() -> String {
+    #[cfg(unix)]
+    {
+        let mut name = [0u8; 256];
+        // SAFETY: the buffer is ours and its length is given; the name is ended by a nought within it.
+        let said = unsafe { libc::gethostname(name.as_mut_ptr().cast(), name.len() - 1) };
+        if said == 0 {
+            let end = name.iter().position(|b| *b == 0).unwrap_or(name.len());
+            return String::from_utf8_lossy(&name[..end]).trim().to_owned();
+        }
+        String::new()
+    }
+    #[cfg(not(unix))]
+    {
+        std::env::var("COMPUTERNAME").unwrap_or_default().trim().to_owned()
+    }
+}
+
 /// Bytes in hex, as the server writes digests and state vectors.
 pub fn hex(bytes: &[u8]) -> String {
     const DIGITS: &[u8; 16] = b"0123456789abcdef";

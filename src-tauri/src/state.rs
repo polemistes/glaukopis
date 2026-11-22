@@ -2,7 +2,7 @@
 
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, AtomicUsize};
-use std::sync::{Mutex, MutexGuard, RwLock};
+use std::sync::{Arc, Mutex, MutexGuard, RwLock};
 
 use glaukopis_core::export::Tools;
 use glaukopis_core::export::tools::{self, Configured};
@@ -25,8 +25,10 @@ pub struct AppState {
     /// Held while the application runs, so that no other works in the same data.
     _claim: Claim,
     pub projects: Projects,
-    /// The notebook's document (its files are in the library's store).
-    pub notebook: Notebook,
+    /// The notebook's document (its files are in the library's store). The
+    /// engine of the synchronization holds it too (`commands::sync`): one
+    /// at a time writes to it, whoever it is.
+    pub notebook: Arc<Notebook>,
     /// Whether the files the notebook held alone and no note holds have
     /// been swept out of the store in this run: it is done once.
     pub notebook_swept: AtomicBool,
@@ -161,7 +163,7 @@ impl AppState {
         }
         let state = AppState {
             projects,
-            notebook: Notebook::new(&data),
+            notebook: Arc::new(Notebook::new(&data)),
             notebook_swept: AtomicBool::new(false),
             inbox: Inbox::new(&data),
             inbox_taking: Mutex::new(()),
