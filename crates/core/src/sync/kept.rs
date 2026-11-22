@@ -1,4 +1,4 @@
-//! What this computer keeps of being synchronized (record 0119).
+//! What this computer keeps of being synchronized (record 0120).
 //!
 //! ```text
 //! sync/sync.json          the server, the home, and who this computer is in it

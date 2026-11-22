@@ -11,19 +11,13 @@ look-scope = These changes hold for
 look-scope-document = The whole document: { $name }
 # Only one element under the document, by its name.
 look-scope-only = Only { $name }
-# The line under it, which goes down to the layout at the foot of Look; the count of changes follows it.
-look-layout-line = Layout: { $layout }
 
-# After the name of the layout at the top of the panel: "Manuscript · 2 changes".
-look-changes = { $count ->
-    [one] { $count } change
-   *[other] { $count } changes
-  }
-# Under a setting the document sets otherwise than its layout.
-look-changed-here = Changed here
+# Under a setting the document sets otherwise than its type.
+look-changed-here = Changed in this document
 # A change made on an element over this one, as a book over its chapters.
 look-changed-in = Changed in “{ $name }”
-look-take-again = take { $layout }’s again
+# Takes a change away.
+look-reset = Reset
 
 look-search = Find a setting: font, margins, page numbers…
 look-search-nothing = No setting has these words.
@@ -46,12 +40,6 @@ look-first-headings-numbered = Headings are numbered
 look-at-citations = Citations
 look-at-bibliography = Bibliography
 
-look-keep = Keep these changes as a layout of my own…
-look-keep-save = Keep
-# Where the layout is one of the writer's own.
-look-put-into = Put these changes into “{ $name }”
-look-delete-layout = Delete this layout of mine…
-
 ## The parts of the document type, a section of Look: the parts the program
 ## makes itself and the kinds of elements given a place of their own, in one
 ## list in the order they are printed, and what is required. What is changed
@@ -68,15 +56,14 @@ look-contents-limit-keywords = Keywords, at most
 # What the limits count, as what the document is says it.
 look-contents-requirements-note = What the limits count: { $note }
 
-# A layout, a style or a template that is neither chosen nor inherited: the one from the settings, named.
-look-usual = Your usual ({ $name })
-# The first choice of a layout or a style: what the template brings, named.
-look-as-template = As the template has it ({ $name })
-# The first choice where an element over this one has chosen: the element, and what it chose.
-look-from-with = From { $name } ({ $what })
+# The look or the reference style a document has where its type brings none: the one from the settings, by its name.
+look-your-default = { $name }, your default
+# The first choice of a look or a reference style: what the document type brings, by its name, and the type by its name.
+look-from-type = { $name }, from { $type }
+# The first choice where an element over this one has chosen: what it chose, and the element.
+look-from-with = { $what }, from { $name }
 look-style = Reference style
 look-style-change = Change this reference style…
-
 
 # The groups of the fonts to choose from.
 look-fonts-document = In this document
@@ -93,9 +80,6 @@ look-hide = Hide the look
 
 look-section-line-numbers = Line numbers
 look-section-type-parts = Parts
-look-section-the-layout = Layout
-look-choose-layout = Choose a layout
-look-layout-modifications = Modifications to the layout
 look-at-quotations-warning = Quotations
 look-at-paragraph-kinds = Paragraph kinds
 look-at-words-kinds = Words kinds
@@ -106,3 +90,33 @@ look-kind-key = Key
 look-kind-key-none = None
 # A digit another kind has: choosing it here leaves that kind without.
 look-kind-key-taken = { $keys }, now { $kind }
+
+## One form (the plan of 2026-11-22, stage 2): the top of Look says what the
+## document sets otherwise than its type, and the last part is the document type.
+
+# How many changes the document has over its type, at the top of Look.
+look-changes-here = { $count ->
+    [one] { $count } change in this document
+   *[other] { $count } changes in this document
+  }
+# Puts what the document sets otherwise into its type, a type of the writer's own, by its name.
+look-save-to = Save to “{ $name }”
+# Makes a document type of the writer's own of the type in use and what the document sets otherwise.
+look-save-as = Save as document type…
+look-save = Save
+look-type-name = Name of the document type
+# While a type of the writer's own is edited in Look: every change goes into it.
+look-editing = Editing the document type “{ $name }”
+look-done = Done
+look-section-document-type = Document type
+# Where the look of the document is taken from: the type, the writer's default, or another document type's look.
+look-taken-from = Look taken from
+# Over the list of what the document sets otherwise than its type.
+look-changed-list = Changed in this document
+
+# What a document type of the writer's own is beside its look and its parts, under Document type in Look.
+look-type-field-name = Name
+look-type-description = Description
+look-type-passage-kinds = Paragraph and words kinds offered first
+look-type-exported-as = Exported as
+look-type-delete = Delete this document type…

@@ -81,8 +81,6 @@ project-badge-joined = { $name }, som du har blitt med i
 # Two projects side by side.
 project-beside-failed = Prosjektet kunne ikkje opnast ved sida av dette
 project-beside-no-comments = Kommentarane høyrer til prosjektet du opna: opne det andre for seg sjølv for å kommentere i det
-# A template of the writer's own was saved anew, and the copy of it the project carries could not be made afresh.
-project-template-not-renewed = Kopien prosjektet har av malen, kunne ikkje oppdaterast
 # Said over the other pane while elements of one project are dragged over it.
 project-copy-to-project = Kopier til «{ $name }»
 project-move-to-project = Flytt til «{ $name }»

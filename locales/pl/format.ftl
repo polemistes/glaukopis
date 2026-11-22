@@ -13,15 +13,6 @@ format-kind-poetry = Poezja
 
 ## The format editor.
 
-format-name = Nazwa formatu
-# The name a format of one's own is first given, made from that of the format it is made from.
-format-name-changed = { $name }, zmieniony
-format-saved = „{ $name }” zapisano wśród twoich własnych formatów
-format-save-failed = Nie udało się zapisać formatu.
-format-delete-failed = Nie udało się usunąć formatu.
-format-delete-title = Usunąć format „{ $name }”?
-format-delete-message = Mapy, które go używają, będą zamiast niego używać ogólnego formatu maszynopisu.
-format-delete-confirm = Usuń format
 
 ## The parts of a format, as they are chosen at the left.
 
@@ -250,8 +241,6 @@ format-page-numbers-show = Strony są numerowane
 
 ## About the format: where its requirements are from.
 
-format-description = Opis
-format-source = Skąd pochodzą wymagania
 # The date the source was read on.
 format-source-read = Odczytano { $date }.
 format-source-high = Wartości są te ze źródła.

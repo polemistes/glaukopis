@@ -6,7 +6,7 @@ import source from '/crates/core/src/sync/settings.rs?raw';
 
 /**
  * The settings that follow the writer from computer to computer, and those
- * that stay on each, are listed by name in the core (record 0119). A
+ * that stay on each, are listed by name in the core (record 0120). A
  * setting in neither list is sent nowhere, without anyone having decided
  * so: this holds every setting of the interface to be in one of them.
  */

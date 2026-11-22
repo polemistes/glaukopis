@@ -11,19 +11,11 @@ look-scope = Diese Änderungen gelten für
 look-scope-document = Das ganze Dokument: { $name }
 # Only one element under the document, by its name.
 look-scope-only = Nur { $name }
-# The line under it, which goes down to the layout at the foot of Look; the count of changes follows it.
-look-layout-line = Layout: { $layout }
 
-# After the name of the layout at the top of the panel: "Manuscript · 2 changes".
-look-changes = { $count ->
-    [one] { $count } Änderung
-   *[other] { $count } Änderungen
-  }
 # Under a setting the document sets otherwise than its layout.
 look-changed-here = Hier geändert
 # A change made on an element over this one, as a book over its chapters.
 look-changed-in = Geändert in „{ $name }“
-look-take-again = wieder wie in { $layout }
 
 look-search = Eine Einstellung finden: Schrift, Ränder, Seitenzahlen…
 look-search-nothing = Keine Einstellung hat diese Wörter.
@@ -46,11 +38,6 @@ look-first-headings-numbered = Überschriften werden nummeriert
 look-at-citations = Zitationen
 look-at-bibliography = Literaturverzeichnis
 
-look-keep = Diese Änderungen als eigenes Layout behalten…
-look-keep-save = Behalten
-# Where the layout is one of the writer's own.
-look-put-into = Diese Änderungen in „{ $name }“ übernehmen
-look-delete-layout = Dieses eigene Layout löschen…
 
 ## The parts of the document type, a section of Look: the parts the program
 ## makes itself and the kinds of elements given a place of their own, in one
@@ -65,10 +52,6 @@ look-contents-limit-keywords = Schlüsselwörter, höchstens
 # What the limits count, as what the document is says it.
 look-contents-requirements-note = Was die Grenzen zählen: { $note }
 
-# A layout, a style or a template that is neither chosen nor inherited: the one from the settings, named.
-look-usual = Wie gewohnt ({ $name })
-# The first choice of a layout or a style: what the template brings, named.
-look-as-template = Wie die Vorlage es vorsieht ({ $name })
 # The first choice where an element over this one has chosen: the element, and what it chose.
 look-from-with = Von { $name } ({ $what })
 look-style = Zitierstil
@@ -90,9 +73,6 @@ look-hide = Aussehen ausblenden
 
 look-section-line-numbers = Zeilennummern
 look-section-type-parts = Teile des Dokumenttyps
-look-section-the-layout = Layout
-look-choose-layout = Layout wählen
-look-layout-modifications = Änderungen am Layout
 look-at-quotations-warning = Zitate
 look-at-paragraph-kinds = Absatzarten
 look-at-words-kinds = Arten der Wörter

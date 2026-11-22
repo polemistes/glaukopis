@@ -1,4 +1,4 @@
-# 0119 — The same on every device
+# 0120 — The same on every device
 
 Date: 2026-11-22. Status: built on 2026-11-22 from the plan `docs/plans/the-same-on-every-device.md`, which is the specification and says what each part does; its choices beyond the owner's words are not yet confirmed by the owner. Adds to 0006 (the server), builds on 0002 (a project is a document of changes), 0085 (a change passes through the shell to the other windows), 0111 (the form of the texts).
 

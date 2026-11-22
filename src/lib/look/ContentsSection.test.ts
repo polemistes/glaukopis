@@ -181,8 +181,8 @@ describe('the parts of a document, in Look', () => {
       requirements: { words: 10000, keywords: 6 },
     });
     expect(view.froms()).toEqual([
-      'Changed here · take My article’s again',
-      'Changed here · take My article’s again',
+      'Changed in this document · Reset',
+      'Changed in this document · Reset',
     ]);
     // An empty field is no limit, otherwise than the template.
     type(view.field('words'), '');

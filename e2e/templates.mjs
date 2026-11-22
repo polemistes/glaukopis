@@ -6,11 +6,12 @@
 // groups, and the journals, publishers and style guides are a second step,
 // narrowed to what is made for the type in use and found by the
 // search whatever is chosen. Under each name stands what the type brings,
-// its parts, its pages and what it requires, and no words of help, in the
-// tab or in the editor of a template. Then the parts the template gives a place to,
-// made as elements of a kind of the catalogue; the kind menu that offers
-// them; the checklist; a document made of it; a template of the writer's
-// own made from the one in use; and the usual template in the settings.
+// its parts, its pages and what it requires, and no words of help. Then the
+// parts the type suggests, in Parts in Look, each added as an element of a
+// kind of the catalogue, last under the document (record 0118); the kind
+// menu that offers them; the checklist; a document made of it; a document
+// type of the writer's own made from the one in use by New document type…,
+// which opens Look on it; and the usual type in the settings.
 
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
@@ -162,7 +163,7 @@ try {
   );
   check(
     'chosen, it offers no way back but the choosing of another',
-    !(await app.exec(`return Array.from(document.querySelectorAll('dialog[open] .chooser .top button')).length`)),
+    !(await app.exec(`return Array.from(document.querySelectorAll('dialog[open] .chooser .top button:not([data-new-type])')).length`)),
   );
   // The second step, narrowed to what is made for an article.
   await app.exec(`document.querySelector('dialog[open] .chooser details[data-step]').open = true;`);
@@ -194,59 +195,32 @@ try {
   await app.screenshot('templates-3-chosen');
   await app.closeChooser();
 
-  // --- What the document contains, in Look: the parts, the places of their own, what is required ---
+  // --- What the document contains, in Look: the parts the type suggests, each with Add ---
   await app.click('.preview header [data-look]');
-  await app.openLook('Parts of the document type');
+  await app.openLook('Parts');
   const places = await app.exec(
     `return Array.from(document.querySelectorAll('.side .look .place')).map((p) => ({
        name: p.querySelector('.place-head strong').textContent.trim(),
-       make: !!p.querySelector('[data-make]'),
-       none: !!p.querySelector('.none'),
+       add: !!p.querySelector('[data-make]'),
+       elements: p.querySelectorAll('.element').length,
      }))`,
   );
   check(
-    'the places of their own are the abstract, the appendix and the acknowledgements, none filled, each with "Make one"',
-    ['Abstract', 'Appendix', 'Acknowledgements'].every((n) => places.some((p) => p.name === n && p.make && p.none)),
+    'Parts lists what an article suggests, in its order, each with Add and none there yet',
+    JSON.stringify(places.map((p) => p.name)) ===
+      JSON.stringify(['Title page', 'Abstract', 'Keywords', 'Appendix', 'Acknowledgements', 'Bibliography']) &&
+      places.every((p) => p.add && !p.elements),
     JSON.stringify(places),
   );
-  const switches = () =>
-    app.exec(
-      `return Object.fromEntries(Array.from(document.querySelectorAll('.side .look [data-part-switch]')).map((i) => [i.dataset.partSwitch, { on: i.checked, fixed: i.disabled }]))`,
-    );
-  let parts = await switches();
-  check(
-    'the parts the program makes have switches: for an article the keywords on, the table of contents off, the text always there',
-    parts.keywords?.on && !parts.contents?.on && parts.body?.on && parts.body?.fixed,
-    JSON.stringify(parts),
-  );
+  check('nothing is turned on or off there', !(await app.exists('.side .look [data-part-switch]')));
   await app.screenshot('templates-4-parts');
-  // The table of contents turned on is the document's own change, and printed; turned off again, nothing is left.
-  const contentsSwitch = `document.querySelector('.side .look [data-part-switch="contents"]')`;
-  await app.click(await app.exec(`return ${contentsSwitch}`));
-  await sleep(600);
-  const changedHere = await app.exec(`return ${contentsSwitch}.closest('.row').nextElementSibling?.matches('.from') ? ${contentsSwitch}.closest('.row').nextElementSibling.textContent.replace(/\\s+/g, ' ').trim() : null`);
-  check('a part turned on says it is changed here', (await switches()).contents?.on && /^Changed here/.test(changedHere ?? ''), changedHere);
-  const preview = () => {
-    const work = join(app.dataDir, 'work');
-    return readFileSync(join(work, readdirSync(work)[0], 'preview', 'document.typ'), 'utf8');
-  };
-  let waited = Date.now();
-  while (!/#outline\(/.test(preview()) && Date.now() - waited < 15000) await sleep(300);
-  check('and the preview prints the table of contents', /#outline\(/.test(preview()));
-  await app.click(await app.exec(`return ${contentsSwitch}`));
-  await sleep(600);
-  check(
-    'turned off again, it is as the template has it, with nothing said',
-    !(await switches()).contents?.on && !(await app.exec(`return ${contentsSwitch}.closest('.row').nextElementSibling?.matches('.from') ?? false`)),
-  );
-  await app.click(await app.exec(`return document.querySelector('.side .look .place[data-kind="abstract"] [data-make]')`));
-  await app.waitFor('.side .look .place[data-kind="abstract"] .element', 3000);
+  await app.addPart('Abstract');
   const filled = await app.exec(
     `return Array.from(document.querySelectorAll('.side .look .place[data-kind="abstract"] .element')).map((e) => e.textContent.trim())`,
   );
-  check('made, the abstract is listed under its place', filled.length === 1 && filled[0] === 'Abstract', JSON.stringify(filled));
+  check('added, the abstract is listed under its part', filled.length === 1 && filled[0] === 'Abstract', JSON.stringify(filled));
 
-  // --- In the text, the abstract is the first child, with the grey label of a part ---
+  // --- In the text, the abstract is the last child, with the grey label of a part ---
   await app.keys(['Control', 'd']);
   await app.waitFor('.text-view .section', 5000);
   await sleep(500);
@@ -261,11 +235,11 @@ try {
     );
   let seen = await sections();
   check(
-    'the abstract is made the first child, of the kind abstract',
-    seen.length === 3 && seen[1].kind === 'Abstract' && /Abstract/.test(seen[1].heading) && /The word/.test(seen[2].heading),
+    'the abstract is made the last child, of the kind abstract',
+    seen.length === 3 && seen[2].kind === 'Abstract' && /Abstract/.test(seen[2].heading) && /The word/.test(seen[1].heading),
     JSON.stringify(seen),
   );
-  check('its label is the plain grey of a part', seen[1].colour === '#6b7280', seen[1].colour);
+  check('its label is the plain grey of a part', seen[2].colour === '#6b7280', seen[2].colour);
   await app.click(
     await app.exec(
       `return Array.from(document.querySelectorAll('.text-view .section')).find((s) => s.querySelector('.heading > .tag.kind')?.textContent.trim() === 'Abstract').querySelector('.body')`,
@@ -297,12 +271,15 @@ try {
   );
   await app.screenshot('templates-6-preview-abstract');
 
-  // --- The checklist of a small document is empty ---
+  // --- The checklist says the order the type has, and moves nothing ---
   await app.openAbout('Checklist');
+  const said = await app.exec(
+    `return Array.from(document.querySelectorAll('dialog[open] .remarks li')).map((l) => l.textContent.replace(/\\s+/g, ' ').trim())`,
+  );
   check(
-    'the checklist has nothing to remark on in a small document',
-    (await app.count('dialog[open] .remarks li')) === 1 && (await app.exists('dialog[open] .remarks li.clear')),
-    (await app.text('dialog[open] .remarks')).replace(/\s+/g, ' '),
+    'the checklist of a small document says only that the type has the abstract before the text',
+    said.length === 1 && said[0].startsWith('The document type has these parts in this order: Abstract · The text'),
+    said.join(' | '),
   );
   await app.closeAbout();
 
@@ -342,8 +319,8 @@ try {
   await sleep(500);
   seen = await sections();
   check(
-    'the second abstract is marked on its label as not printed',
-    seen[2]?.kind === 'Abstract' && seen[2].doubled && !seen[1].doubled,
+    'the second abstract is marked on its label as not printed: the one added, now after the chapter made an abstract',
+    seen[1]?.kind === 'Abstract' && seen[2]?.kind === 'Abstract' && seen[2].doubled && !seen[1].doubled,
     JSON.stringify(seen),
   );
 
@@ -353,14 +330,14 @@ try {
   );
   check(
     'the checklist lists the doubled abstract, and names it',
-    remarks.length === 1 && /One more element of the kind “Abstract”/.test(remarks[0]) && /The word/.test(remarks[0]),
+    remarks.length === 1 && /One more element of the kind “Abstract”/.test(remarks[0]) && /Abstract$/.test(remarks[0]),
     remarks.join(' | '),
   );
   await app.screenshot('templates-8-checklist');
   await app.closeAbout();
-  await app.openLook('Parts of the document type');
+  await app.openLook('Parts');
   check(
-    'and what the document contains says that only the first is used',
+    'and Parts says that only the first is used',
     (await app.text('.side .look .place[data-kind="abstract"]')).includes('Only the first is used'),
   );
 
@@ -429,52 +406,50 @@ try {
     check('a title page turned off is off in Word too, and the title stays in the properties', false, JSON.stringify(madeUntitled).slice(0, 300));
   }
 
-  // --- A template of one's own, made from the one in use ---
+  // --- A document type of one's own, made from the one in use ---
   await app.openChooser();
-  await app.clickText('dialog[open] .chooser .own button', 'Make a template of my own from this…');
-  await app.waitFor('dialog[open] .editor nav', 8000);
-  await app.waitUntil(`return document.querySelector('dialog[open] input.name')?.value === 'Journal article, my own'`, 5000, 'the editor to be read');
-  await app.screenshot('templates-10-editor');
-  const helpIn = async () => {
-    const found = [];
-    for (const part of await app.exec(`return Array.from(document.querySelectorAll('dialog[open] .editor nav button')).map((b) => b.textContent.trim())`)) {
-      await app.clickText('dialog[open] .editor nav button', part);
-      await sleep(120);
-      // "In the contents", beside a kind that is in hand already, says why its box cannot be changed: no help.
-      const words = await app.exec(
-        `return Array.from(document.querySelectorAll('dialog[open] .editor .hint, dialog[open] .editor small, dialog[open] footer .note, dialog[open] .editor [placeholder]'))
-           .map((e) => e.getAttribute('placeholder') ?? e.textContent.trim()).filter((w) => w && w !== 'In the contents')`,
-      );
-      if (words.length) found.push(`${part}: ${words.join(' / ')}`);
-    }
-    await app.clickText('dialog[open] .editor nav button', 'About this template');
-    return found;
-  };
-  const help = await helpIn();
-  check('no part of the editor of a template has words of help', !help.length, help.join(' | '));
-  await app.clickText('dialog[open] footer button', 'Save as my own');
-  await app.waitUntil(`return document.querySelectorAll('dialog[open]').length === 1`, 8000, 'the editor to go');
-  await sleep(500);
+  await app.click('dialog[open] .chooser [data-new-type]');
+  await app.waitFor('dialog[open] [data-new-name]', 5000);
+  check(
+    'New document type… asks a name and what to start from, the type in use first, with no words of help',
+    (await app.exec(`return document.querySelector('dialog[open] [data-start-from]').value`)) === 'article' &&
+      (await app.exec(`return document.querySelector('dialog[open] [data-start-from] option').textContent.trim()`)) === 'Nothing' &&
+      !(await app.exists('dialog[open] .new-type .hint, dialog[open] .new-type small, dialog[open] .new-type [placeholder]')),
+  );
+  await app.screenshot('templates-10-new');
+  await app.type('dialog[open] [data-new-name]', 'My article');
+  await app.click('dialog[open] [data-create]');
+  await app.waitGone('dialog[open]', 8000);
+  await app.waitFor('.side .look [data-editing]', 8000).catch(() => {});
   const ownFiles = existsSync(join(app.dataDir, 'templates')) ? readdirSync(join(app.dataDir, 'templates')) : [];
-  check('the template is saved among one’s own', ownFiles.length === 1, ownFiles.join(' '));
+  check('the type is saved among one’s own', ownFiles.length === 1 && ownFiles[0] === 'my-article.json', ownFiles.join(' '));
+  const editing = await app.lookTop();
+  check(
+    'Document properties closes, and Look edits the type, which the document has',
+    editing.what === 'My article' && editing.editing === 'Editing the document type “My article”',
+    JSON.stringify(editing),
+  );
+  await app.screenshot('templates-11-own');
+  await app.clickText('.side .look [data-editing] button', 'Done');
+  await sleep(300);
+  await app.openChooser();
   const listed = await app.exec(
     `const out = [];
      let group = '';
      for (const e of document.querySelectorAll('dialog[open] .chooser .templates h4, dialog[open] .chooser .templates .template')) {
        if (e.tagName === 'H4') group = e.textContent.trim();
-       else out.push({ group, name: e.querySelector('.name').textContent.trim(), chosen: e.classList.contains('chosen') });
+       else out.push({ group, name: e.querySelector('.name').textContent.trim(), chosen: e.classList.contains('chosen'), edit: !!e.querySelector('[data-edit-type]') });
      }
      return out;`,
   );
-  const mine = listed.find((t) => t.name === 'Journal article, my own');
+  const mine = listed.find((t) => t.name === 'My article');
   check(
-    'it is in the chooser under "Your own", and chosen',
-    !!mine && mine.group === 'Your own' && mine.chosen,
+    'it is in the chooser under "Your own", chosen, with Edit',
+    !!mine && mine.group === 'Your own' && mine.chosen && mine.edit,
     JSON.stringify(mine ?? listed.slice(0, 3)),
   );
-  await app.screenshot('templates-11-own');
   await app.closeChooser();
-  check('and it is what the document is', (await app.whatIs()) === 'Journal article, my own', await app.whatIs());
+  check('and it is what the document is', (await app.whatIs()) === 'My article', await app.whatIs());
 
   // --- The settings offer the usual template ---
   await app.keys(['Control', ',']);

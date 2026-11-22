@@ -1,6 +1,6 @@
 /**
  * What the window knows of the synchronization between the writer's
- * computers (record 0119; the plan is `docs/plans/the-same-on-every-device.md`):
+ * computers (record 0120; the plan is `docs/plans/the-same-on-every-device.md`):
  * the status, asked once and then kept as the event `sync` tells it; the
  * computers, asked of the server when the settings show them; and what is
  * done from the settings. One for the window.

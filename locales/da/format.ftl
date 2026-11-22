@@ -13,15 +13,6 @@ format-kind-poetry = Lyrik
 
 ## Layouts of the writer's own, kept from the changes of a document.
 
-format-name = Opsætningens navn
-# The name a layout of one's own is first given, made from that of the layout it is made from.
-format-name-changed = { $name }, ændret
-format-saved = »{ $name }« er gemt blandt dine egne opsætninger
-format-save-failed = Opsætningen kunne ikke gemmes.
-format-delete-failed = Opsætningen kunne ikke slettes.
-format-delete-title = Slet opsætningen »{ $name }«?
-format-delete-message = Elementer, der bruger den, vil bruge den almindelige manuskriptopsætning i stedet.
-format-delete-confirm = Slet opsætningen
 
 ## Words that stand in several parts.
 
@@ -319,8 +310,6 @@ format-item-text = Mine egne ord
 
 ## About the layout: where its requirements are from.
 
-format-description = Beskrivelse
-format-source = Hvor kravene kommer fra
 # The date the source was read on.
 format-source-read = Læst { $date }.
 format-source-high = Værdierne er kildens.

@@ -1,6 +1,6 @@
 //! The settings that follow the writer from computer to computer, as a
 //! store that is brought to be the same as a map of the home document
-//! (`mirror`, record 0119).
+//! (`mirror`, record 0120).
 //!
 //! A setting follows where it is the writer's: who they are, the language,
 //! the look they chose, how they like to write. It stays where it belongs

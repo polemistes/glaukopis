@@ -1,5 +1,5 @@
 //! What is no document on disk brought to be the same as a map of the home
-//! document (record 0119): the folders, the settings, what the list shows
+//! document (record 0120): the folders, the settings, what the list shows
 //! of each project.
 //!
 //! A store holds names and values, and so does its map. Two computers may

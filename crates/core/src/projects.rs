@@ -330,7 +330,7 @@ impl Projects {
     }
 
     /// Makes a project that another computer of the writer's holds (record
-    /// 0119), under its id, with all it holds: the state is written before
+    /// 0120), under its id, with all it holds: the state is written before
     /// what is known of the project, so that it is never in the list empty,
     /// where opening it would begin it anew. A folder left by a making that
     /// was cut short, with a state and nothing known of it, is made again.
@@ -355,7 +355,7 @@ impl Projects {
 
     /// Keeps a whole state of the project among its earlier versions: the
     /// project as it stood here before what another computer wrote came
-    /// into it (record 0119). See `keep_whole`.
+    /// into it (record 0120). See `keep_whole`.
     pub fn keep_version(&self, id: &str, whole: &[u8], always: bool) -> Result<Option<String>> {
         keep_whole(&self.existing_dir(id)?, whole, always)
     }
@@ -941,7 +941,7 @@ fn thin(history: &Path, now_unix: i64) {
 
 /// Keeps `whole`, a document as one update, among the earlier states in
 /// `dir`: what it held before something came into it from another computer
-/// of the writer's (record 0119). As `keep_history`, not within ten minutes
+/// of the writer's (record 0120). As `keep_history`, not within ten minutes
 /// of the newest kept, unless `always`: where two computers wrote apart,
 /// the document as it stood here is kept whatever was kept before. Returns
 /// the name of what was kept.

@@ -1,6 +1,6 @@
 # The same on every device — the build plan
 
-From the owner's words of 2026-11-22 (the last section of `docs/brief.md`: read it first). The record is `docs/adr/0119-the-same-on-every-device.md`. This plan is the specification the parts are built from: where it says a path, a name or a shape, that is what is built.
+From the owner's words of 2026-11-22 (the last section of `docs/brief.md`: read it first). The record is `docs/adr/0120-the-same-on-every-device.md`. This plan is the specification the parts are built from: where it says a path, a name or a shape, that is what is built.
 
 ## What it is
 

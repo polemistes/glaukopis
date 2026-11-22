@@ -1,6 +1,6 @@
 //! What is kept about a project beside its document, as stores that are
 //! brought to be the same as maps of the home document (`mirror`): what the
-//! list of projects shows of it, and how it is shared (record 0119).
+//! list of projects shows of it, and how it is shared (record 0120).
 
 use std::collections::{BTreeMap, BTreeSet};
 

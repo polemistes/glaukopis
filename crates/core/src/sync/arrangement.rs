@@ -1,6 +1,6 @@
 //! How the projects are arranged, as stores that are brought to be the same
 //! as maps of the home document (`mirror`): the folders, the folder each
-//! project is in, and the favourites (record 0119). They were kept on each
+//! project is in, and the favourites (record 0120). They were kept on each
 //! computer alone (record 0031), which is right for those who share a
 //! project and wrong for one writer's own computers.
 

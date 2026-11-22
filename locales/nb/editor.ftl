@@ -39,9 +39,9 @@ editor-numbering = Nummerering
 editor-numbering-none = Ikke nummerert
 editor-numbering-counted = Telt fra det første nummeret som er gitt
 editor-numbering-given = Bare numrene som er gitt
-editor-line-numbers-every-layout = Som oppsettet: hver { $every }
+editor-line-numbers-every-layout = Fra Utseende: hver { $every }
 editor-line-numbers-side = Numrene på
-editor-side-layout = Siden oppsettet sier ({ $side })
+editor-side-layout = Fra Utseende ({ $side })
 editor-side-left = Venstre
 editor-side-right = Høyre
 # Over et nummer i margen av teksten, som åpner et felt for det når det trykkes.
@@ -74,7 +74,7 @@ editor-gloss-hint = Hva oppslagsordet betyr
 editor-code = Kode
 editor-code-hint = En linje kode, eller noe annet som beholdes bokstav for bokstav
 editor-break = Skille
-editor-break-hint = Et opphold mellom deler, med tegnet oppsettet gir det
+editor-break-hint = Et opphold mellom deler, med tegnet Utseende gir det
 editor-draft = Kladd
 editor-draft-hint = For dine øyne: det kommer ikke med i noe dokument
 editor-foreign = Annet språk
@@ -118,8 +118,6 @@ editor-kinds-mixed = Blandet
 editor-kinds-own = Dine egne
 editor-kinds-make = Lag et slag …
 editor-kinds-change-own = Endre et av dine egne …
-# Over valget som åpner oppsettredigeringen: oppsettet bestemmer hvordan hvert slag ser ut.
-editor-kinds-set-by = Satt slik «{ $format }» har dem
 editor-kinds-change-look = Hvordan «{ $kind }» ser ut …
 editor-words-make = Lag et slag ord …
 # Først blant språkene ord på et annet språk kan være på: det teksten selv er på.
@@ -169,7 +167,7 @@ editor-pointer = Kryssreferanse …
 editor-refmark-title = Tall i linjen
 editor-refmark-label = Merke
 editor-refmark-placeholder = 3:16, 327a, 1094a1
-editor-refmark-dialog-hint = Merket er ingen del av ordene: stavekontroll, søk og ordtelling går forbi det. Oppsettet bestemmer om det heves i linjen eller settes i margen.
+editor-refmark-dialog-hint = Merket er ingen del av ordene: stavekontroll, søk og ordtelling går forbi det. Utseende bestemmer om det heves i linjen eller settes i margen.
 # Det et bilde som ble limt inn uten eget navn, heter i bildelageret.
 editor-pasted-picture = bilde
 
@@ -241,7 +239,7 @@ editor-locator-sub-verbo = Sub verbo
 # Tallet er notens nummer, eller en bokstav for en note som står et eget sted.
 editor-note-numbered = Note { $number }
 editor-note-place = Hvor noten står
-editor-note-place-format = Der oppsettet har notene sine
+editor-note-place-format = Der Utseende setter notene
 editor-note-place-foot = Nederst på siden
 editor-note-place-end = Til slutt i teksten
 editor-note-placeholder = Teksten i noten

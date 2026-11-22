@@ -131,7 +131,7 @@ struct AppendHead {
     here: Option<bool>,
     time: Option<i64>,
     /// Whether the writer wrote nothing of it: what the application writes
-    /// into a project by itself (record 0119, `sync::wrote`).
+    /// into a project by itself (record 0120, `sync::wrote`).
     quiet: Option<bool>,
 }
 
@@ -161,7 +161,7 @@ pub fn project_append(window: WebviewWindow, state: State<'_, AppState>, request
     if let Err(error) = window.emit_filter(PROJECT_UPDATE, passed, others) {
         tracing::warn!(%error, "a change was not passed to the other windows");
     }
-    // And, in a moment, to the writer's other computers (record 0119).
+    // And, in a moment, to the writer's other computers (record 0120).
     super::sync::touched(window.app_handle());
     Ok(())
 }

@@ -13,15 +13,6 @@ format-kind-poetry = 诗歌
 
 ## The format editor.
 
-format-name = 格式名称
-# The name a format of one's own is first given, made from that of the format it is made from.
-format-name-changed = { $name }（已修改）
-format-saved = “{ $name }”已保存到你的自定义格式中
-format-save-failed = 无法保存此格式。
-format-delete-failed = 无法删除此格式。
-format-delete-title = 删除格式“{ $name }”？
-format-delete-message = 使用它的导图将改用通用文稿格式。
-format-delete-confirm = 删除格式
 
 ## The parts of a format, as they are chosen at the left.
 
@@ -250,8 +241,6 @@ format-page-numbers-show = 为页面编号
 
 ## About the format: where its requirements are from.
 
-format-description = 说明
-format-source = 要求的出处
 # The date the source was read on.
 format-source-read = 查阅于 { $date }。
 format-source-high = 数值与出处一致。

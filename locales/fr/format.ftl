@@ -13,15 +13,6 @@ format-kind-poetry = Poésie
 
 ## Layouts of the writer's own, kept from the changes of a document.
 
-format-name = Nom de la mise en page
-# The name a layout of one's own is first given, made from that of the layout it is made from.
-format-name-changed = { $name }, modifié
-format-saved = La mise en page « { $name } » est enregistrée parmi les vôtres
-format-save-failed = La mise en page n’a pas pu être enregistrée.
-format-delete-failed = La mise en page n’a pas pu être supprimée.
-format-delete-title = Supprimer la mise en page « { $name } » ?
-format-delete-message = Les éléments qui l’utilisent prendront à la place la mise en page générale de manuscrit.
-format-delete-confirm = Supprimer la mise en page
 
 ## Words that stand in several parts.
 
@@ -319,8 +310,6 @@ format-item-text = Mes propres mots
 
 ## About the layout: where its requirements are from.
 
-format-description = Description
-format-source = D’où viennent les exigences
 # The date the source was read on.
 format-source-read = Lu le { $date }.
 format-source-high = Les valeurs sont celles de la source.

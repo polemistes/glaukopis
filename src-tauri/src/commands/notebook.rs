@@ -113,7 +113,7 @@ pub fn notebook_append(window: WebviewWindow, state: State<'_, AppState>, reques
     if let Err(error) = window.emit_filter(NOTEBOOK_UPDATE, passed, others) {
         tracing::warn!(%error, "a change to the notebook was not passed to the other windows");
     }
-    // And, in a moment, to the writer's other computers (record 0119).
+    // And, in a moment, to the writer's other computers (record 0120).
     super::sync::touched(window.app_handle());
     Ok(())
 }

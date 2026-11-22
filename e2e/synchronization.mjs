@@ -1,4 +1,4 @@
-// The same on every computer (record 0119): the real server, and the
+// The same on every computer (record 0120): the real server, and the
 // application running twice, each with a data directory of its own, as two
 // computers of one writer. Synchronization is turned on in the settings of
 // the first (Start here, with the server's password) and a code made; the

@@ -1,4 +1,4 @@
-//! The home document (record 0119): what a writer's computers hold that is
+//! The home document (record 0120): what a writer's computers hold that is
 //! no document on disk, made one for the journey. It is a Yjs document of
 //! maps whose values are strings, kept here in `sync/home.bin` and brought
 //! to be the same as the server's by the exchange, as any document is.

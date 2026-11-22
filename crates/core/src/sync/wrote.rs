@@ -1,5 +1,5 @@
 //! Whether the writer wrote in a project since it was last exchanged
-//! (record 0119): a mark beside the project, made when a change of the
+//! (record 0120): a mark beside the project, made when a change of the
 //! writer's own is written to its log.
 //!
 //! The application writes into a project by itself as well: who is who in

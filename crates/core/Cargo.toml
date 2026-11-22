@@ -58,7 +58,7 @@ typst-layout = "0.15.1"
 typst-pdf = "0.15.1"
 typst-kit = { version = "0.15.1", default-features = false, features = ["scan-fonts"] }
 comemo = "0.5"
-# Yjs, for what is synchronized between the writer's computers (record 0119): the
+# Yjs, for what is synchronized between the writer's computers (record 0120): the
 # changes of a document worked with as bytes, and the documents the core makes
 # itself. The version the server has; with `sync`, a document may pass between threads.
 yrs = { version = "0.28", features = ["sync"] }

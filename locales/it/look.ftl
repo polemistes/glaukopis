@@ -11,20 +11,11 @@ look-scope = Queste modifiche valgono per
 look-scope-document = Tutto il documento: { $name }
 # Only one element under the document, by its name.
 look-scope-only = Solo { $name }
-# The line under it, which goes down to the layout at the foot of Look; the count of changes follows it.
-look-layout-line = Impaginazione: { $layout }
 
-# After the name of the layout at the top of the panel: "Manuscript · 2 changes".
-look-changes = { $count ->
-    [one] { $count } modifica
-    [many] { $count } modifiche
-   *[other] { $count } modifiche
-  }
 # Under a setting the document sets otherwise than its layout.
 look-changed-here = Modificato qui
 # A change made on an element over this one, as a book over its chapters.
 look-changed-in = Modificato in «{ $name }»
-look-take-again = riprendi quello di { $layout }
 
 look-search = Trova un'impostazione: font, margini, numeri di pagina…
 look-search-nothing = Nessuna impostazione ha queste parole.
@@ -47,11 +38,6 @@ look-first-headings-numbered = I titoli sono numerati
 look-at-citations = Citazioni
 look-at-bibliography = Bibliografia
 
-look-keep = Tieni queste modifiche come un'impaginazione mia…
-look-keep-save = Tieni
-# Where the layout is one of the writer's own.
-look-put-into = Metti queste modifiche in «{ $name }»
-look-delete-layout = Elimina questa mia impaginazione…
 
 ## The parts of the document type, a section of Look: the parts the program
 ## makes itself and the kinds of elements given a place of their own, in one
@@ -66,10 +52,6 @@ look-contents-limit-keywords = Parole chiave, al massimo
 # What the limits count, as what the document is says it.
 look-contents-requirements-note = Che cosa contano i limiti: { $note }
 
-# A layout, a style or a template that is neither chosen nor inherited: the one from the settings, named.
-look-usual = Il tuo solito ({ $name })
-# The first choice of a layout or a style: what the template brings, named.
-look-as-template = Come vuole il modello ({ $name })
 # The first choice where an element over this one has chosen: the element, and what it chose.
 look-from-with = Da { $name } ({ $what })
 look-style = Stile di citazione
@@ -91,9 +73,6 @@ look-hide = Nascondi l'aspetto
 
 look-section-line-numbers = Numeri di riga
 look-section-type-parts = Parti del tipo di documento
-look-section-the-layout = Impaginazione
-look-choose-layout = Scegli un'impaginazione
-look-layout-modifications = Modifiche all'impaginazione
 look-at-quotations-warning = Citazioni
 look-at-paragraph-kinds = Tipi di paragrafo
 look-at-words-kinds = Tipi di parole

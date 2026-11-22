@@ -204,7 +204,7 @@ try {
   typ = source();
   check('the preview follows what is written', /written while the preview is open/.test(typ));
 
-  // --- Another template, which brings its layout and its reference style ---
+  // --- Another document type, which brings its look and its reference style ---
   check(
     'the head of the typesetting pane has the Look button, and nothing of what the document is, its layout or style',
     (await app.exists('.side.typesetting .preview header [data-look]')) &&
@@ -226,7 +226,7 @@ try {
   await sleep(4500);
   typ = source();
   check(
-    'choosing a template takes the layout and the reference style that go with it',
+    'choosing a document type takes the look and the reference style that go with it',
     (await app.whatIs()) === 'APA 7 (professional paper)' && /US Letter · Times New Roman 12 pt · Line spacing 2/.test(brings) && /APA Style 7th/.test(brings),
     `${await app.whatIs()} | ${brings}`,
   );
@@ -237,18 +237,18 @@ try {
   );
   await app.screenshot('preview-2-apa');
 
-  // --- The layouts are in groups, and a novel is a book: chosen in the look of the document ---
+  // --- The looks are in groups, and a novel is a book: chosen under Document type in Look ---
   await app.click('.preview header [data-look]');
   await app.openLook();
   const groups = await app.exec(
-    `return Array.from(${app.lookRow('Choose a layout')}.querySelectorAll('optgroup')).map((g) => g.label)`,
+    `return Array.from(${app.lookRow('Look taken from')}.querySelectorAll('optgroup')).map((g) => g.label)`,
   );
   check(
-    'the layouts are offered by kind',
+    'the looks are offered by kind',
     ['Fiction', 'Stage and screen', 'Poetry'].every((g) => groups.includes(g)),
     groups.join(' | '),
   );
-  check('the layout chosen is a choice of its own', await app.lookChoose('Choose a layout', 'novel-book'));
+  check('another document type’s look is a choice of its own', await app.lookChoose('Look taken from', 'novel-book'));
   await sleep(4500);
   typ = source();
   check(
@@ -258,17 +258,34 @@ try {
       /a5/.test(typ),
   );
   await app.screenshot('preview-2b-novel');
-  // The layout of the template again.
-  await app.lookChoose('Choose a layout', '');
+  // The type's own look again.
+  await app.lookChoose('Look taken from', '');
   await sleep(4500);
   typ = source();
   check(
-    'left to the template, the layout is the template’s again',
-    (await app.lookChosen('Choose a layout')) === '' && /us-letter/.test(typ) && !/a5/.test(typ),
+    'left to the type, the look is the type’s again',
+    (await app.lookChosen('Look taken from')) === '' && /us-letter/.test(typ) && !/a5/.test(typ),
     typ.match(/paper: "[^"]*"/)?.[0],
   );
 
-  // --- The particulars of the document ---
+  // --- The particulars of the document, on its title page, which is an element of its own (record 0118) ---
+  await app.addPart('Title page');
+  // Added last under the document, it is moved first in the tree, where a title page is printed first.
+  await app.keys(['Control', 'd']);
+  await app.waitFor('.diagram .node', 5000);
+  await sleep(300);
+  await app.click('.diagram');
+  await app.keys(['Control', '0']);
+  await sleep(400);
+  await app.click(await app.findByText('.diagram .node', 'Title page'));
+  await sleep(200);
+  for (let i = 0; i < 12; i++) {
+    await app.keys(['Alt', 'ArrowUp']);
+    await sleep(150);
+  }
+  await app.keys(['Control', 'd']);
+  await app.waitFor('.text-view .section', 5000);
+  await sleep(400);
   await app.openAbout('Details');
   check(
     'the details say nothing but their labels',
@@ -362,7 +379,7 @@ try {
   await app.waitFor('.preview header [data-look]', 8000);
   await sleep(500);
   await app.openLook();
-  await app.lookChoose('Choose a layout', own);
+  await app.lookChoose('Look taken from', own);
   await app.waitFor('.preview footer .issues', 15000);
   {
     await app.click('.preview footer .issues');
@@ -440,7 +457,8 @@ try {
   await sleep(200);
   await app.press('ArrowDown');
   await app.keys(['Control', 'End']);
-  for (let i = 0; i < 9; i++) {
+  // Twelve paragraphs: the document has no bibliography's pages since record 0118.
+  for (let i = 0; i < 12; i++) {
     await app.press('Enter');
     await app.exec(
       `const v = document.querySelector('.text-view .ProseMirror-focused');

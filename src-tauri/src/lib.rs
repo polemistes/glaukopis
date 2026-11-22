@@ -120,7 +120,7 @@ pub fn run() {
             let handle = app.handle().clone();
             glaukopis_core::changes::on_changed(move |area| {
                 let _ = handle.emit("changed", area);
-                // And what was written here is sent to the writer's other computers (record 0119).
+                // And what was written here is sent to the writer's other computers (record 0120).
                 commands::sync::touched(&handle);
             });
             let start = Start { log: log_file.clone(), resources: app.path().resource_dir().ok() };
@@ -558,7 +558,7 @@ impl Start {
             Opening::Ready(mut state) => {
                 state.data_folder_chosen = chosen;
                 // The engine that keeps this computer the same as the
-                // writer's others (record 0119): made with the stores it
+                // writer's others (record 0120): made with the stores it
                 // shares with the commands, and started once the windows are.
                 let sync = commands::sync::engine(app, &state);
                 app.manage(*state);

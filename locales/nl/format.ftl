@@ -13,15 +13,6 @@ format-kind-poetry = Poëzie
 
 ## The format editor.
 
-format-name = Naam van het formaat
-# The name a format of one's own is first given, made from that of the format it is made from.
-format-name-changed = { $name }, gewijzigd
-format-saved = ‘{ $name }’ is opgeslagen bij je eigen formaten
-format-save-failed = Het formaat kon niet worden opgeslagen.
-format-delete-failed = Het formaat kon niet worden gewist.
-format-delete-title = Het formaat ‘{ $name }’ wissen?
-format-delete-message = Mindmaps die het gebruiken, gebruiken dan het algemene manuscriptformaat.
-format-delete-confirm = Formaat wissen
 
 ## The parts of a format, as they are chosen at the left.
 
@@ -250,8 +241,6 @@ format-page-numbers-show = Pagina's worden genummerd
 
 ## About the format: where its requirements are from.
 
-format-description = Beschrijving
-format-source = Waar de eisen vandaan komen
 # The date the source was read on.
 format-source-read = Gelezen op { $date }.
 format-source-high = De waarden zijn die van de bron.

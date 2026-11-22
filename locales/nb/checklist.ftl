@@ -2,24 +2,24 @@
 # som merknader i dokumentvinduet.
 
 checklist-words = { $count ->
-    [one] { $count } ord; malen tillater { $limit }.
-   *[other] { $count } ord; malen tillater { $limit }.
+    [one] { $count } ord; dokumenttypen tillater { $limit }.
+   *[other] { $count } ord; dokumenttypen tillater { $limit }.
 }
 checklist-abstract-words = { $count ->
-    [one] Sammendraget har { $count } ord; malen tillater { $limit }.
-   *[other] Sammendraget har { $count } ord; malen tillater { $limit }.
+    [one] Sammendraget har { $count } ord; dokumenttypen tillater { $limit }.
+   *[other] Sammendraget har { $count } ord; dokumenttypen tillater { $limit }.
 }
 checklist-keywords = { $count ->
-    [one] { $count } nøkkelord; malen tillater { $limit }.
-   *[other] { $count } nøkkelord; malen tillater { $limit }.
+    [one] { $count } nøkkelord; dokumenttypen tillater { $limit }.
+   *[other] { $count } nøkkelord; dokumenttypen tillater { $limit }.
 }
 checklist-doubled = { $count ->
     [one] Ett element til av typen «{ $kind }» står ved siden av det første; bare det første skrives ut.
    *[other] { $count } elementer til av typen «{ $kind }» står ved siden av det første; bare det første skrives ut.
 }
 checklist-unplaced = { $count ->
-    [one] Malen lager ikke noe omslag: ett element av en omslagstype skrives ikke ut.
-   *[other] Malen lager ikke noe omslag: { $count } elementer av en omslagstype skrives ikke ut.
+    [one] Dokumenttypen lager ikke noe omslag: ett element av en omslagstype skrives ikke ut.
+   *[other] Dokumenttypen lager ikke noe omslag: { $count } elementer av en omslagstype skrives ikke ut.
 }
 
 ## Fewer words, stage 4: what the type and the layout ask of the front page and of quotations.
@@ -29,11 +29,11 @@ checklist-long-quotation = { $by ->
     [lines] «{ $element }» har et sitat på { $words } ord i teksten, omtrent { $lines ->
         [one] { $lines } linje
        *[other] { $lines } linjer
-    }; oppsettet setter sitater for seg fra { $limit } linjer.
+    }; Utseende setter sitater for seg fra { $limit } linjer.
    *[words] «{ $element }» har et sitat på { $words } ord i teksten, omtrent { $lines ->
         [one] { $lines } linje
        *[other] { $lines } linjer
-    }; oppsettet setter sitater for seg fra { $limit } ord.
+    }; Utseende setter sitater for seg fra { $limit } ord.
 }
 
 ## Treets rekkefølge: det som sies om delene, og aldri rettes.

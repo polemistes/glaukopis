@@ -5,7 +5,7 @@ settings-error-system = Opplysningene om programmet kunne ikke leses
 settings-error-read = Innstillingene kunne ikke leses
 settings-error-save = Innstillingene kunne ikke lagres
 settings-error-fonts = Skriftene på denne datamaskinen kunne ikke listes opp
-settings-error-templates = Malene kunne ikke listes opp
+settings-error-templates = Dokumenttypene kunne ikke listes opp
 settings-set-aside = Innstillingene kunne ikke leses, og er lagt til side som { $path }; standardinnstillingene brukes
 settings-set-aside-person = Innstillingene kunne ikke leses, og er lagt til side som { $path }; standardinnstillingene brukes, og denne datamaskinen er en ny person i historikken til prosjektene
 
@@ -117,7 +117,7 @@ settings-default-view = Standardvisning for nye prosjekter
 settings-default-type = Standard dokumenttype
 settings-default-look = Standardutseende
 settings-default-style = Standard referansestil
-settings-default-none = Ingen: som dokumenttypen har det
+settings-default-none = Fra dokumenttypen
 settings-look-chips = Vis merkelapper for utseende i forhåndsvisningen
 
 ## The data folder chosen by the writer (docs/plans/the-data-folder-more-than-one-window-favourites-and-the-copied-space.md).

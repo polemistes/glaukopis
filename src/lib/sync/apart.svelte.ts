@@ -1,6 +1,6 @@
 /**
  * What the writer is told when a project was written in on two of their
- * computers while they were apart (record 0119). The engine has then kept
+ * computers while they were apart (record 0120). The engine has then kept
  * the project as it stood here before the other computer's changes came
  * in, and the moment before them; a toast says so, with Show the changes,
  * which opens the project and the review of its changes from that moment.

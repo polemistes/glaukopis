@@ -45,78 +45,41 @@ template-target-epub = E-bog
 
 ## The template editor.
 
-template-editor = Skabelon
-template-name = Skabelonens navn
 # The name a template of one's own is first given, made from that of the template it is made from.
 template-name-changed = { $name }, ændret
-# A template of the writer's own made from another, before it is named: by the other's name.
-template-name-own = { $name }, min egen
-template-sections = Skabelonens dele
-template-delete = Slet denne skabelon
-template-save-own = Gem som min egen
 template-saved = »{ $name }« er gemt blandt dine egne skabeloner
-template-read-failed = Skabelonen kunne ikke læses.
 template-save-failed = Skabelonen kunne ikke gemmes.
 template-delete-failed = Skabelonen kunne ikke slettes.
 template-keep-failed = Skabelonen kunne ikke gemmes i projektet. På en anden computer og i en projektfil får dokumentet i stedet den sædvanlige skabelon.
 template-delete-title = Slet skabelonen »{ $name }«?
 template-delete-message = Elementer, der bruger den, vil bruge den skabelon, den blev lavet ud fra, i stedet.
 template-delete-confirm = Slet skabelonen
-template-leave-title = Forlad uden at gemme?
-template-leave-message = De ændringer, du har lavet i skabelonen, går tabt.
-template-leave-confirm = Forlad
-template-leave-cancel = Fortsæt med at redigere
 
 ## The parts of the editor, as they are chosen at the left.
 
-template-section-about = Om denne skabelon
-template-section-looks = Opsætning og referencestil
-template-section-contents = Indhold
-template-section-kinds = Arter af elementer
-template-section-passage-kinds = Arter af afsnit og ord
-template-section-requirements = Krav
-template-section-outputs = Filer
 
 ## About the template.
 
-template-description = Beskrivelse
-template-group = Gruppe
-template-based-on = Bygger på
-template-based-on-none = Intet bestemt
 
 ## The layout and the reference style it brings.
 
-template-layout = Opsætning
-template-style = Referencestil
-# The layout or style the writer has chosen in the settings.
-template-usual = Din sædvanlige, fra indstillingerne
 
 ## The contents: the order of the document.
 
-# An item of the contents that places every element of a kind.
-template-contents-kind = Hvert element af arten { $name }
-template-contents-add-part = En del…
-template-contents-add-kind = En art element…
-template-contents-up = Op
-template-contents-down = Ned
 
 ## The kinds in hand.
 
-template-kinds-in-contents = I indholdet
 
 ## The requirements.
 
 template-requirement-words = Ord i teksten
 template-requirement-abstract-words = Ord i resuméet
 template-requirement-keywords = Nøgleord
-template-requirement-note = Hvad grænserne tæller
 # Beside a number of 0, in the place of its unit.
 template-no-limit = ingen grænse
 
 ## The files the template makes.
 
-template-output-document = Dokumentet
-template-output-cover = Omslaget
 
 ## The names of the kinds of text that come with Glaukopis, as the chooser of what you are writing
 ## and the button over the preview give them; journals, publishers and style guides keep their own.
@@ -143,6 +106,5 @@ template-called-news-article = Nyhedsartikel
 template-requirement-anonymity = Anonymt
 
 ## Stage 4 of the settings, the zoom and the keys of the kinds: the kinds Ctrl+Alt and a digit gives.
-template-kind-keys = Taster
 
 template-described-plain = Generel tekst.

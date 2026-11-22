@@ -159,7 +159,7 @@ impl DataDir {
     }
 
     /// What this computer keeps of being synchronized with the writer's
-    /// others (record 0119): made when it is first written to.
+    /// others (record 0120): made when it is first written to.
     pub fn sync(&self) -> PathBuf {
         self.root.join("sync")
     }

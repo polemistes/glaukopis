@@ -81,8 +81,6 @@ project-badge-joined = { $name }、参加中
 # 二つのプロジェクトを並べて。
 project-beside-failed = このプロジェクトの隣にプロジェクトを開けませんでした
 project-beside-no-comments = コメントは開いたプロジェクトのものです。もう一方のプロジェクトにコメントするには、それを単独で開いてください
-# 書き手の独自のテンプレートが保存し直され、プロジェクトが持つそのコピーを新しくできなかったとき。
-project-template-not-renewed = プロジェクトが持つテンプレートのコピーを最新にできませんでした
 # あるプロジェクトの要素をドラッグしてもう一方のペインの上に来たとき、そのペインの上に表示する。
 project-copy-to-project = 「{ $name }」にコピー
 project-move-to-project = 「{ $name }」に移動

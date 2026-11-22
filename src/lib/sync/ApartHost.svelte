@@ -1,6 +1,6 @@
 <!--
   What the window is told of projects written in on two computers while
-  they were apart (record 0119; see `apart.svelte.ts`): it listens, once for
+  they were apart (record 0120; see `apart.svelte.ts`): it listens, once for
   the window, looks at each project as it is opened, and shows the earlier
   versions of a project whose changes cannot be shown. Mounted once, by the
   window.

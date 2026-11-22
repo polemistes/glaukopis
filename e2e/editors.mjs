@@ -1,5 +1,5 @@
-// The look of a document changed and kept as a layout of one's own, and the
-// editor of reference styles, opened from the look.
+// The look of a document changed and saved as a document type of one's own,
+// and the editor of reference styles, opened from the look.
 
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -54,11 +54,14 @@ try {
   await app.click('.preview header [data-look]');
   await app.waitFor('.side .look .chips', 15000);
   await sleep(300);
+  // A document has no bibliography until an element of that kind stands in it: the style's
+  // initials are read in what is printed there.
+  await app.addPart('Bibliography');
   /** Whether the editor of the style has gone. */
   const editorGone = () =>
     app.waitUntil(`return !document.querySelector('dialog[open]')`, 8000, 'the editor to go');
 
-  // --- The layout, changed in Look and kept as one's own ---
+  // --- The look, changed in Look and saved as a document type of one's own ---
   await app.screenshot('editors-1-format');
   await app.lookSection('Type');
   await app.lookChoose('Line spacing', '1.5');
@@ -78,7 +81,7 @@ try {
   await sleep(600);
   const told = await app.exec(`return document.querySelector('.side .look .part[data-part="figures"]').textContent`);
   check(
-    'the layout says what a figure is called, and shows it',
+    'Look says what a figure is called, and shows it',
     /Fig\. 1/.test(told),
     told.replace(/\s+/g, ' ').slice(0, 300),
   );
@@ -88,30 +91,30 @@ try {
       (await app.exec(`return Array.from(document.querySelectorAll('.side .look .part[data-part="figures"] input')).some((i) => /about here/.test(i.value))`)),
   );
   await app.screenshot('editors-2b-format-figures');
-  await app.lookSection('Layout');
+  await app.lookSection('Document type');
   await sleep(200);
   await app.screenshot('editors-3-format-about');
-  await app.clickText('.side .look .keep button', 'Keep these changes as a layout of my own');
-  await app.waitFor('.side .look .keep input.kept-name', 3000);
+  await app.click('.side .look .whole [data-save-as]');
+  await app.waitFor('.side .look .whole input.type-name', 3000);
   await app.exec(
-    `const n = document.querySelector('.side .look .keep input.kept-name'); n.value = 'My publisher'; n.dispatchEvent(new Event('input', { bubbles: true }));`,
+    `const n = document.querySelector('.side .look .whole input.type-name'); n.value = 'My publisher'; n.dispatchEvent(new Event('input', { bubbles: true }));`,
   );
-  await app.clickText('.side .look .keep button', 'Keep');
+  await app.clickText('.side .look .whole .naming button', 'Save');
   await app
-    .waitUntil(`return document.querySelector('.side .look .layout-line')?.textContent.replace(/\\s+/g, ' ').trim() === 'Layout: My publisher'`, 8000, 'the layout kept')
+    .waitUntil(`return document.querySelector('.side .look .whole .type-line .name')?.textContent.trim() === 'My publisher'`, 8000, 'the type saved')
     .catch(() => {});
   await sleep(3500);
-  const format = await app.lookChosen('Choose a layout');
   const kept = await app.lookTop();
+  const type = JSON.parse(readFileSync(join(app.dataDir, 'templates', 'my-publisher.json'), 'utf8'));
   check(
-    'a changed layout is saved as one’s own and taken into use',
-    format === 'my-publisher' && kept.layout === 'Layout: My publisher',
-    `${format}: ${kept.layout}`,
+    'a changed look is saved in a document type of one’s own, which the document has with no changes left',
+    kept.what === 'My publisher' && kept.changes === 0 && !!type.layout,
+    JSON.stringify({ kept, layout: type.layout }),
   );
-  const saved = JSON.parse(readFileSync(join(app.dataDir, 'formats', 'my-publisher.json'), 'utf8'));
+  const saved = JSON.parse(readFileSync(join(app.dataDir, 'formats', `${type.layout}.json`), 'utf8'));
   check(
-    'it holds the change and remembers what it was made from',
-    saved.text.lineSpacing === 1.5 && saved.basedOn === 'manuscript',
+    'its pages hold the change and remember what they were made from',
+    saved.text.lineSpacing === 1.5 && saved.basedOn === 'manuscript' && saved.kind === 'own',
     `${saved.text.lineSpacing} ${saved.basedOn}`,
   );
   check(
@@ -132,7 +135,7 @@ try {
       ),
       'utf8',
     );
-  check('the preview is in the new layout', /leading: 0\.8em/.test(typ()));
+  check('the preview is in the new look', /leading: 0\.8em/.test(typ()));
 
   // --- The style ---
   await app.clickText('.side .look button', 'Change this reference style…');

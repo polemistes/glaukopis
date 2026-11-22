@@ -11,19 +11,11 @@ look-scope = Desse endringane gjeld for
 look-scope-document = Heile dokumentet: { $name }
 # Only one element under the document, by its name.
 look-scope-only = Berre { $name }
-# The line under it, which goes down to the layout at the foot of Look; the count of changes follows it.
-look-layout-line = Oppsett: { $layout }
 
-# After the name of the layout at the top of the panel: "Manuscript · 2 changes".
-look-changes = { $count ->
-    [one] { $count } endring
-   *[other] { $count } endringar
-  }
 # Under a setting the document sets otherwise than its layout.
 look-changed-here = Endra her
 # A change made on an element over this one, as a book over its chapters.
 look-changed-in = Endra i «{ $name }»
-look-take-again = ta det frå { $layout } igjen
 
 look-search = Finn ei innstilling: skrift, margar, sidetal …
 look-search-nothing = Inga innstilling har desse orda.
@@ -46,11 +38,6 @@ look-first-headings-numbered = Overskriftene er nummererte
 look-at-citations = Kjeldetilvisingar
 look-at-bibliography = Litteraturliste
 
-look-keep = Ta vare på desse endringane som eit eige oppsett …
-look-keep-save = Ta vare på
-# Where the layout is one of the writer's own.
-look-put-into = Legg desse endringane inn i «{ $name }»
-look-delete-layout = Slett dette oppsettet mitt …
 
 ## The parts of the document type, a section of Look: the parts the program
 ## makes itself and the kinds of elements given a place of their own, in one
@@ -65,10 +52,6 @@ look-contents-limit-keywords = Nøkkelord, høgst
 # What the limits count, as what the document is says it.
 look-contents-requirements-note = Kva grensene tel: { $note }
 
-# A layout, a style or a template that is neither chosen nor inherited: the one from the settings, named.
-look-usual = Som vanleg ({ $name })
-# The first choice of a layout or a style: what the template brings, named.
-look-as-template = Som malen har det ({ $name })
 # The first choice where an element over this one has chosen: the element, and what it chose.
 look-from-with = Frå { $name } ({ $what })
 look-style = Referansestil
@@ -90,9 +73,6 @@ look-hide = Skjul utsjånaden
 
 look-section-line-numbers = Linjenummer
 look-section-type-parts = Delane av dokumenttypen
-look-section-the-layout = Oppsett
-look-choose-layout = Vel eit oppsett
-look-layout-modifications = Endringar i oppsettet
 look-at-quotations-warning = Sitat
 look-at-paragraph-kinds = Slag avsnitt
 look-at-words-kinds = Slag ord

@@ -45,78 +45,41 @@ template-target-epub = Livre numérique
 
 ## The template editor.
 
-template-editor = Modèle
-template-name = Nom du modèle
 # The name a template of one's own is first given, made from that of the template it is made from.
 template-name-changed = { $name }, modifié
-# A template of the writer's own made from another, before it is named: by the other's name.
-template-name-own = { $name }, à moi
-template-sections = Rubriques du modèle
-template-delete = Supprimer ce modèle
-template-save-own = Enregistrer comme modèle à moi
 template-saved = « { $name } » est enregistré parmi vos propres modèles
-template-read-failed = Le modèle n’a pas pu être lu.
 template-save-failed = Le modèle n’a pas pu être enregistré.
 template-delete-failed = Le modèle n’a pas pu être supprimé.
 template-keep-failed = Le modèle n’a pas pu être gardé dans le projet. Sur un autre ordinateur, et dans un fichier de projet, le document aura à la place le modèle habituel.
 template-delete-title = Supprimer le modèle « { $name } » ?
 template-delete-message = Les éléments qui l’utilisent prendront à la place le modèle à partir duquel il a été fait.
 template-delete-confirm = Supprimer le modèle
-template-leave-title = Quitter sans enregistrer ?
-template-leave-message = Les modifications que vous avez faites au modèle seront perdues.
-template-leave-confirm = Quitter
-template-leave-cancel = Continuer à modifier
 
 ## The parts of the editor, as they are chosen at the left.
 
-template-section-about = À propos de ce modèle
-template-section-looks = Mise en page et style de référence
-template-section-contents = Contenu
-template-section-kinds = Types d’éléments
-template-section-passage-kinds = Types de paragraphes et de mots
-template-section-requirements = Exigences
-template-section-outputs = Fichiers
 
 ## About the template.
 
-template-description = Description
-template-group = Groupe
-template-based-on = Fondé sur
-template-based-on-none = Rien en particulier
 
 ## The layout and the reference style it brings.
 
-template-layout = Mise en page
-template-style = Style de référence
-# The layout or style the writer has chosen in the settings.
-template-usual = Votre choix habituel, d’après les réglages
 
 ## The contents: the order of the document.
 
-# An item of the contents that places every element of a kind.
-template-contents-kind = Chaque { $name }
-template-contents-add-part = Une partie…
-template-contents-add-kind = Un type d’élément…
-template-contents-up = Monter
-template-contents-down = Descendre
 
 ## The kinds in hand.
 
-template-kinds-in-contents = Dans le contenu
 
 ## The requirements.
 
 template-requirement-words = Mots du texte
 template-requirement-abstract-words = Mots du résumé
 template-requirement-keywords = Mots-clés
-template-requirement-note = Ce que comptent les limites
 # Beside a number of 0, in the place of its unit.
 template-no-limit = pas de limite
 
 ## The files the template makes.
 
-template-output-document = Le document
-template-output-cover = La couverture
 
 ## The names of the kinds of text that come with Glaukopis, as the chooser of what you are writing
 ## and the button over the preview give them; journals, publishers and style guides keep their own.
@@ -143,6 +106,5 @@ template-called-news-article = Article de presse
 template-requirement-anonymity = Anonyme
 
 ## Stage 4 of the settings, the zoom and the keys of the kinds: the kinds Ctrl+Alt and a digit gives.
-template-kind-keys = Touches
 
 template-described-plain = Texte générique.

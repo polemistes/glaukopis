@@ -1,4 +1,4 @@
-//! The files of the store follow their records (record 0119). The store is
+//! The files of the store follow their records (record 0120). The store is
 //! by the SHA-256 of what each file holds, and every file in it has a
 //! record (`library`): the files of the library, the images of the projects,
 //! the files the notes hold. Once the records here and in the home are the

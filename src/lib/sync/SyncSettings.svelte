@@ -1,6 +1,6 @@
 <script lang="ts">
   /**
-   * Synchronization in the settings (record 0119): turned on once for this
+   * Synchronization in the settings (record 0120): turned on once for this
    * computer, by starting on a server or by joining with a code made on
    * another computer; and, while it is on, how it stands, the computers,
    * a code for one more, and leaving. What the server cannot be asked is

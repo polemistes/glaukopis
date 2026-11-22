@@ -1,4 +1,4 @@
-//! A document from its bytes on disk (record 0119): what it holds, as one
+//! A document from its bytes on disk (record 0120): what it holds, as one
 //! update; what it holds beyond what another has; and the moment it is at.
 //!
 //! A project's document and the notebook's are kept as a state and the

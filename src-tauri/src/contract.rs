@@ -476,7 +476,7 @@ fn what_is_sent_is_what_the_interface_declares() {
         }],
         invitations: vec![glaukopis_core::sharing::Invitation { code: None, ..invitation.clone() }],
     };
-    // The synchronization between the writer's computers (record 0119).
+    // The synchronization between the writer's computers (record 0120).
     let sync_status = glaukopis_core::sync::Status {
         on: true,
         server: Some("https://example.org".into()),

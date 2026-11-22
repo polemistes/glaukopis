@@ -119,7 +119,6 @@
   import LookPanel from '$lib/look/LookPanel.svelte';
   import { lookUi } from '$lib/look/look.svelte';
   import { aboutDocumentUi } from '$lib/document/about-document.svelte';
-  import { templateEditorUi } from '$lib/document/template-editor.svelte';
   import { historyOf } from '$lib/history/history.svelte';
   import { me } from '$lib/history/me.svelte';
   import type { Looking } from '$lib/history/looking';
@@ -631,7 +630,6 @@
       .catch(() => {});
     document.getElementById('passage-kinds')?.remove();
     aboutDocumentUi.close();
-    templateEditorUi.close();
     ownKindsUi.editing = null;
     documentPane.review?.close();
     comparing.copy = null;

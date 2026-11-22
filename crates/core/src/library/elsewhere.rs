@@ -1,5 +1,5 @@
 //! The doors by which what the writer's other computers wrote comes into
-//! the library (record 0119; `sync::library` brings it). It is written by
+//! the library (record 0120; `sync::library` brings it). It is written by
 //! the library itself, under its rules and saved as it saves, so that it
 //! says it changed and every window reads it again.
 //!

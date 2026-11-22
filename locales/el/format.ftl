@@ -13,15 +13,6 @@ format-kind-poetry = Ποίηση
 
 ## The format editor.
 
-format-name = Όνομα της μορφής
-# The name a format of one's own is first given, made from that of the format it is made from.
-format-name-changed = { $name }, αλλαγμένη
-format-saved = Η «{ $name }» αποθηκεύτηκε στις δικές σας μορφές
-format-save-failed = Η μορφή δεν μπόρεσε να αποθηκευτεί.
-format-delete-failed = Η μορφή δεν μπόρεσε να διαγραφεί.
-format-delete-title = Διαγραφή της μορφής «{ $name }»;
-format-delete-message = Οι χάρτες που τη χρησιμοποιούν θα χρησιμοποιούν αντ’ αυτής τη γενική μορφή χειρογράφου.
-format-delete-confirm = Διαγραφή μορφής
 
 ## The parts of a format, as they are chosen at the left.
 
@@ -250,8 +241,6 @@ format-page-numbers-show = Οι σελίδες αριθμούνται
 
 ## About the format: where its requirements are from.
 
-format-description = Περιγραφή
-format-source = Από πού είναι οι απαιτήσεις
 # The date the source was read on.
 format-source-read = Διαβάστηκε στις { $date }.
 format-source-high = Οι τιμές είναι αυτές της πηγής.

@@ -1,4 +1,4 @@
-//! The same on every computer of the writer (record 0119; the plan is
+//! The same on every computer of the writer (record 0120; the plan is
 //! `docs/plans/the-same-on-every-device.md`).
 //!
 //! A writer's computers share a home on a server: the computers that may

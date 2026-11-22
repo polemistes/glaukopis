@@ -1,5 +1,5 @@
 /**
- * The synchronization between the writer's computers (record 0119). Mirrors
+ * The synchronization between the writer's computers (record 0120). Mirrors
  * `src-tauri/src/commands/sync.rs`.
  */
 

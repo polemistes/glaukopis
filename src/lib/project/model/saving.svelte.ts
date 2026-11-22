@@ -18,7 +18,7 @@ export interface Persistence<S = Summary> {
    * Writes a batch of changes to the log: whether they were made here or
    * came from another, and when, in milliseconds since 1970. `quiet` says
    * that the writer wrote nothing of it: what the program writes into a
-   * project by itself, as who is who in its history (record 0119).
+   * project by itself, as who is who in its history (record 0120).
    */
   append(update: Uint8Array, here: boolean, time: number, quiet?: boolean): Promise<void>;
   /** With `keep`, where the project's full history is on, the log is kept in it. */

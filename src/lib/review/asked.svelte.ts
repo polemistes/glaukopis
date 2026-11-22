@@ -1,7 +1,7 @@
 /**
  * A review asked for from outside the view of a project: of a project, from
  * a moment given, as when a project was written in on two computers while
- * they were apart (record 0119). The document pane opens its tab of changes
+ * they were apart (record 0120). The document pane opens its tab of changes
  * once a side of that project is the active one, and gives the review the
  * moment (`project/document-pane.svelte.ts`).
  */

@@ -732,7 +732,7 @@ try {
     'in a style of notes, the citation that was made of the note is set as a note, with its words before and after',
     // Between the page and words that begin with a sign of punctuation there is room, which is
     // for the one who writes what Pandoc is given to mend: both are taken here.
-    // Nothing chosen is the layout's own style, which is one of notes.
+    // Nothing chosen is the style of the look in use, which is one of notes.
     (was === 'chicago-notes-bibliography' || was === '') &&
       /Not all agree\.#footnote\[See Gregory Nagy,.*?73 ?\\?; but he says otherwise elsewhere\.?\]/.test(
         typ.replace(/\s+/g, ' '),

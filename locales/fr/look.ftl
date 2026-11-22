@@ -11,20 +11,11 @@ look-scope = Ces modifications valent pour
 look-scope-document = Tout le document : { $name }
 # Only one element under the document, by its name.
 look-scope-only = Seulement « { $name } »
-# The line under it, which goes down to the layout at the foot of Look; the count of changes follows it.
-look-layout-line = Mise en page : { $layout }
 
-# After the name of the layout at the top of the panel: "Manuscript · 2 changes".
-look-changes = { $count ->
-    [one] { $count } modification
-    [many] { $count } modifications
-   *[other] { $count } modifications
-  }
 # Under a setting the document sets otherwise than its layout.
 look-changed-here = Modifié ici
 # A change made on an element over this one, as a book over its chapters.
 look-changed-in = Modifié dans « { $name } »
-look-take-again = revenir à « { $layout } »
 
 look-search = Trouver un réglage : police, marges, numéros de page…
 look-search-nothing = Aucun réglage ne contient ces mots.
@@ -47,11 +38,6 @@ look-first-headings-numbered = Les titres sont numérotés
 look-at-citations = Citations
 look-at-bibliography = Bibliographie
 
-look-keep = Garder ces modifications comme une mise en page à moi…
-look-keep-save = Garder
-# Where the layout is one of the writer's own.
-look-put-into = Enregistrer ces modifications dans « { $name } »
-look-delete-layout = Supprimer cette mise en page à moi…
 
 ## The parts of the document type, a section of Look: the parts the program
 ## makes itself and the kinds of elements given a place of their own, in one
@@ -66,10 +52,6 @@ look-contents-limit-keywords = Mots-clés, au plus
 # What the limits count, as what the document is says it.
 look-contents-requirements-note = Ce que comptent les limites : { $note }
 
-# A layout, a style or a template that is neither chosen nor inherited: the one from the settings, named.
-look-usual = Votre choix habituel ({ $name })
-# The first choice of a layout or a style: what the template brings, named.
-look-as-template = Comme le veut le modèle ({ $name })
 # The first choice where an element over this one has chosen: the element, and what it chose.
 look-from-with = De « { $name } » ({ $what })
 look-style = Style de référence
@@ -91,9 +73,6 @@ look-hide = Masquer l’aspect
 
 look-section-line-numbers = Numéros de ligne
 look-section-type-parts = Parties du type de document
-look-section-the-layout = Mise en page
-look-choose-layout = Choisir une mise en page
-look-layout-modifications = Modifications de la mise en page
 look-at-quotations-warning = Citations
 look-at-paragraph-kinds = Types de paragraphes
 look-at-words-kinds = Types de mots

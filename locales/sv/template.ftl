@@ -45,78 +45,41 @@ template-target-epub = E-bok
 
 ## The template editor.
 
-template-editor = Mall
-template-name = Mallens namn
 # The name a template of one's own is first given, made from that of the template it is made from.
 template-name-changed = { $name }, ändrad
-# A template of the writer's own made from another, before it is named: by the other's name.
-template-name-own = { $name }, min egen
-template-sections = Mallens delar
-template-delete = Radera den här mallen
-template-save-own = Spara som min egen
 template-saved = ”{ $name }” är sparad bland dina egna mallar
-template-read-failed = Mallen kunde inte läsas.
 template-save-failed = Mallen kunde inte sparas.
 template-delete-failed = Mallen kunde inte raderas.
 template-keep-failed = Mallen kunde inte sparas i projektet. På en annan dator, och i en fil av projektet, får dokumentet den vanliga mallen i stället.
 template-delete-title = Radera mallen ”{ $name }”?
 template-delete-message = Element som använder den kommer att använda mallen den gjordes av i stället.
 template-delete-confirm = Radera mallen
-template-leave-title = Lämna utan att spara?
-template-leave-message = Ändringarna du har gjort i mallen går förlorade.
-template-leave-confirm = Lämna
-template-leave-cancel = Fortsätt redigera
 
 ## The parts of the editor, as they are chosen at the left.
 
-template-section-about = Om den här mallen
-template-section-looks = Layout och referensstil
-template-section-contents = Innehåll
-template-section-kinds = Slag av element
-template-section-passage-kinds = Slag av stycken och ord
-template-section-requirements = Krav
-template-section-outputs = Filer
 
 ## About the template.
 
-template-description = Beskrivning
-template-group = Grupp
-template-based-on = Bygger på
-template-based-on-none = Inget särskilt
 
 ## The layout and the reference style it brings.
 
-template-layout = Layout
-template-style = Referensstil
-# The layout or style the writer has chosen in the settings.
-template-usual = Din vanliga, från inställningarna
 
 ## The contents: the order of the document.
 
-# An item of the contents that places every element of a kind.
-template-contents-kind = Varje { $name }
-template-contents-add-part = En del…
-template-contents-add-kind = Ett slag av element…
-template-contents-up = Upp
-template-contents-down = Ner
 
 ## The kinds in hand.
 
-template-kinds-in-contents = I innehållet
 
 ## The requirements.
 
 template-requirement-words = Ord i texten
 template-requirement-abstract-words = Ord i sammanfattningen
 template-requirement-keywords = Nyckelord
-template-requirement-note = Vad gränserna räknar
 # Beside a number of 0, in the place of its unit.
 template-no-limit = ingen gräns
 
 ## The files the template makes.
 
-template-output-document = Dokumentet
-template-output-cover = Omslaget
 
 ## The names of the kinds of text that come with Glaukopis, as the chooser of what you are writing
 ## and the button over the preview give them; journals, publishers and style guides keep their own.
@@ -143,6 +106,5 @@ template-called-news-article = Nyhetsartikel
 template-requirement-anonymity = Anonymt
 
 ## Stage 4 of the settings, the zoom and the keys of the kinds: the kinds Ctrl+Alt and a digit gives.
-template-kind-keys = Tangenter
 
 template-described-plain = Allmän text.

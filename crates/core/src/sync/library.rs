@@ -1,5 +1,5 @@
 //! The library as stores brought to be the same as the maps of the
-//! library's document (`mirror`, record 0119): the folders of its files,
+//! library's document (`mirror`, record 0120): the folders of its files,
 //! the record of the files, the references and the collections. The
 //! document is of the kind the home document is (`home`), kept beside it in
 //! `sync/library.bin`, since a library may hold thousands of references.

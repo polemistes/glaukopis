@@ -1,6 +1,6 @@
 //! The small things the writer has made their own, as stores that are
 //! brought to be the same as maps of the home document (`mirror`, record
-//! 0119): the reference styles, the formats and the templates of their own,
+//! 0120): the reference styles, the formats and the templates of their own,
 //! the words they added to spelling, and the words of the interface they
 //! changed.
 //!

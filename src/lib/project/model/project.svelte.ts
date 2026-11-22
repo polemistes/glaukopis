@@ -401,7 +401,7 @@ export class Project {
         // What came from another copy is applied as a change that is not local.
         // What the program writes by itself, who is who in the history and
         // what is put in order when a project is read, is none of the
-        // writer's writing: the writer's other computers are told so (record 0119).
+        // writer's writing: the writer's other computers are told so (record 0120).
         this.#saving.change(update, transaction.local, origin === HISTORY || origin === TIDY);
       },
     );

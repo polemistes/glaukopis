@@ -588,7 +588,7 @@ impl Remote<'_> {
 
     /// The files of a store of the server, by the path of what holds it:
     /// a project (`/api/rooms/<room>`), or the home of the writer's
-    /// computers (`/api/homes/<home>`, record 0119), which keeps its files
+    /// computers (`/api/homes/<home>`, record 0120), which keeps its files
     /// as a room does.
     pub(crate) fn files_in(&self, store: &str, token: &str) -> Result<(Vec<RemoteFile>, u64)> {
         let value = self.ask("GET", &format!("{store}/files"), Some(token), None)?;

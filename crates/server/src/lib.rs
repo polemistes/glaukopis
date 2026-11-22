@@ -14,7 +14,7 @@
 //!
 //! A writer's computers keep the same things through a *home* here (see
 //! `homes.rs`): its computers, its documents, each kept as a room is, and
-//! one store of files. See ADR 0119.
+//! one store of files. See ADR 0120.
 
 pub mod api;
 pub mod files;

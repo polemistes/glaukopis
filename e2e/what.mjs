@@ -6,8 +6,9 @@
 // moves there, the page is left or Escape is pressed; pressing the chip
 // opens Look at it: at the look of the kind, for the quotation. The switch
 // at the foot of the preview turns the chips off, and what each line is
-// stays known; turned on again, the chip is back. What the layout puts in
-// the margins and the page itself have chips too (ADR 0056).
+// stays known; turned on again, the chip is back. What the look puts in
+// the margins, the title page once it is placed, and the page itself have
+// chips too (ADR 0056).
 
 import { App, sleep } from './harness.mjs';
 
@@ -87,6 +88,24 @@ try {
   await app.waitFor('.preview .page .line[data-what]', 30000);
   await sleep(800);
   await app.waitUntil(`return !!document.querySelector(${JSON.stringify(quoteLine)})`, 15000, 'the quotation named').catch(() => {});
+  // A title page is printed where an element of its kind stands (record 0118): one is added,
+  // last, and moved first in the tree, where a title page is printed first.
+  await app.addPart('Title page');
+  await app.keys(['Control', 'd']);
+  await app.waitFor('.diagram .node', 5000);
+  await sleep(300);
+  await app.click('.diagram');
+  await app.keys(['Control', '0']);
+  await sleep(400);
+  await app.click(await app.findByText('.diagram .node', 'Title page'));
+  await sleep(200);
+  await app.keys(['Alt', 'ArrowUp']);
+  await sleep(300);
+  await app.keys(['Control', 'd']);
+  await app.waitFor('.text-view .section', 5000);
+  await app.waitUntil(`return Array.from(document.querySelectorAll('.preview .page .line[data-what="front"]')).length > 0`, 15000, 'the title page').catch(() => {});
+  await app.keys(['Control', 'Shift', 'a']);
+  await app.waitGone('.side .look', 3000).catch(() => {});
   check('the quotation is named as one', (await whatOf('Many cities of men')).includes('kind:quote'), JSON.stringify(await whatOf('Many cities of men')));
   check('the text is named as text', (await whatOf('Tell me, Muse')).includes('text'), JSON.stringify(await whatOf('Tell me, Muse')));
   check('the heading of Book one is named as a heading of the first level', (await whatOf('Book one')).includes('heading:1'), JSON.stringify(await whatOf('Book one')));
@@ -208,7 +227,7 @@ try {
     .catch(() => {});
   check('and turns it off: the header is gone from the pages', !(await app.exists(headLine)));
 
-  // The title: its chip lands on the switch of the title page, first in the front page.
+  // The title, on the title page placed at the start, opens the front page.
   const titleLine = '.preview .page .line[data-what="front"]';
   await app.waitFor(titleLine, 15000);
   await app.exec(`document.querySelector(arguments[0]).scrollIntoView({ block: 'center' });`, titleLine);
@@ -218,17 +237,11 @@ try {
   check('the title has its chip', shown?.what === 'front', JSON.stringify(shown));
   await app.click('.preview .page .chip');
   await sleep(600);
-  const first = await app.exec(
-    `const part = document.querySelector('.side .look .part[data-part="front"]');
-     const row = part?.querySelector('.row');
-     return { switch: !!row?.querySelector('[data-part-switch="title-page"]'), on: !!row?.querySelector('input')?.checked };`,
+  check(
+    'which opens Look at the front page, where nothing turns the title page on or off',
+    (await app.exec(`return document.querySelector('.side .look .chips button.current')?.dataset.section`)) === 'front' &&
+      !(await app.exists('.side .look [data-part-switch]')),
   );
-  check('which opens the front page, whose first row is the switch of the title page, on', first.switch && first.on, JSON.stringify(first));
-  await app.click('.side .look .part[data-part="front"] [data-part-switch="title-page"]');
-  await app
-    .waitUntil(`return !document.querySelector(${JSON.stringify(titleLine)}) && !!document.querySelector('.preview .page .line[data-what]')`, 20000, 'the title page to go')
-    .catch(() => {});
-  check('turned off there, the title page is gone from the pages', !(await app.exists(titleLine)));
 
   // The page itself: pressed where no line is, a chip for the page.
   await app.exec(`document.querySelector('.preview .page[data-page="1"]').scrollIntoView({ block: 'start' });`);

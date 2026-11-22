@@ -13,15 +13,6 @@ format-kind-poetry = Poezie
 
 ## The format editor.
 
-format-name = Numele formatului
-# The name a format of one's own is first given, made from that of the format it is made from.
-format-name-changed = { $name }, modificat
-format-saved = „{ $name }” este salvat printre formatele dumneavoastră
-format-save-failed = Formatul nu s-a putut salva.
-format-delete-failed = Formatul nu s-a putut șterge.
-format-delete-title = Ștergeți formatul „{ $name }”?
-format-delete-message = Hărțile care îl folosesc vor folosi în schimb formatul general de manuscris.
-format-delete-confirm = Șterge formatul
 
 ## The parts of a format, as they are chosen at the left.
 
@@ -250,8 +241,6 @@ format-page-numbers-show = Paginile sunt numerotate
 
 ## About the format: where its requirements are from.
 
-format-description = Descriere
-format-source = De unde sunt cerințele
 # The date the source was read on.
 format-source-read = Citit la { $date }.
 format-source-high = Valorile sunt cele ale sursei.

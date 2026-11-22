@@ -6,16 +6,25 @@
   style guides, narrowed to those made for the type in use. The search finds
   every one. Under each name stands what the type brings, worked out from
   the type itself (`brings.ts`), and nothing that explains. Choosing writes
-  at once, as a step of undo of its own.
+  at once, as a step of undo of its own. New document type… makes a type of
+  the writer's own, from another or from nothing, and opens Look to edit it;
+  a type of the writer's own in use has Edit, which does the same for it.
 -->
 <script lang="ts">
   import { untrack } from 'svelte';
   import ExternalLink from '@lucide/svelte/icons/external-link';
   import Search from '@lucide/svelte/icons/search';
   import { openPath } from '$lib/api/documents';
-  import type { ContentsItem, Requirements, Template, TemplateGroup } from '$lib/api/templates';
+  import {
+    templatesSave,
+    type ContentsItem,
+    type Requirements,
+    type Template,
+    type TemplateGroup,
+  } from '$lib/api/templates';
   import { has, t } from '$lib/i18n';
   import { styleName } from '$lib/look/choosing.svelte';
+  import { lookUi } from '$lib/look/look.svelte';
   import {
     documents,
     PLAIN_TEMPLATE,
@@ -26,10 +35,10 @@
   import type { DocumentSettings } from '$lib/project/model/types';
   import { settings } from '$lib/state/settings.svelte';
   import Button from '$lib/ui/Button.svelte';
-  import { notifyError } from '$lib/ui/toast.svelte';
+  import Dialog from '$lib/ui/Dialog.svelte';
+  import { describeError, notifyError } from '$lib/ui/toast.svelte';
   import { limitsBrought, pagesBrought, partsBrought } from './brings';
-  import { templateEditorUi } from './template-editor.svelte';
-  import { confidenceWords, templateGroupWords, typeSaid } from './templates';
+  import { asOwn, confidenceWords, templateGroupWords, typeSaid } from './templates';
 
   interface Props {
     project: Project;
@@ -280,28 +289,60 @@
       .catch((error) => notifyError(t('template-keep-failed'), error));
   }
 
-  /** Opens the template editor on the template in use: as one of the writer's own made from it, or, for one that is theirs, to change it. */
-  function editTemplate(fresh: boolean) {
-    const id = choice.template;
-    templateEditorUi.open({
-      id,
-      fresh,
-      // Where the application lacks it, the editor begins from the project's copy.
-      copy: documents.templateSummary(id) ? undefined : project.templateCopy(id),
-      onsaved: (saved) => {
-        documents.forgetTemplate(saved);
-        write({ template: saved });
-        keep(saved);
-      },
-    });
+  /** Edits a type of the writer's own in Look, on this document: Document properties closes. */
+  function edit(id: string) {
+    lookUi.editing = id;
+    onclose();
+    lookUi.open({ section: 'document-type' });
+  }
+
+  // ---- a new type ----
+
+  /** The name of a new type and what it starts from, while they are asked for; nothing while they are not. */
+  let making = $state<{ name: string; from: string } | null>(null);
+  let creating = $state(false);
+  let makingError = $state<string | null>(null);
+  /** Every type to start from, by its name. */
+  const startFrom = $derived(
+    [...all].sort((a, b) => nameOfTemplate(a).localeCompare(nameOfTemplate(b))),
+  );
+
+  /**
+   * Makes a type of the writer's own from the one chosen to start from, or
+   * from the plain type, gives it to the element, and edits it in Look.
+   */
+  async function create() {
+    if (!making || !making.name.trim() || creating) return;
+    creating = true;
+    makingError = null;
+    try {
+      const from = $state.snapshot(await templateFor(project, making.from)) as Template;
+      const taken = documents.templates.map((s) => s.id);
+      const saved = await templatesSave(asOwn(from, making.name, taken, true));
+      documents.forgetTemplate(saved.id);
+      await documents.reload();
+      setTemplate(saved.id);
+      project.keepTemplate(saved);
+      making = null;
+      edit(saved.id);
+    } catch (e) {
+      makingError = describeError(e) ?? t('template-save-failed');
+    } finally {
+      creating = false;
+    }
   }
 </script>
 
 <div class="chooser">
   <div class="top">
-    <div class="search">
-      <Search size={14} />
-      <input bind:value={query} aria-label={t('chooser-search')} spellcheck="false" />
+    <div class="search-line">
+      <div class="search">
+        <Search size={14} />
+        <input bind:value={query} aria-label={t('chooser-search')} spellcheck="false" />
+      </div>
+      <Button size="sm" data-new-type onclick={() => (making = { name: '', from: choice.template })}
+        >{t('chooser-new')}</Button
+      >
     </div>
     {#if templateFrom}
       <p class="from" data-from>{t('documents-inherited-from', { name: templateFrom })}</p>
@@ -340,11 +381,45 @@
       <p class="hint">{t('chooser-none-found')}</p>
     {/if}
   </div>
-
-  <div class="actions own">
-    <Button size="sm" onclick={() => editTemplate(true)}>{t('chooser-own-from')}</Button>
-  </div>
 </div>
+
+{#if making}
+  {@const m = making}
+  <Dialog open title={t('chooser-new-title')} width={420} onclose={() => (making = null)}>
+    <form
+      id="new-type"
+      class="new-type settings"
+      onsubmit={(e) => {
+        e.preventDefault();
+        void create();
+      }}
+    >
+      {#if makingError}<p class="error selectable" role="alert">{makingError}</p>{/if}
+      <label class="row">
+        <span class="what">{t('chooser-new-name')}</span>
+        <!-- svelte-ignore a11y_autofocus -->
+        <input bind:value={m.name} data-new-name autofocus />
+      </label>
+      <label class="row">
+        <span class="what">{t('chooser-start-from')}</span>
+        <select bind:value={m.from} data-start-from>
+          <option value={PLAIN_TEMPLATE}>{t('chooser-start-nothing')}</option>
+          {#each startFrom as s (s.id)}<option value={s.id}>{nameOfTemplate(s)}</option>{/each}
+        </select>
+      </label>
+    </form>
+    {#snippet footer()}
+      <Button variant="ghost" onclick={() => (making = null)}>{t('common-cancel')}</Button>
+      <Button
+        type="submit"
+        form="new-type"
+        variant="primary"
+        data-create
+        disabled={creating || !m.name.trim()}>{t('chooser-create')}</Button
+      >
+    {/snippet}
+  </Dialog>
+{/if}
 
 {#snippet entry(s: Listed)}
   {@const chosen = s.id === choice.template}
@@ -386,7 +461,7 @@
         {/if}
         {#if s.group === 'own' && !s.ofProject}
           <div class="actions">
-            <Button size="sm" onclick={() => editTemplate(false)}>{t('chooser-change-own')}</Button>
+            <Button size="sm" data-edit-type onclick={() => edit(s.id)}>{t('chooser-edit')}</Button>
           </div>
         {/if}
       </div>
@@ -410,7 +485,14 @@
     font-size: var(--text-sm);
     color: var(--ink-3);
   }
+  .search-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
   .search {
+    flex: 1;
+    min-width: 0;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -532,7 +614,12 @@
   .link:hover {
     text-decoration: underline;
   }
-  .own {
-    margin: 12px 0 0;
+  .error {
+    padding: 8px 12px;
+    margin-bottom: 12px;
+    border-radius: var(--radius-m);
+    background: var(--danger-soft);
+    color: var(--danger);
+    white-space: pre-wrap;
   }
 </style>

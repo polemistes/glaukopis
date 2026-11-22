@@ -125,7 +125,7 @@ impl Notebook {
     }
 
     /// As `append`, saying whether the change was made here or came from
-    /// another computer of the writer's (record 0119).
+    /// another computer of the writer's (record 0120).
     pub fn append_change(&self, update: &[u8], here: bool, time: i64) -> Result<()> {
         if update.is_empty() {
             return Ok(());

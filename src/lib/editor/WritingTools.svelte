@@ -59,7 +59,6 @@
   import WholeWord from '@lucide/svelte/icons/whole-word';
   import type { Command } from 'prosemirror-state';
   import type { EditorView } from 'prosemirror-view';
-  import type { DocumentFormat } from '$lib/api/documents';
   import { selectedPassage } from '$lib/comments/marks';
   import { commentsUi } from '$lib/comments/ui.svelte';
   import { languageName, t, TEXT_LANGUAGES } from '$lib/i18n';
@@ -206,37 +205,17 @@
   const ofDocument = $derived(
     element && project?.node(element) ? project.documentOf(element) : null,
   );
-  // The format of the document: for the kinds it suggests, and its name at the foot of the kind menu.
+  // What the document is made with: for the kinds its type suggests.
   $effect(() => {
     documents.load();
   });
   const choice = $derived(documents.choice(ofDocument?.settings ?? {}, project));
-  let format = $state.raw<DocumentFormat | null>(null);
-  $effect(() => {
-    const id = choice.format;
-    void documents.changed;
-    let stale = false;
-    documents.format(id).then(
-      (f) => {
-        if (!stale) format = f;
-      },
-      () => {
-        if (!stale) format = null;
-      },
-    );
-    return () => {
-      stale = true;
-    };
-  });
   // The kinds Ctrl+Alt with a digit gives in the document type of the element, for the menu to show (ADR 0066).
   const kindKeys = $derived(
     kindKeysOf(project && element && ofDocument ? templateUsedCached(project, element) : null),
   );
   // The kinds the template puts in hand (ADR 0038); nothing until the template is read.
   const suggests = $derived(documents.templateCached(choice.template)?.passageKinds ?? []);
-  const formatName = $derived(
-    documents.formatSummary(choice.format)?.name ?? format?.name ?? choice.format,
-  );
   const ownParagraphs = $derived(ownKinds.filter((k) => k.family === 'paragraph'));
   const ownWords = $derived(ownKinds.filter((k) => k.family === 'words'));
 
@@ -621,10 +600,6 @@
         ...(project
           ? [
               { kind: 'separator' as const },
-              {
-                kind: 'heading' as const,
-                label: t('editor-kinds-set-by', { format: formatName }),
-              },
               {
                 label: t('editor-kinds-change-look', { kind: nameOf(kind) }),
                 icon: Palette,

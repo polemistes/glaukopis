@@ -13,15 +13,6 @@ format-kind-poetry = Poézia
 
 ## The format editor.
 
-format-name = Názov formátu
-# The name a format of one's own is first given, made from that of the format it is made from.
-format-name-changed = { $name }, zmenený
-format-saved = „{ $name }“ je uložený medzi vašimi vlastnými formátmi
-format-save-failed = Formát sa nepodarilo uložiť.
-format-delete-failed = Formát sa nepodarilo odstrániť.
-format-delete-title = Odstrániť formát „{ $name }“?
-format-delete-message = Mapy, ktoré ho používajú, budú namiesto neho používať všeobecný formát rukopisu.
-format-delete-confirm = Odstrániť formát
 
 ## The parts of a format, as they are chosen at the left.
 
@@ -250,8 +241,6 @@ format-page-numbers-show = Strany sú číslované
 
 ## About the format: where its requirements are from.
 
-format-description = Opis
-format-source = Odkiaľ sú požiadavky
 # The date the source was read on.
 format-source-read = Prečítané { $date }.
 format-source-high = Hodnoty sú tie zo zdroja.

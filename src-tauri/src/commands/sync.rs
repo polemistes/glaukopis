@@ -1,5 +1,5 @@
 //! Commands for the synchronization between the writer's computers (record
-//! 0119), and the engine as the application runs it. Mirrors
+//! 0120), and the engine as the application runs it. Mirrors
 //! `src/lib/api/sync.ts`.
 //!
 //! The engine is the core's (`glaukopis_core::sync`), one thread that brings
