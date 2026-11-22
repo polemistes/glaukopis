@@ -7,12 +7,11 @@
 // also while it is open. The server is taken away, both write, and it is
 // brought back: both hold both, the one that meets the server second says
 // that the project was written in apart, and Show the changes opens the
-// review from the moment kept. A project deleted on one goes from the list
+// review from the moment kept. A reference added to the library of one is
+// in the library of the other. A project deleted on one goes from the list
 // of the other, into its trash. Last, Stop synchronizing on this computer,
 // on both: with the last, nothing is left on the server.
 //
-// Written without being run. What could not be made sure of without
-// running it is marked "Not run:" where it stands.
 
 import { spawn } from 'node:child_process';
 import { existsSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
@@ -166,8 +165,8 @@ try {
   await closeSettings(desk);
 
   // A project made on the first before the second joins, with its history kept, so that the review can show
-  // what came from elsewhere. Not run: that the history, turned on here before the second has the project,
-  // is begun on the second as it opens it there, the setting being in the project.
+  // what came from elsewhere. The history, turned on here before the second has the project, is begun on the
+  // second as it opens it there: the setting is in the project.
   await desk.beginProject();
   await desk.type('dialog input', 'Wrath and the hero');
   await desk.clickText('dialog footer button', 'Create');
@@ -240,7 +239,7 @@ try {
   await serverAnswers();
   const back = Date.now();
   // The first meets the server first, the second after it: the second is the one told.
-  // Not run: the second's own half minute could come before the first is hurried; it is begun last above.
+  // The second's own half minute could come before the first is hurried; it is begun last above.
   await hurry(desk);
   await until('the first to meet the server', async () => (await lastSame(desk)) > back, 30000);
   await hurry(laptop);
@@ -256,8 +255,8 @@ try {
   const apartToast = await laptop.waitForText('.toaster .toast', 'was written in on two computers', 15000);
   const toast = await laptop.text(apartToast);
   check('the second says that the project was written in on two computers apart', toast.includes('“Wrath and the hero” was written in on two computers while they were apart.'), toast);
-  // Not run: whether the history file is on disk on the second by then, which the toast asks; where it is not,
-  // the toast offers the earlier versions instead, and this check fails.
+  // The history is kept on the second by then, which the toast asks; where it were not, the toast would
+  // offer the earlier versions instead.
   check('with Show the changes', toast.includes('Show the changes'), toast);
   check(
     'and the first, which met the server first, says nothing of it',
@@ -284,6 +283,21 @@ try {
   await laptop.screenshot('synchronization-9-review');
   const seen = await invoke(laptop, 'project_apart', { id: await laptop.exec(`return window.__glaukopisHistory.history.id`) });
   check('and what was kept of it is seen, and forgotten', seen === null, JSON.stringify(seen));
+
+  // ---- the library ----
+  await desk.execAsync(
+    `const invoke = window.__TAURI_INTERNALS__.invoke;
+     const plan = await invoke('import_bib_text', { text: arguments[0] });
+     await invoke('import_apply', { plan });`,
+    '@book{lord1960, author={Lord, Albert B.}, title={The Singer of Tales}, date={1960}}',
+  );
+  await sleep(4000);
+  await invoke(desk, 'sync_now');
+  await sleep(1500);
+  await invoke(laptop, 'sync_now');
+  const inLibrary = (app, words) => invoke(app, 'library_list').then((l) => JSON.stringify(l.entries).includes(words));
+  await until('the reference to be in the library of the second', () => inLibrary(laptop, 'The Singer of Tales'), 45000);
+  check('a reference added to the library of the first is in the library of the second', true);
 
   // ---- deleted on one, gone from the other ----
   await laptop.home();
