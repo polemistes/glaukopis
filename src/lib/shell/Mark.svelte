@@ -9,7 +9,7 @@
 
   let { size = 24 }: { size?: number } = $props();
 
-  // Made small, the lines are darker, or they would be too faint to see.
+  // Made small, the head alone, which can still be seen as an owl.
   const lines = $derived(size <= 48 ? small : large);
 </script>
 
