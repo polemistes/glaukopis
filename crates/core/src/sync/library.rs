@@ -738,12 +738,16 @@ mod tests {
         /// A round of the library's stores, with `server` standing for the
         /// server's document: as the engine makes it.
         fn meet(&self, server: &HomeDoc) {
-            let held = BTreeSet::new();
+            self.meet_holding(server, &BTreeSet::new());
+        }
+
+        /// The same, where the notes here held the files `held` when the notebook was last saved.
+        fn meet_holding(&self, server: &HomeDoc, held: &BTreeSet<String>) {
             let folders = FileFolders { library: &self.library, written: Cell::default() };
             let records = Records {
                 library: &self.library,
                 doc: &self.doc,
-                held: &held,
+                held,
                 kept_for_notes: RefCell::default(),
                 written: Cell::default(),
             };
@@ -778,6 +782,9 @@ mod tests {
             }
             let keys = keys_made_here(&self.library, &self.doc);
             forget_agreed(&self.kept, "references", |name| keys.contains(name)).unwrap();
+            let kept = records.kept_for_notes.take();
+            forget_agreed(&self.kept, "files", |name| name.split_once('/').is_some_and(|(h, _)| kept.contains(h)))
+                .unwrap();
         }
 
         fn add(&self, source: &str) -> Entry {
@@ -965,6 +972,35 @@ mod tests {
         b.meet(&server);
         assert!(b.lib().files.get(&hash).is_none());
         assert!(b.lib().get(&work.id).unwrap().attachments().is_empty());
+    }
+
+    #[test]
+    fn a_file_the_notes_here_hold_is_not_taken_from_the_others_by_a_computer_that_swept_it_out() {
+        let server = HomeDoc::new();
+        let (a, b) = (Computer::new(), Computer::new());
+        let hash = a.lib().notebook_take_image("pasted", &crate::library::figures::fixtures::PNG).unwrap().hash;
+        let held: BTreeSet<String> = [hash.clone()].into();
+        a.meet_holding(&server, &held);
+        b.meet(&server);
+        assert_eq!(b.lib().files.get(&hash).unwrap().notebook, Some(Held::Only));
+        // The other computer reads its notebook with less of it than there is, and sweeps the file out.
+        assert_eq!(b.lib().notebook_sweep(&std::collections::HashSet::new()).unwrap(), 1);
+        b.meet(&server);
+        // The first, whose notes hold it, keeps it, held by them alone, and tells it again.
+        a.meet_holding(&server, &held);
+        assert_eq!(a.lib().files.get(&hash).unwrap().notebook, Some(Held::Only));
+        a.meet_holding(&server, &held);
+        b.meet(&server);
+        assert_eq!(b.lib().files.get(&hash).map(|r| r.notebook), Some(Some(Held::Only)), "it is on the other again");
+        // Where the notes of the first hold it no more either, it goes from both.
+        assert_eq!(a.lib().notebook_sweep(&std::collections::HashSet::new()).unwrap(), 1);
+        a.meet(&server);
+        b.meet(&server);
+        assert!(b.lib().files.get(&hash).is_some(), "the other keeps it until its own notes are read");
+        assert_eq!(b.lib().notebook_sweep(&std::collections::HashSet::new()).unwrap(), 1);
+        b.meet(&server);
+        a.meet(&server);
+        assert!(a.lib().files.get(&hash).is_none() && b.lib().files.get(&hash).is_none());
     }
 
     #[test]

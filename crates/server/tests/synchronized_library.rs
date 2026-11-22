@@ -502,6 +502,54 @@ async fn a_computer_that_was_off_through_many_changes_catches_up() {
     .await;
 }
 
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn what_one_computer_cannot_read_of_its_library_is_taken_from_no_other_and_mended_from_the_home() {
+    with_server(|address| {
+        let (a, b) = two(&address);
+        let nagy = a.add("@book{nagy1979, title={The Best of the Achaeans}}");
+        let lord = a.add("@book{lord1960, title={The Singer of Tales}}");
+        let scan = a.take_in("scan.pdf", b"%PDF the scan");
+        let shelf = a.lib().files.folder_create("Shelf", None).unwrap();
+        a.lib().move_files(std::slice::from_ref(&scan), Some(&shelf.id)).unwrap();
+        a.lib().files.rename(&scan, "Named well.pdf").unwrap();
+        a.lib().save_files().unwrap();
+        settle(&[&a, &b]);
+        assert!(b.has(&lord.id));
+
+        // On the second, an entry of the library's file is broken by hand, and the record of the files is damaged.
+        let dir = b.lib().dir().to_owned();
+        let bib = dir.join("library.bib");
+        let text = std::fs::read_to_string(&bib).unwrap();
+        assert!(text.contains("@book{lord1960,"), "{text}");
+        std::fs::write(&bib, text.replace("@book{lord1960,", "@book{lord1960, note = {never closed,")).unwrap();
+        std::fs::write(dir.join(glaukopis_core::library::files::FILE), b"{ not json").unwrap();
+        *b.library.lock().unwrap() = Library::open(&b.data).unwrap();
+        assert!(!b.has(&lord.id) && b.has(&nagy.id), "what cannot be read is not in the library");
+        b.round();
+        a.round();
+        settle(&[&a, &b]);
+        assert!(a.has(&lord.id), "and it is taken from no other computer");
+        assert!(!b.has(&lord.id), "nor written anew beside the text that holds it");
+        {
+            let lib = b.lib();
+            let record = lib.files.get(&scan).unwrap();
+            assert_eq!(record.name, "Named well.pdf", "the record is mended from the home");
+            assert_eq!(record.folder.as_deref(), Some(shelf.id.as_str()));
+        }
+        let record = a.lib().files.get(&scan).cloned().unwrap();
+        assert_eq!((record.name.as_str(), record.folder.as_deref()), ("Named well.pdf", Some(shelf.id.as_str())));
+
+        // Put right by hand, it is the one it was, and nothing is two.
+        std::fs::write(&bib, std::fs::read_to_string(&bib).unwrap().replace("note = {never closed,", "")).unwrap();
+        b.lib().refresh().unwrap();
+        assert!(b.has(&lord.id));
+        settle(&[&a, &b]);
+        assert_eq!(a.lib().len(), 2);
+        assert_eq!(a.library_as_said(), b.library_as_said());
+    })
+    .await;
+}
+
 /// The way to a server, through which every request is written down as it
 /// goes: its method and its path. What the engine asks is counted so.
 async fn counting(server: &str) -> (String, Arc<Mutex<Vec<String>>>) {
