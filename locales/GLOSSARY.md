@@ -36,24 +36,26 @@ language would use, not a transliteration of the English.
   (foreign words, the title of a work, a term, a mention, a highlight). The
   same word is used for all three. A kind is a meaning, never a look.
 - **look** — how a kind is set in a document: size, spacing, italics and
-  so on. Looks belong to the layout, not to the text.
-- **layout** — how the page of a document looks: the margins, the fonts,
-  the headings, the notes, the looks of the kinds. "Manuscript" and "A
-  book of fiction" are layouts. The files and the code call it the
-  *format*, which was its name in the interface until ADR 0038; the word
-  "format" is now kept for file formats (Word, PDF) only.
-- **template** — what a document of a kind consists of: which parts it has
-  and in what order, which kinds of elements and of passages it puts in
-  hand, which layout and reference style it brings, what it requires
-  (words, keywords, anonymity), and which files it makes. "Journal
-  article", "Novel manuscript" and a journal's own are templates. A
-  template is chosen in the document settings of an element, and inherits
-  down the tree.
+  so on. Looks belong to the document, set in Look, not to the text.
+- **layout** — not said to the writer (2026-11-22). Underneath, how the
+  pages of a document look: the margins, the fonts, the headings, the notes,
+  the looks of the kinds. To the writer this is the **look** of a document,
+  set in Look, and a document type holds it. The files and the code call it
+  the *format*; the word "format" is kept for file formats (Word, PDF) only.
+- **document type** — never "template" (2026-11-22): what a document of a
+  kind consists of and how its pages look: which parts it suggests and in
+  what order, which kinds of passages it offers first, its look and
+  reference style, what it requires (words, keywords, anonymity), and which
+  files it makes. "Journal article", "Novel" and a journal's own are
+  document types. One is chosen in Document properties, and inherits down
+  the tree; one of the writer's own is made from a document in Look (*Save
+  as document type…*) or in the chooser (*New document type…*). The code
+  and the files call it a *template*.
 - **style** — the reference style only: how citations and the bibliography
   are written (author–date, notes, numbers). Never used for looks.
 - **document settings** — the window of an element's document: its
-  template, its details (title, authors, date, keywords, identifiers), its
-  parts, its layout and style, its language, and the checklist.
+  document type, its details (title, authors, date, keywords, identifiers), its
+  parts, its look and style, its language, and the checklist.
 - **part** — a kind of element that has a place in the document: the
   abstract, a dedication, an appendix, the cover. Front matter, back
   matter and the cover are its places.
@@ -101,7 +103,7 @@ language would use, not a transliteration of the English.
 - **foreign words** — a kind of words: words in another language than the
   map's, which carry their language, for spelling and for the document.
 - **title of a work** — a kind of words: the title of a book or article
-  named in the text, set as the layout says (usually italics).
+  named in the text, set as Look says (usually italics).
 - **term** — a kind of words: a word where it is introduced or defined.
 - **mention** — a kind of words: a word spoken of *as a word*, set in the
   quotation marks of the language of the map.

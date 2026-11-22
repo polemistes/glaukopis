@@ -23,7 +23,6 @@ look-changes = { $count ->
 look-changed-here = Ændret her
 # A change made on an element over this one, as a book over its chapters.
 look-changed-in = Ændret i »{ $name }«
-look-take-again = tag den fra { $layout } igen
 
 look-search = Find en indstilling: skrift, margener, sidetal…
 look-search-nothing = Ingen indstilling har disse ord.
@@ -65,10 +64,6 @@ look-contents-limit-keywords = Nøgleord, højst
 # What the limits count, as what the document is says it.
 look-contents-requirements-note = Hvad grænserne tæller: { $note }
 
-# A layout, a style or a template that is neither chosen nor inherited: the one from the settings, named.
-look-usual = Din sædvanlige ({ $name })
-# The first choice of a layout or a style: what the template brings, named.
-look-as-template = Som skabelonen har det ({ $name })
 # The first choice where an element over this one has chosen: the element, and what it chose.
 look-from-with = Fra { $name } ({ $what })
 look-style = Referencestil

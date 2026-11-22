@@ -16,9 +16,9 @@ look-changes = { $count ->
     [one] { $count } endring
    *[other] { $count } endringer
   }
-look-changed-here = Endret her
+look-changed-here = Endret i dette dokumentet
 look-changed-in = Endret i «{ $name }»
-look-take-again = ta { $layout } sitt igjen
+look-reset = Tilbakestill
 
 look-search = Finn en innstilling: skrift, marger, sidetall …
 look-search-nothing = Ingen innstilling har disse ordene.
@@ -58,12 +58,12 @@ look-contents-limit-abstract-words = Ord i sammendraget, høyst
 look-contents-limit-keywords = Nøkkelord, høyst
 look-contents-requirements-note = Hva grensene teller: { $note }
 
-# Et oppsett, en stil eller en mal som verken er valgt eller arvet: den fra innstillingene, med navn.
-look-usual = Den vanlige ({ $name })
-# Det første valget av oppsett eller stil: det malen bringer med seg, med navn.
-look-as-template = Som malen har det ({ $name })
-# Det første valget der et element over dette har valgt: elementet, og det det valgte.
-look-from-with = Fra { $name } ({ $what })
+# Utseendet eller referansestilen et dokument har der typen ikke har noen: den fra innstillingene, med navn.
+look-your-default = { $name }, din standard
+# Det første valget av utseende eller stil: det dokumenttypen har med seg, og typen, med navn.
+look-from-type = { $name }, fra { $type }
+# Det første valget der et element over dette har valgt: det det valgte, og elementet.
+look-from-with = { $what }, fra { $name }
 look-style = Referansestil
 look-style-change = Endre denne referansestilen …
 

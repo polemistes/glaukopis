@@ -153,7 +153,7 @@ format-bibliography-entry-spacing = Luft mellom oppføringene
 ## på. Radene er også dem i vinduet for et eget slag; det som ikke sies, er
 ## som grunnlaget har det.
 
-format-kind-text-note = som skriften og avsnittene i oppsettet har det
+format-kind-text-note = satt under Skrift og Avsnitt
 format-kind-as-base = som grunnlaget
 format-kind-resolved = Slik det blir: { $look }
 format-kind-resolved-nothing = Slik det blir: som teksten rundt

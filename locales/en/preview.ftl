@@ -15,7 +15,7 @@ preview-program-missing = { $program } is not installed
 preview-programs-needed = Preview and export are made with Pandoc and Typst. Install them with the package manager of your system, or say in the settings where they are.
 preview-look-again = Look again
 preview-looking-failed = The programs could not be looked for
-preview-reading-failed = The styles, layouts and templates could not be read
+preview-reading-failed = The reference styles, looks and document types could not be read
 preview-failed = The preview could not be made
 preview-failed-message = The preview could not be made.
 # A page of the preview, as it is told to those who cannot see it.
@@ -48,7 +48,7 @@ preview-remarks = Remarks
 preview-remarks-font = Font
 preview-font-missing = { $font } is not installed.
 # The first name is that of the font the layout asks for; this is of the one used in its place.
-preview-font-substitute = { $font } is used in its place, here in the preview and in a PDF that is made. In a document that is exported for Word, LibreOffice or LaTeX, the font is named as the layout asks, and is there for whoever opens the document and has it.
+preview-font-substitute = { $font } is used in its place, here in the preview and in a PDF that is made. In a document that is exported for Word, LibreOffice or LaTeX, the font is named as Look sets it, and is there for whoever opens the document and has it.
 preview-remarks-references = References
 # In bold, and the next follows it in the same sentence.
 preview-works-missing = { $count ->

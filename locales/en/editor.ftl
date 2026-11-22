@@ -39,9 +39,9 @@ editor-numbering = Numbering
 editor-numbering-none = Not numbered
 editor-numbering-counted = Counted from the first number given
 editor-numbering-given = Only the numbers given
-editor-line-numbers-every-layout = As the layout: every { $every }
+editor-line-numbers-every-layout = From Look: every { $every }
 editor-line-numbers-side = Numbers on the
-editor-side-layout = Side the layout says ({ $side })
+editor-side-layout = From Look ({ $side })
 editor-side-left = Left
 editor-side-right = Right
 # Over a number in the margin of the text, which opens a field for it when pressed.
@@ -74,7 +74,7 @@ editor-gloss-hint = What the headword means
 editor-code = Code
 editor-code-hint = A line of code or of anything kept letter for letter
 editor-break = Break
-editor-break-hint = A pause between parts, with the sign the layout gives it
+editor-break-hint = A pause between parts, with the sign Look gives it
 editor-draft = Draft note
 editor-draft-hint = For your eyes: it goes into no document
 editor-foreign = Foreign words
@@ -169,7 +169,7 @@ editor-pointer = Cross-reference…
 editor-refmark-title = Inline number
 editor-refmark-label = Label
 editor-refmark-placeholder = 3:16, 327a, 1094a1
-editor-refmark-dialog-hint = The mark is no part of the words: spelling, search and the count of words pass over it. The layout says whether it is raised in the line or set in the margin.
+editor-refmark-dialog-hint = The mark is no part of the words: spelling, search and the count of words pass over it. Look says whether it is raised in the line or set in the margin.
 # What a picture that was pasted without a name of its own is called in the store of pictures.
 editor-pasted-picture = image
 
@@ -243,7 +243,7 @@ editor-locator-sub-verbo = Sub verbo
 # The number is that of the note, or a letter for a note that stands in a place of its own.
 editor-note-numbered = Note { $number }
 editor-note-place = Where the note stands
-editor-note-place-format = Where the layout has its notes
+editor-note-place-format = Where Look puts the notes
 editor-note-place-foot = At the foot of the page
 editor-note-place-end = At the end of the text
 editor-note-placeholder = The text of the note

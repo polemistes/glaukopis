@@ -23,7 +23,6 @@ look-changes = { $count ->
 look-changed-here = Hier geändert
 # A change made on an element over this one, as a book over its chapters.
 look-changed-in = Geändert in „{ $name }“
-look-take-again = wieder wie in { $layout }
 
 look-search = Eine Einstellung finden: Schrift, Ränder, Seitenzahlen…
 look-search-nothing = Keine Einstellung hat diese Wörter.
@@ -65,10 +64,6 @@ look-contents-limit-keywords = Schlüsselwörter, höchstens
 # What the limits count, as what the document is says it.
 look-contents-requirements-note = Was die Grenzen zählen: { $note }
 
-# A layout, a style or a template that is neither chosen nor inherited: the one from the settings, named.
-look-usual = Wie gewohnt ({ $name })
-# The first choice of a layout or a style: what the template brings, named.
-look-as-template = Wie die Vorlage es vorsieht ({ $name })
 # The first choice where an element over this one has chosen: the element, and what it chose.
 look-from-with = Von { $name } ({ $what })
 look-style = Zitierstil

@@ -22,7 +22,6 @@ look-changes = { $count ->
 look-changed-here = ここで変更
 # この要素より上の要素で行った変更。章に対する本のように。
 look-changed-in = 「{ $name }」で変更
-look-take-again = 「{ $layout }」の設定に戻す
 
 look-search = 設定を検索：フォント、余白、ページ番号…
 look-search-nothing = この語を含む設定はありません。
@@ -64,10 +63,6 @@ look-contents-limit-keywords = キーワードの数の上限
 # 上限が何を数えるか。文書種別が言うとおりに。
 look-contents-requirements-note = 上限の数え方：{ $note }
 
-# 選ばれても受け継がれてもいないレイアウト、スタイル、テンプレート：設定のものを名前で。
-look-usual = 既定（{ $name }）
-# レイアウトやスタイルの最初の選択肢：テンプレートがもたらすものを名前で。
-look-as-template = テンプレートのとおり（{ $name }）
 # この要素より上の要素が選んでいるときの最初の選択肢：その要素と、選んだもの。
 look-from-with = 「{ $name }」から（{ $what }）
 look-style = 引用スタイル

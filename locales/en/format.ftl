@@ -157,7 +157,7 @@ format-bibliography-entry-spacing = Space between entries
 
 format-kind-based-on = based on { $base }
 # Of the kind Text, which the parts for type and paragraphs set.
-format-kind-text-note = as the type and the paragraphs of the layout have it
+format-kind-text-note = set under Type and Paragraphs
 # At the right of a kind's line where this layout says nothing of it.
 format-kind-as-base = as the base
 format-kind-resolved = As it will stand: { $look }

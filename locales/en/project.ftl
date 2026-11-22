@@ -82,7 +82,7 @@ project-badge-joined = { $name }, joined
 project-beside-failed = The project could not be opened beside this one
 project-beside-no-comments = The comments are those of the project you opened: open the other on its own to comment in it
 # A template of the writer's own was saved anew, and the copy of it the project carries could not be made afresh.
-project-template-not-renewed = The project's copy of the template could not be brought up to date
+project-template-not-renewed = The project's copy of the document type could not be brought up to date
 # Said over the other pane while elements of one project are dragged over it.
 project-copy-to-project = Copy to “{ $name }”
 project-move-to-project = Move to “{ $name }”

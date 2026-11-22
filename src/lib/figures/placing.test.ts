@@ -197,20 +197,20 @@ describe('where something stands', () => {
     const said = (kind: string, side: string, flow: string) =>
       t('figures-usual', { kind, side, flow });
     expect(said('figure', 'left', 'around')).toBe(
-      'The layout has figures to the left, with the text flowing around them.',
+      'Look has figures to the left, with the text flowing around them.',
     );
     expect(said('table', 'right', 'apart')).toBe(
-      'The layout has tables to the right, apart from the text.',
+      'Look has tables to the right, apart from the text.',
     );
-    expect(said('equation', 'center', 'none')).toBe('The layout has equations in the middle.');
+    expect(said('equation', 'center', 'none')).toBe('Look has equations in the middle.');
     languages.current = 'nb';
     expect(said('table', 'left', 'apart')).toBe(
-      'Oppsettet har tabeller til venstre, atskilt fra teksten.',
+      'Utseende har tabeller til venstre, atskilt fra teksten.',
     );
-    expect(sides().map((s) => s.label)).toEqual(['Som oppsettet', 'Venstre', 'Midten', 'Høyre']);
+    expect(sides().map((s) => s.label)).toEqual(['Fra Utseende', 'Venstre', 'Midten', 'Høyre']);
     languages.current = 'en';
     expect(flows().map((f) => f.label)).toEqual([
-      'As the layout',
+      'From Look',
       'Flows around it',
       'Stands apart',
     ]);

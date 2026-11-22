@@ -100,7 +100,7 @@ export class Composition {
     return {
       words: who === this.at ? t('look-changed-here') : t('look-changed-in', { name }),
       again: {
-        label: t('look-take-again', { layout: this.named }),
+        label: t('look-reset'),
         take: () => this.takeAgain(who, path),
       },
     };

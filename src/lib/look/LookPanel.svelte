@@ -264,9 +264,9 @@
     const who = path === 'lineNumbers' ? inherited.from.get('lineNumbers') : changes.from.get(path);
     if (!who) return null;
     return {
-      words: who === target ? t('look-changed-here') : t('look-changed-in', { name: nameOf(who) }),
+      words: who === at ? t('look-changed-here') : t('look-changed-in', { name: nameOf(who) }),
       again: {
-        label: t('look-take-again', { layout: nameOfLayout }),
+        label: t('look-reset'),
         take: () => takeAgain(who, path),
       },
     };
@@ -339,26 +339,23 @@
     if (!who || who === target) return null;
     return nameOf(who);
   }
-  // The writer's usual, named as such where the settings choose one; with
-  // none, the layout and the style that hold are named as they are.
-  const usualLayout = $derived(layoutName(documents.choice({}).format));
-  const usualStyle = $derived(styleName(documents.choice({}).style));
+  // What the first choice of the layout and of the style is, named with where
+  // it is from: the document type, or the writer's default.
+  const typeName = $derived(templateName(project, choice.template));
   const broughtLayout = $derived(
     template?.layout
-      ? layoutName(template.layout)
-      : documents.chosenUsual('format')
-        ? t('look-usual', { name: usualLayout })
-        : usualLayout,
+      ? t('look-from-type', { name: layoutName(template.layout), type: typeName })
+      : t('look-your-default', { name: layoutName(documents.usualFormat()) }),
   );
-  const broughtStyle = $derived(
-    template?.style
-      ? styleName(template.style)
-      : layout?.style
-        ? styleName(layout.style)
-        : documents.chosenUsual('style')
-          ? t('look-usual', { name: usualStyle })
-          : usualStyle,
-  );
+  const broughtStyle = $derived.by(() => {
+    if (template?.style)
+      return t('look-from-type', { name: styleName(template.style), type: typeName });
+    if (layout?.style && template?.layout === layout.id)
+      return t('look-from-type', { name: styleName(layout.style), type: typeName });
+    if (layout?.style)
+      return t('look-from-type', { name: styleName(layout.style), type: nameOfLayout });
+    return t('look-your-default', { name: styleName(documents.choice({}).style) });
+  });
   const formatFrom = $derived(own.format ? null : fromAbove('format'));
   const styleFrom = $derived(own.style ? null : fromAbove('style'));
 
@@ -1734,7 +1731,7 @@
       <option value="">
         {styleFrom
           ? t('look-from-with', { name: styleFrom, what: styleName(choice.style) })
-          : t('look-as-template', { name: broughtStyle })}
+          : broughtStyle}
       </option>
       {#each styleGroups() as [name, styles] (name)}
         <optgroup label={name}>
@@ -1976,7 +1973,7 @@
               <option value="">
                 {formatFrom
                   ? t('look-from-with', { name: formatFrom, what: nameOfLayout })
-                  : t('look-as-template', { name: broughtLayout })}
+                  : broughtLayout}
               </option>
               {#each formatGroups() as group (group.name)}
                 <optgroup label={group.name}>
@@ -2003,7 +2000,7 @@
                       : t('look-changed-in', { name: nameOf(c.who) })}</small
                   >
                   <button type="button" class="again" onclick={() => takeAgain(c.who, c.path)}
-                    >{t('look-take-again', { layout: nameOfLayout })}</button
+                    >{t('look-reset')}</button
                   >
                 </li>
               {/each}

@@ -5,7 +5,7 @@ settings-error-system = Something about the application could not be read
 settings-error-read = The settings could not be read
 settings-error-save = The settings could not be saved
 settings-error-fonts = The fonts of this computer could not be listed
-settings-error-templates = The templates could not be listed
+settings-error-templates = The document types could not be listed
 # A damaged file of settings was renamed and left beside where it was; $path is where it is now.
 settings-set-aside = The settings could not be read, and are set aside as { $path }; the defaults are used
 settings-set-aside-person = The settings could not be read, and are set aside as { $path }; the defaults are used, and this computer is a new person in the history of projects
@@ -133,7 +133,7 @@ settings-default-type = Default document type
 settings-default-look = Default look
 settings-default-style = Default citation style
 # The first choice of each of the three defaults: none, so that a new document is of the plain type, and the type's look and style hold.
-settings-default-none = None, as the document type has it
+settings-default-none = From the document type
 # Whether a line of the preview, pressed, shows a chip at the edge of the page that says what it is and opens Look at it.
 settings-look-chips = Display look chips in the preview window
 

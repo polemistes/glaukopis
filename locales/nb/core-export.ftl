@@ -61,12 +61,12 @@ core-export-the-format = dokumentformatet «{ $id }»
 
 ## Maler.
 
-core-export-template-bad-id = «{ $id }» kan ikke være id-en til en mal
-core-export-template-needs-name = En mal må ha et navn.
-core-export-template-own-only = Bare dine egne maler kan slettes.
-core-export-the-template = malen «{ $id }»
-core-export-output-not-yet = Utdataen «{ $id }» i malen kan ikke lages ennå: bare dokumentet kan.
-core-export-output-unknown = Malen har ingen utdata «{ $id }».
+core-export-template-bad-id = «{ $id }» kan ikke være id-en til en dokumenttype
+core-export-template-needs-name = En dokumenttype må ha et navn.
+core-export-template-own-only = Bare dine egne dokumenttyper kan slettes.
+core-export-the-template = dokumenttypen «{ $id }»
+core-export-output-not-yet = Utdataen «{ $id }» i dokumenttypen kan ikke lages ennå: bare dokumentet kan.
+core-export-output-unknown = Dokumenttypen har ingen utdata «{ $id }».
 
 ## Stage 5 of the settings in plain words: LaTeX's hyphenation.
 

@@ -19,11 +19,12 @@ look-changes = { $count ->
     [one] { $count } change
    *[other] { $count } changes
   }
-# Under a setting the document sets otherwise than its layout.
-look-changed-here = Changed here
+# Under a setting the document sets otherwise than its type.
+look-changed-here = Changed in this document
 # A change made on an element over this one, as a book over its chapters.
 look-changed-in = Changed in “{ $name }”
-look-take-again = take { $layout }’s again
+# Takes a change away.
+look-reset = Reset
 
 look-search = Find a setting: font, margins, page numbers…
 look-search-nothing = No setting has these words.
@@ -68,12 +69,12 @@ look-contents-limit-keywords = Keywords, at most
 # What the limits count, as what the document is says it.
 look-contents-requirements-note = What the limits count: { $note }
 
-# A layout, a style or a template that is neither chosen nor inherited: the one from the settings, named.
-look-usual = Your usual ({ $name })
-# The first choice of a layout or a style: what the template brings, named.
-look-as-template = As the template has it ({ $name })
-# The first choice where an element over this one has chosen: the element, and what it chose.
-look-from-with = From { $name } ({ $what })
+# The look or the reference style a document has where its type brings none: the one from the settings, by its name.
+look-your-default = { $name }, your default
+# The first choice of a look or a reference style: what the document type brings, by its name, and the type by its name.
+look-from-type = { $name }, from { $type }
+# The first choice where an element over this one has chosen: what it chose, and the element.
+look-from-with = { $what }, from { $name }
 look-style = Reference style
 look-style-change = Change this reference style…
 
