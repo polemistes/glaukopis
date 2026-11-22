@@ -54,6 +54,9 @@ try {
   await app.click('.preview header [data-look]');
   await app.waitFor('.side .look .chips', 15000);
   await sleep(300);
+  // A document has no bibliography until an element of that kind stands in it: the style's
+  // initials are read in what is printed there.
+  await app.addPart('Bibliography');
   /** Whether the editor of the style has gone. */
   const editorGone = () =>
     app.waitUntil(`return !document.querySelector('dialog[open]')`, 8000, 'the editor to go');
