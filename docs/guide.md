@@ -511,7 +511,7 @@ the one the note has in the document: the notes are numbered through all
 its elements. An element that is left out of the document numbers its own.
 
 Whether notes stand at the foot of the page or at the end of the text is
-said by the layout of the document. Some books keep two kinds of notes apart: the
+said by the look of the document. Some books keep two kinds of notes apart: the
 author's remarks at the foot of the page, say, and the sources at the end.
 For that, a single note can be set to stand at the other place, in the panel
 it is written in. Such notes are lettered, *a*, *b*, *c*, in the text and in
@@ -551,8 +551,8 @@ Pressing the image opens the rest that can be said of it:
   *Editing an image*.
 
 The word before the number, where what is said of the figure stands and how
-it is set, are said by the layout of the document: *Figure 1.* under the
-image in one, **Figure 1** over it in another. A layout can also have the figures
+it is set, are said by the look of the document: *Figure 1.* under the
+image in one, **Figure 1** over it in another. A look can also have the figures
 gathered at the end of the document, as many journals ask of a manuscript;
 a line in the text then says where each belongs.
 
@@ -586,7 +586,7 @@ headings. The cursor then stands in the first cell.
 The tables are numbered through the document, as the figures are, and can be
 pointed to. The word before the number, whether what is said of the table
 stands over or under it, the lines of the table and the size of its type are
-said by the layout of the document: most have a line over the table, one under its
+said by the look of the document: most have a line over the table, one under its
 headings and one under the table, and no lines between the columns.
 
 A table that was copied, from a web page or a document, becomes a table
@@ -640,7 +640,7 @@ Enter within a line parts the stanza there, the line break becoming the break
 between the two. Tab sets the line the cursor is in in a step, for the
 shorter lines of lyric, and Shift+Tab takes it back; over several lines
 selected, each of them. In any other kind of paragraph Tab sets the whole
-paragraph in. The step is the layout's **Indentation step**, 0.6 cm unless
+paragraph in. The step is the look's **Indentation step**, 0.6 cm unless
 it says otherwise (see *Look*, **Paragraphs**), and the steps stand where
 you write and in every document: in the PDF, in LaTeX, on a page of the
 web, and in Word and Writer as four spaces that do not break for each step.
@@ -675,7 +675,7 @@ pressed on, unless it is pressed within a selection; **Inline number…**, under
 prose (see *Inline numbers*); and **Number the lines of the page**, in
 *Document properties* under **Details**, numbers every line of the printed
 page in the margin, for the document and all under it, over what its
-layout says.
+look says.
 
 **Line numbering from here…** numbers the lines from the paragraph the
 cursor is in: that paragraph and those after it in the numbered stretch it
@@ -700,14 +700,14 @@ begins: it is filled in with the number the first counted line from here
 has now, and 1 where nothing is counted yet; write 45 for lines that begin
 at line 45. It is a setting of the numbering, not a number written on a
 line, and is shown as the others are. **Show a number every** and the side
-the numbers stand on are the layout's unless you say otherwise here: every
-fifth line, at the left, in the layouts that ship.
+the numbers stand on are the look's unless you say otherwise here: every
+fifth line, at the left, in the looks that ship.
 **Count the lines of** is **Every kind** that is counted, or one kind
 only, chosen among the kinds of the paragraphs from here: with *Verse*, a
 quotation among the lines is passed over as a speaker is, and shows only a
 number you gave it. An empty line is never counted. The numbers stand in
 the margin, in the text and in the document, as far from the text as the
-layout says (see *Look*, **Line numbers**); in Word and Writer they stand
+look says (see *Look*, **Line numbers**); in Word and Writer they stand
 at the head of their lines, small.
 
 Which numbers are shown: of the counted lines, those that fall on every
@@ -739,9 +739,9 @@ as those of Greek drama do not:
   parentheses. Always: its number stands beside it where the count would not
   show it.
 - **Annotation in the right margin**, or **in the left margin**, as the
-  layout sets the annotations: a note of the metre, the number another
+  look sets the annotations: a note of the metre, the number another
   edition gives, anything to stand beside the line. It is not counted. It
-  stands in the margin across from the numbers, unless the layout says
+  stands in the margin across from the numbers, unless the look says
   otherwise (see *Look*, **Line numbers**), and in Word and Writer at the
   end or the head of its line, small.
 
@@ -763,7 +763,7 @@ A **screenplay** is written with the kinds of paragraph under *Script*:
 **scene heading**, **action**, **character**, **dialogue**,
 **parenthetical** and **transition**, each chosen from the kind menu, which
 offers every part of a script first while the cursor is in one. The
-*Screenplay* layout sets every part where the standard script page has it.
+*Screenplay* look sets every part where the standard script page has it.
 
 **Two texts side by side**, under *Insert*, puts an original beside its
 translation: two columns, each a text of its own, in which verse and
@@ -870,14 +870,13 @@ Every paragraph is of a **kind**, and a run of words may be: a quotation,
 an epigraph, a line of verse, the heading of a scene, a point of a list, a
 word in another language. A kind says what the words are, not how they
 look, and it is a label and nothing more: no kind follows another, and the
-keys are the same in all of them. The look comes from the layout of the
-document, which has a look for every kind and changes with the layout;
-where you write, the editor shows each kind by cues of its own, which go
+keys are the same in all of them. The look comes from the look of the
+document, which has one for every kind; where you write, the editor shows each kind by cues of its own, which go
 into no document: a speaker in small capitals, a direction in italics,
 and only what stands apart from the text by nature set in — a quotation,
 its attribution, code, an epigraph, and the lists, whose marks hang. The
 lines of a verse and the parts of a play or a script stand at the edge
-where you write, as text does; the page sets them in as the layout says.
+where you write, as text does; the page sets them in as the look says.
 
 You choose one thing: the kind of a paragraph. **Paragraph kind**, in the
 bar, shows the kind of the paragraph the cursor is in, or **Mixed**
@@ -932,7 +931,7 @@ cursor is — at a line of verse, **Verse**, **Speaker** and **Stage
 direction**; in a script, every part; at a headword, **Headword** and
 **Gloss** — then the kinds **at hand**: **Text**, **Quotation**, **List**
 and **Numbered list**, every kind the project's texts use, and those the
-template brings. There is nothing to pin: the menu learns from what you
+document type brings. There is nothing to pin: the menu learns from what you
 write. **More…** has every kind, by its group:
 
 | Group | Kinds |
@@ -942,7 +941,7 @@ write. **More…** has every kind, by its group:
 | **Verse** | **Verse**, a stanza of poetry, drama or a transcript, its lines kept as lines; **Speaker** and **Stage direction**: see *Lines and paragraphs, verse, and texts side by side* |
 | **Script** | **Scene heading**, **Action**, **Character**, **Dialogue**, **Parenthetical** and **Transition**: the parts of a screenplay |
 | **List** | **List**, a point with a mark before it; **Numbered list**, a point that is counted; and **To do**, a point with a box before it, to tick when it is done; an indent makes a list within the list |
-| **More** | **Headword** and **Gloss**, the two paragraphs of a glossary; **Code**, a line kept letter for letter; **Break**, a pause between parts, which holds no text and prints the sign the layout gives it; **Draft note**, for your eyes, which goes into no document |
+| **More** | **Headword** and **Gloss**, the two paragraphs of a glossary; **Code**, a line kept letter for letter; **Break**, a pause between parts, which holds no text and prints the sign the look gives it; **Draft note**, for your eyes, which goes into no document |
 
 Typing `> `, `- ` or `1. ` at the start of a paragraph of text makes it a
 quotation, a point or a numbered point, as Markdown has it; `7. ` begins a
@@ -967,7 +966,7 @@ capitals**, **Underlined** (**Ctrl+U**), **Superscript**, **Subscript**,
 **Struck through** and **Code in the line**. They are only looks.
 
 **Words kind**, beside it, has the kinds of words, which say what the words
-are, and whose look the layout gives: **Foreign words**, with their language,
+are, and whose look the look gives: **Foreign words**, with their language,
 which the spelling follows and which goes into every document; the
 **Title of a work**; a **Term** where it is first used; a **Mention** of a
 word spoken of as a word, which stands in the quotation marks of the
@@ -1003,12 +1002,12 @@ stanza of verse, and its lines are indented one by one — and paragraphs of
 it standing together have a bracket named by it, so that paragraphs of a
 kind *Letter* stand together as a letter. What was selected is given the
 kind at once. A kind of your own is kept with the project, so that those
-you share it with have it, and works in every layout, since it says no more
-than how it differs from a kind the layout knows; its name is offered in
+you share it with have it, and works in every look, since it says no more
+than how it differs from a kind the look knows; its name is offered in
 your other projects when a kind is named there.
 
 The foot of the kind menu says where the looks come from: **Set as
-“Manuscript” has them**, naming the layout of the document, and under it
+“Manuscript” has them**, naming the look of the document, and under it
 **How “Quotation” looks…**, named for the kind the cursor is in, which
 opens Look in the typesetting pane at the look of that kind, where it is
 changed; see *The look of a document*. A draft note is for
@@ -1025,7 +1024,7 @@ selected goes into what is put in.
 
 A **formula** stands in the line, among the words. An **equation** stands on
 a line of its own, and can be numbered; what stands around the number,
-as in (1), is said by the layout of the document. Pressing either opens it
+as in (1), is said by the look of the document. Pressing either opens it
 again.
 
 ### Where things stand
@@ -1034,11 +1033,11 @@ A figure, a table and an equation each stand to the left, in the middle or
 to the right. The text can flow around a figure or a table that stands at a
 side, as it does in books; in the middle, nothing flows around it.
 
-What the layout of the document says holds for all of them: a layout may
+What the look of the document says holds for all of them: a look may
 have its figures in the middle and its tables at the left margin. Of any one
 of them you can say something else, in the panel that opens when it is
-pressed; **As the layout** takes what you said back. The panel tells what
-the layout says.
+pressed; **From Look** takes what you said back. The panel tells what
+the look says.
 
 Several can stand **beside each other**: open the panel of the second, and
 choose **Put it beside the one before it**. A third and a fourth can join
@@ -1062,11 +1061,11 @@ They can be found by what is said of them.
 
 The cross-reference then says what the document calls the thing:
 
-- a **figure** or a **table** by the word the layout has for it and its
+- a **figure** or a **table** by the word the look has for it and its
   number, *Figure 2*, *Table 1*, or by the number alone;
 - an **equation** by its number as it stands beside it, *(1)*, or by the
   number alone;
-- a **part** by its number where the layout numbers the headings, *2.1*, and
+- a **part** by its number where the look numbers the headings, *2.1*, and
   by its name where it does not, or whenever you choose the name.
 
 Words like *see* and *section* you write yourself. Press the cross-reference
@@ -2221,11 +2220,11 @@ A kind may also say what an element of it is in the document, under **In
 the document** in the kind's dialog: an abstract, an appendix, a page of its
 own, chosen among the kinds that come with Glaukopis (see *What goes into
 the document*). An *Author's note* that is a front section is then printed
-before the text, in every layout. A kind that is **nothing in particular**
+before the text, in every look. A kind that is **nothing in particular**
 there is a name and a colour, as before.
 
 **Kind** in the element's menu has the kinds of the project, in their
-colours; then the kinds that come with Glaukopis which the template puts in
+colours; then the kinds that come with Glaukopis which the document type puts in
 hand, or which the project uses already, such as **Abstract** or
 **Appendix**; and **More…**, with all of them in one list. **New kind…** makes a kind and gives it to
 the element, and **Kinds of this project…** shows the project's own, with
@@ -3094,24 +3093,25 @@ moved.
 ## What you are writing
 
 Every document begins as a **plain document**: generic text, its pages as
-your usual layout has them. Nothing is asked when a
+your default look has them. Nothing is asked when a
 project is made, since a project may hold a thesis, the letters about it and
 a play, each an element that prints as a document of its own. When you know
 what you are writing, say so, and the parts, the pages and the citations
 follow.
 
 What the document is, *Plain document* until you choose something else, is
-chosen under **Document type** in *Document properties*. **Document type…**
-at the top of Look opens it there, and so do **Document properties…** in
-the right-click menu of an element, and **What are you writing…** in the
-palette. The tab has a search at its top; under it the plain document,
-alone; then the document types in their groups:
+its **document type**, chosen under **Document type** in *Document
+properties*. **Document type…** at the top of Look opens it there, and so do
+**Document properties…** in the right-click menu of an element, and **What
+are you writing…** in the palette. The tab has a search at its top, with
+**New document type…** beside it; under them the document types of your own,
+then the plain document, alone; then the document types in their groups:
 
 - **Articles and papers**: a **journal article**, with an abstract and
   keywords before the text, and appendices and acknowledgements after it,
-  with no limits until a journal's template sets them; a **paper**, a
-  student's or a conference paper, as the plain document with your usual
-  layout and reference style; and a **report**, with abstract, contents,
+  with no limits until a journal's document type sets them; a **paper**, a
+  student's or a conference paper, as the plain document with your default
+  look and reference style; and a **report**, with abstract, contents,
   text, appendices and bibliography.
 - **Books and theses**: an **academic book**, with half-title and title
   page, copyright page, dedication and epigraph, the contents, foreword,
@@ -3120,11 +3120,11 @@ alone; then the document types in their groups:
   abstract and acknowledgements, the contents with the lists of figures and
   tables, the chapters, then appendices and bibliography.
 - **Fiction**: a **novel**, as a printed book or an e-book, with its cover,
-  its front matter and its chapters, in the layout of a novel as a book; a
-  **novel manuscript**, a title page and the chapters in the standard
-  manuscript layout, for an agent or a publisher; a **short story**, for a
-  magazine or a competition, the same way; and a **collection of stories**,
-  as a book, each story an element.
+  its front matter and its chapters, set as a novel is in a book; a
+  **novel manuscript**, a title page and the chapters set as a manuscript is
+  for an agent or a publisher; a **short story**, for a magazine or a
+  competition, the same way; and a **collection of stories**, as a book,
+  each story an element.
 - **Poetry**: **poems**, a collection with a dedication, the contents, each
   poem an element, then acknowledgements and a note on the poet.
 - **Stage and screen**: a **play**, with its cast and its setting before the
@@ -3138,22 +3138,22 @@ Under the name of each stands what it brings, and nothing else: its parts
 in their order; the paper, the font with its size and the line spacing of
 its pages, and the reference style where it brings one; and what it
 requires, where it requires anything, as *Words of text 12,000 · Words of
-abstract 250 · Keywords 8 · Anonymous*. A type that brings no layout of its
-own shows that of your usual layout. Of the plain document it says
-*Generic text*, and of a template of your own what you have written as its
+abstract 250 · Keywords 8 · Anonymous*. A document type that brings no look
+of its own shows your default look. Of the plain document it says *Generic
+text*, and of a document type of your own what you have written as its
 description.
 
 The one in use is marked. Choosing takes effect
 at once, as a step of undo, and the typesetting follows; a double click chooses
-and closes. A type chosen brings its look and its citation style: a layout or
-a reference style chosen for the document in Look gives way to the type's, in
-the same step of undo.
+and closes. A document type chosen brings its look and its citation style: a
+look or a reference style chosen for the document in Look gives way to the
+type's, in the same step of undo.
 
 **Writing for a journal, a publisher or a style guide?**, under the
-groups, is the second step: a template for each journal, publisher and style
-guide that Glaukopis has a layout for, each based on the article, the book
-or the paper, keeping that layout, its reference style, and its limits as
-requirements. *The Classical Quarterly* allows twelve thousand words,
+groups, is the second step: a document type for each journal, publisher and
+style guide that Glaukopis has a look for, each based on the article, the
+book or the paper, keeping that look, its reference style, and its limits
+as requirements. *The Classical Quarterly* allows twelve thousand words,
 footnotes and abstract included, an abstract of 250 words and eight
 keywords, and asks for an anonymised text. Under a journal article only
 those made for an article are offered, under an academic book those made
@@ -3163,71 +3163,76 @@ that is.
 
 What a document is holds for everything under the element it is chosen on:
 a chapter printed alone is what the book is. Any element may be something
-else: a clone of a chapter (see *One tree, entered anywhere*) sends the chapter as an article, with the journal's template,
-while the book stays a book. Where it is taken from an element over this
-one, the chooser says **From** which. To have an element follow the one
-over it again, choose for it the type the one over it has, and at the top
-of a project the type new documents have: it then says nothing of its own,
-and is whatever that becomes. What new documents are, how their pages
-look and how they cite are chosen under *Settings* › *New documents*, as
-**Default document type**, **Default look** and **Default citation style**;
-each may be **None, as the document type has it**, so that a new document is
-a plain document, and a type that brings no look or citation style of its
-own has those Glaukopis begins with, the Manuscript layout and Chicago's
-notes and bibliography.
+else: a clone of a chapter (see *One tree, entered anywhere*) sends the
+chapter as an article, with the journal's document type, while the book
+stays a book. Where it is taken from an element over this one, the chooser
+says **From** which. To have an element follow the one over it again, choose
+for it the document type the one over it has, and at the top of a project
+the type new documents have: it then says nothing of its own, and is
+whatever that becomes. What new documents are, how their pages look and how
+they cite are chosen under *Settings* › *New documents*, as **Default
+document type**, **Default look** and **Default citation style**; each may
+be **From the document type**, so that a new document is a plain
+document, and a document type that brings no look or citation style of its
+own has those Glaukopis begins with, the Manuscript look and Chicago's notes
+and bibliography.
 
-Underneath, three things are told apart, each with one job. You meet the
-last two by name in Look, at its foot:
+A document type holds what a document consists of and how its pages look.
+The reference style, how citations and the bibliography are written, is
+chosen under **Notes and citations** in Look; a document type may bring
+one, and where it brings none yours is used. The document types of novels,
+plays, screenplays and poems bring no reference style: a novel that cites
+does so in your default style, and one that does not is never shown one.
 
-| | What it says |
-| --- | --- |
-| **Template** | What the document is: its parts in their order, the kinds it puts in your hand, what it requires |
-| **Layout** | How the pages look: the page, the type, the spacing, the headings, the notes, the looks of the kinds |
-| **Reference style** | How citations and the bibliography are written |
+### Your own document types
 
-A template brings a layout and a reference style, or leaves them to your
-usual ones. The layouts of novels, plays, screenplays and poems bring no
-reference style: a novel that cites does so in your usual style, and one
-that does not is never shown one.
+A document type of your own is made from a document: set the document up in
+Look, seeing the pages, and then say where that goes. At the top of Look,
+under the name of the document type, one line counts what the document sets
+otherwise than its type, *3 changes in this document*, with:
 
-**Make a template of my own from this…**, at the foot of the chooser,
-opens the template editor on the template in use, and keeps what you make
-as a template of your own, named after the one it was made from until you
-name it; for a template that is already yours, **Change this template of
-mine…** under it changes it. The editor has, part by part:
+- **Save to “Gentium book”**, where the document type is your own: puts
+  everything the document sets otherwise, its look, its reference style, what
+  it requires, and the parts it has, into the type, for every document that
+  has it, and takes it off the document. It is dimmed where there is nothing
+  to put.
+- **Save as document type…**, which asks a name, first the type's name and
+  *changed*, and makes a document type of your own of the one in use with
+  what the document sets otherwise. The document then has it, with no
+  changes of its own. This is the way from a document type that came with
+  Glaukopis, and from the plain document, to one of your own.
+- **Reset**: takes every change of the document away, those of its look and
+  those of what it requires, in one step of undo.
 
-- **About this template**: its description, which stands under its name
-  where the type is chosen, its group, what it is based on, and where its
-  requirements are from.
-- **Layout and reference style**: what it brings, or your usual.
-- **Contents**: the order of the document, as a list. In it stand the parts
-  Glaukopis makes itself, the half title, the title page, the keywords, the
-  table of contents, the lists of figures and tables, the text, the notes and
-  the bibliography, and *Every abstract*, *Every appendix*, and so on, which
-  place every element of that kind, in the order of the tree. Each is moved
-  up and down or taken out, and **A part…** and **A kind of element…** add
-  one. A kind listed before the text is front matter, one listed after it
-  back matter.
-- **Kinds of elements**: the kinds the template puts in the hand, so that
-  they are offered in the menu of kinds; those in the contents are in hand
-  whether chosen here or not.
-- **Kinds of paragraph and words**: those that belong to a document of its
-  kind, as the parts of a script belong to a screenplay.
-- **Requirements**: words of text, words of abstract, keywords, whether the
-  names of the contributors are left out, for review, and a note on what the
-  limits count; *no limit* where nothing is said. The checklist and the
-  preview count against these; nothing is cut.
-- **Files**: the kinds of file the document is made as.
+The parts a document type of your own suggests are the parts the document
+has when it is saved, in the order they stand in the tree, with the text
+where it begins; of a document with no part but the text the type keeps
+the parts it had. Its pages, the look, are kept with it, and the changes
+it was made with are no longer the document's. It stands under **Your own**,
+first in the chooser, with its parts and its pages listed as every type's
+are; those that came with Glaukopis stay as they were.
 
-What you change is kept as a template of your own, under the name you give
-it, and stands under **Your own**, first in the chooser; those that came
-with Glaukopis stay as they were. A part turned off or on, or a requirement
-changed, for one document only, is done in Look instead (see *What the
-document contains*, under *The look of a document*). **Delete this
-template** takes one of your own away, and the elements that used it use
-the template it was made from. A template is copied into the project when it
-is chosen there, so that those you share the project with, and a
-`.glaukopis` file, have it.
+**New document type…**, at the top of the chooser, asks a **Name** and what
+to **Start from**: any document type, the one in use first, or **Nothing**,
+the plain document. **Create** makes it, gives it to the element, closes
+*Document properties* and opens Look on it, with *Editing the document type
+“Gentium book”* and **Done** at its top. While a document type is edited,
+every change you make in Look goes into it at once, and the document carries
+no changes of its own; the parts it suggests are left as they were, the
+parts of the document going into it only where you save to it. **Done** ends
+the editing. A document type of your own in use has **Edit** in the
+chooser, which does the same.
+
+Under **Document type**, the last part of Look, a document type of your own
+also has what only it has: its **Name** and its **Description**, which stands
+under its name in the chooser; the **Paragraph and words kinds offered
+first**, those that belong to a document of its kind, as the parts of a
+script belong to a screenplay, each with a box; the kinds of file it is
+**Exported as**; and **Delete this document type…**, which asks, after which
+the elements that used it use the document type it was made from. The key a
+kind has is set where the kind is, in Look (see *Kinds of paragraph and of
+words*). A document type is copied into the project when it is chosen there,
+so that those you share the project with, and a `.glaukopis` file, have it.
 
 ## Document properties
 
@@ -3249,7 +3254,7 @@ and shows the name in its place meanwhile; the **subtitle**; the
 **contributors**, each with a role, **Author**, **Editor** or
 **Translator**, chosen before the name, and an affiliation, e-mail and
 ORCID; the **date**, as it is to be printed; the **keywords**, separated by
-commas, counted against what the template allows; and the
+commas, counted against what the document type allows; and the
 **identifiers**, ISBN, edition, publisher, place and DOI, and any other you
 name, such as an ISSN. **Add a contributor** adds a row, an author until
 you choose otherwise. A translation of an old text has the author in its
@@ -3279,20 +3284,20 @@ words of the reference style; the dictionary the spelling is checked by; and
 the quotation marks a mention stands in. **Languages…**, in the menu of the
 element in view, opens the window at this part.
 
-**Checklist** is what the document's template requires, against the text
+**Checklist** is what the document's type requires, against the text
 and the tree; nothing is cut. What is required is changed for one document
 under *Parts*, in Look. It says the words of the text against the limit, with the
-template's note on what the limits count, and whether the contributors are to be
+document type's note on what the limits count, and whether the contributors are to be
 left out, for review; then what there is to remark on: more words than the
-template allows, more words in the abstract, more keywords, a second element
+document type allows, more words in the abstract, more keywords, a second element
 of a kind the document has one of, beside the first, elements of the
-kind **Cover** where the template makes no cover, works cited where the
+kind **Cover** where the document type makes no cover, works cited where the
 document has no bibliography, the order the document type has the parts in
 where they stand otherwise, a front page that names
 the contributors where the document type asks for an anonymous document, and,
-where the layout warns about long inline quotations, every paragraph of
+where the look warns about long inline quotations, every paragraph of
 text with a quotation between quotation marks of so many words or lines.
-The lines are estimated from the layout, from the width of the page less
+The lines are estimated from the look, from the width of the page less
 its margins and the size of the type, and said as *about*: how many lines a
 quotation takes is known only once it is set. Each names its elements,
 which open in the text; otherwise it says **Nothing to remark on**.
@@ -3340,13 +3345,13 @@ them (see *The look of a document*).
 Every line of the pages knows what it is. Press one, without dragging, and
 a small chip in the margin beside it names it: *Text*, *Quotation*, *Verse*
 or another kind, *Heading 2*, *Note*, *Bibliography*, *Figure*, *Table*, the
-*Front page*, or a part such as the *Abstract*. What the layout puts in the
+*Front page*, or a part such as the *Abstract*. What the look puts in the
 margins has its chip too, *Header* and *Footer*, and pressed on
 the page where no line is, a chip says *Page*. The chip stays until the same
 thing is pressed again, something else is pressed and the chip goes there,
 the page is left, or Escape is pressed; dragging to select text shows none.
-Pressing the chip opens Look at that line: for what the layout or the
-template puts on the page, at the row that says whether it is shown at all,
+Pressing the chip opens Look at that line: for what the look or the
+document type puts on the page, at the row that says whether it is shown at all,
 with how it is set under it. The chip knows the element its line stands
 in: pressed on a line of a chapter, Look opens with the changes set to hold
 for that chapter alone (see *Where changes hold*). The chips are turned off and on by the button
@@ -3354,8 +3359,8 @@ with the tag at the foot of the typesetting, and by **Display look chips in
 the preview window** under *Settings* › *New documents*; the text of the pages is
 selected and copied the same either way.
 
-The **layout** is the page, the type, the spacing, the headings, as a
-publisher or a journal asks for them. The layouts that come with Glaukopis
+The **look** is the page, the type, the spacing, the headings, as a
+publisher or a journal asks for them. The looks that come with Glaukopis
 each say where their requirements were found, and when. They are offered by
 kind: the general ones, **fiction** (a novel as a manuscript for submission,
 and as a book), **stage and screen** (a play script and a screenplay),
@@ -3364,7 +3369,7 @@ journals of academic writing. The **reference style** is how citations and
 the bibliography are written: Chicago, MLA, APA, Harvard and other common
 styles come with Glaukopis, and any of the ten thousand styles of the
 Citation Style Language can be fetched by name. A project is not of one
-kind: any template, layout or style can be given to any element, and
+kind: any document type, look or style can be given to any element, and
 changed at any time.
 
 Both are chosen, and the look changed, in Look (see *The look of a
@@ -3383,8 +3388,8 @@ are put in a folder beside it, named after it.
 
 Every document that is made follows the typesetting in what it holds and in
 what order: the half title, the title page, the abstract, the keywords and
-the contents stand where the template puts them, in Word, Writer, LaTeX and
-the web page as in the PDF, and a part turned off in Look is left out of
+the contents stand where their elements stand in the tree, in Word, Writer, LaTeX and
+the web page as in the PDF, and what has no element is left out of
 them all. On the title page the authors stand under the title, with
 their affiliations; then a line for the editors, *Edited by …*, and one for
 the translators, *Translated by …*, or one line, *Edited and translated by
@@ -3393,14 +3398,14 @@ stand in the authors' place. The words are those of the language of the
 document: *Oversatt av …* in a Norwegian one. The title and the authors are
 in the file's own properties all the same, where a word processor, a
 browser or a reader of PDFs shows them: every author, also where the title
-page shows none, unless the layout is anonymous; Word and Writer name the
+page shows none, unless the look is anonymous; Word and Writer name the
 editors and the translators among the file's own properties too. The
 e-book has them all in its package, the editors and the translators with
 their roles, and a Markdown file at its head, which has no page to place a
 title page on. In Word and Writer the lines of the editors and the
 translators are in the paragraph style *Role*, beside *Author*.
 
-In Word and Writer every kind is a style, with the look the layout gives
+In Word and Writer every kind is a style, with the look the look gives
 it, so that a publisher can change every epigraph at once: the paragraph
 styles *Attribution*, *Epigraph*, *Scene Heading*, *Action*, *Character*,
 *Dialogue*, *Parenthetical*, *Transition*, *Headword*, *Gloss*, *Source
@@ -3412,26 +3417,26 @@ document that is made, foreign words and a passage in another language
 carry their language, a mention stands
 in the quotation marks of the language of the text, code is kept letter for
 letter, a highlight has its colour behind the words, and a break prints
-the sign the layout gives it; a draft note goes into none of them.
+the sign the look gives it; a draft note goes into none of them.
 The numbers of the lines you number do not stand in the margin of Word,
 which numbers lines only by the section: they stand at the head of their
 lines, small, and the annotation of a line at its other end, or beside the
-number, further out, where the layout sets the annotations on the numbers'
-side. Reference marks are raised there, whatever the layout says.
+number, further out, where the look sets the annotations on the numbers'
+side. Reference marks are raised there, whatever the look says.
 
 There are two kinds of PDF. **PDF** is what the typesetting pane shows. **PDF, set by
 LaTeX** is the same document in the typesetting of LaTeX, for those who
 prefer its pages or are asked for them; it needs LaTeX (TeX Live) on the
 computer, and takes a little longer. The two are alike in everything the
-layout says, and differ in how lines and pages are broken. A language whose
+look says, and differ in how lines and pages are broken. A language whose
 package of TeX Live is not installed, such as Norwegian without
 *texlive-langeuropean*, is set all the same, from what LaTeX knows of it
 itself; where LaTeX has no hyphenation patterns for the language, the
 export says so, and names the package to install.
 
-What there is to remark about a document, such as a font the layout asks for
+What there is to remark about a document, such as a font the look asks for
 and the computer does not have, is said at the foot of the typesetting, with
-the words of the text against what the template allows.
+the words of the text against what the document type allows.
 
 Two programs do the work. Pandoc turns the text into the document, and sets
 every citation and the bibliography in the reference style. Typst sets the
@@ -3468,11 +3473,14 @@ and by **Ctrl+Shift+A**, which opens the typesetting pane as well where it
 is closed. It is the look of the document the pane shows: of the element in
 view of that side, with all under it.
 
-At its top stands what the document is, with **Document type…**, which
-opens *Document properties* to choose it, and under it one line, the layout with the number
-of changes the document makes to it: *Layout: Manuscript · 2 changes*.
-Pressing the line goes down to the layout, at the foot. Then a field finds
-any setting by its words: *font*, *margins*, *page numbers*, *citations*.
+At its top stands the name of what the document is, its document type, with
+**Document type…**, which opens *Document properties* to choose it. Under
+it one line says how many changes the document makes to what its type has,
+*2 changes in this document*, with **Save to** the type, **Save as document
+type…** and **Reset** (see *Your own document types*, under *What you are
+writing*); where there is none, it names no number and has no **Reset**. Then a
+field finds any setting by its words: *font*, *margins*, *page numbers*,
+*citations*.
 
 Then come the few rows most writers reach for: the **font**, the **type
 size**, the **line spacing**, the **page size**, whether **pages are
@@ -3484,7 +3492,7 @@ it says and sets the same.
 The parts follow one after another, in the order of the page from the
 outside in, each under its heading. Where a part sets something the page
 carries besides the text, it begins with whether that is shown, and goes on
-to how it looks. Every length is in centimetres: a layout that says one in
+to how it looks. Every length is in centimetres: a look that says one in
 another unit has it shown converted, and written in centimetres once you
 change it. The chips over them stay at the top as
 you scroll, mark the part you are in, and go to each:
@@ -3503,7 +3511,7 @@ you scroll, mark the part you are in, and go to each:
   order you add them with **Add…**, with what stands **Between the items**
   (" · " unless you change it); where it differs on left pages, three more
   places for those. Then the **Page numbers**, with the **Style of the
-  numbers**: 1, 2, 3, roman or letters. A layout that says nothing has the
+  numbers**: 1, 2, 3, roman or letters. A look that says nothing has the
   page number in the middle of the footer; **Pages are numbered** among the
   first rows shows or hides the margin that holds it. A book puts the
   author on the left pages and the chapter on the right, the number
@@ -3513,7 +3521,7 @@ you scroll, mark the part you are in, and go to each:
   in the preview. Reference marks in the margin are raised in Word and
   Writer, which have no room for them there.
 - **Paragraphs**: **Indent first line**, **Indentation step**, the step by
-  which Tab sets a line of verse or a paragraph in, 0.6 cm in the layouts
+  which Tab sets a line of verse or a paragraph in, 0.6 cm in the looks
   that ship, and **Space between paragraphs**, each 0 for none but the
   step, and, while the first line is indented, **Also after a heading**: by
   typographic custom the first paragraph after a heading is not indented,
@@ -3551,7 +3559,7 @@ you scroll, mark the part you are in, and go to each:
 - **Line numbers**: how the numbers of lines you number are shown where they do
   not say otherwise, **Show a number every** and **Numbers on the** left or
   the right; **Annotations on the** **Other side from the numbers**, as the
-  layouts that ship have them, **Left** or **Right**; how far from the text
+  looks that ship have them, **Left** or **Right**; how far from the text
   they stand, **Numbers from the text** and **Annotations from the text**,
   in centimetres, measured from the edge of the text to the nearer edge of
   the number or the annotation: 0.25 cm for the numbers, and for the
@@ -3582,7 +3590,8 @@ you scroll, mark the part you are in, and go to each:
   head, and the properties of every file made.
 - **Parts**: the parts the document type suggests, and what it requires
   (below).
-- **Layout**: the layout itself (below).
+- **Document type**: where the look is taken from, what the document changes
+  of it, and, of a document type of your own, what it is (below).
 
 Under **Paragraph kinds**, and again under **Words kinds**, every kind is listed: first those
 this document uses, then the rest by group, and your own kinds after them,
@@ -3590,7 +3599,7 @@ each with what it is based on and, at the right of its line, what is said
 of it, or *as the base* where nothing is. A kind you open stays open while
 you change it, until you close it. Open a kind, and a line says how
 it will stand, **As it will stand**: the base look of the kind, then the
-kinds it is based on, then what the layout and the document say, resolved
+kinds it is based on, then what the look and the document say, resolved
 into one. The rows under it are size, alignment, indents, the first line,
 space before and after, bold, italic, letters, underlining, letters of
 equal width, whether it keeps with what follows, and whether it begins a
@@ -3606,9 +3615,10 @@ nothing is said, # for a manuscript. A kind of paragraph has a last row,
 (see *Kinds of paragraph and of words*); Text has Ctrl+Alt+0 in every type.
 
 The **reference style** stands under **Notes and citations** in every
-document, for whoever looks for it. Its first choice is **As the template
-has it**, naming what what you are writing brings, or **From** the element
-over this one that chose, naming what it chose; then come the reference
+document, for whoever looks for it. Its first choice names the style the
+document has and where it is from: *Chicago, from Novel*, from the document
+type, *Chicago, your default* where the type brings none, or *Chicago, from
+The book* where an element over this one chose it; then come the reference
 styles by kind, with **More styles…**, which fetches any of the ten
 thousand styles of the Citation Style Language by name. **Change this
 reference style…** has the changes publishers most often ask for as simple
@@ -3617,7 +3627,7 @@ in it is kept as a style of your own.
 
 ### Parts
 
-What you are writing suggests what a document consists of, and this part of
+The document type suggests what a document consists of, and this part of
 Look lists it, in the type's usual order: the kinds of elements it names,
 the abstract or the dedication, and what Glaukopis makes itself, the title
 page, the table of contents, the bibliography. Under each stand the elements
@@ -3638,38 +3648,40 @@ abstract and the keywords, each at most, an empty field for no limit, and
 whether it is **Anonymous**, for review; the checklist of
 *Document properties* and the typesetting count against them, and nothing is
 cut. A limit changed holds for the element it
-is changed on and those under it, says **Changed here** under its row, and
-is taken back by **take … again**, as a change of the look is.
+is changed on and those under it, says **Changed in this document** under
+its row, and is taken back by **Reset**, as a change of the look is.
 
-### The layout, and what you change
+### The document type, and what you change
 
-Under **Layout**, at the foot of Look, **Choose a layout**: **As the
-template has it** first, naming what what you are writing brings, or
-**From** the element over this one that chose; then the layouts by kind,
-your own first. Under it, **Modifications to the layout** lists what this
-document changes of it, each change with where it was made and **take
-Manuscript’s again**; then what the layout is; and at the end **Document
-properties…**. Where the requirements of a publisher's layout were found
-is said in *Document properties*, under the document type: **Source:**
-with its name, which opens the publisher's page.
+**Document type**, the last part of Look, begins with **Look taken from**.
+Its first choice names the look the document has and where it is from:
+*Novel, as a book, from Novel*, the look the document type brings; *Manuscript,
+your default* where it brings none; or *Manuscript, from The book* where an
+element over this one chose. Then come the looks by kind, your own first.
+Choosing one sets it for this element. Where the requirements of a
+publisher's look were found is said in *Document properties*, under the
+document type: **Source:** with its name, which opens the publisher's page.
 
-What you change in Look is the document's own: the layout and the template
-stay as they are, and the change is shown at once in the typesetting. Under a
-row you have changed it says **Changed here**, and beside it **take
-Manuscript’s again**, which takes the change away. The changes reach every
-element under the one they are made on, as the language does: in a chapter,
-a change made on the book says **Changed in “The book”**, and the chapter
-can change it again for itself. The changes are kept with the project, and
-in its Org form as the element's **LOOK** and **COMPOSITION**.
+Under **Changed in this document** stands what this document sets
+otherwise than its type, each change with where it was made, *Changed in
+this document* or *Changed in “The book”*, and **Reset**, which takes that
+change away; what it requires is listed there too. The same words and the
+same **Reset** stand under a row of Look that has been changed.
 
-To use the same look elsewhere, **Keep these changes as a layout of my
-own…**, under **Layout**, asks for a name and makes a layout of the
-layout with the changes in it, which the document then uses, with no
-changes of its own; it is offered among your own layouts in every project.
-Where the layout is already one of your own, **Put these changes into** it
-does the same without a new name, for every document that uses it, and
-**Delete this layout of mine…** takes it away. The layouts that come with
-Glaukopis stay as they are.
+What you change in Look is the document's own: the document type stays as it
+is, and the change is shown at once in the typesetting. The changes reach
+every element under the one they are made on, as the language does: in a
+chapter, a change made on the book says **Changed in “The book”**, and the
+chapter can change it again for itself. The changes are kept with the
+project, and in its Org form as the element's **LOOK** and **COMPOSITION**.
+
+To use the same look elsewhere, **Save as document type…** at the top of
+Look makes a document type of your own of the document as it is set up, and
+**Save to** puts it into a document type of your own that the document has,
+for every document that has it (see *Your own document types*, under *What
+you are writing*). The document types that come with Glaukopis stay as they
+are. A look you have made stays among the looks to choose from, in every
+project, and under *Settings* › *New documents*.
 
 ### Where changes hold
 
@@ -3677,10 +3689,10 @@ A change made in Look holds for the element it is made on, wherever that
 element is printed: a chapter set in smaller type is smaller inside the
 book as well as printed alone. Where the text is at an element under the
 document's, or a chip was pressed on one of its lines, Look has a line
-under the layout's, **These changes hold for**, offering **The whole
+under its top, **These changes hold for**, offering **The whole
 document** or **Only** that element. Chosen, every row shows and sets that
-element's look; the chooser of what you are writing and *Parts of the
-document type* stay the document's. An element with nothing changed of its own
+element's look; the chooser of what you are writing and *Parts*
+stay the document's. An element with nothing changed of its own
 has the document's look throughout.
 
 What changes the pages, their size, margins or columns, the header or the
@@ -4009,7 +4021,7 @@ document*.
 The language of an element decides what its document prints in words of its
 own: the headings of the notes, the abstract and the bibliography, what a
 figure and a table are called, and the words of the reference style, such as
-"and", "p." and "edited by". A layout that has words of its own keeps them;
+"and", "p." and "edited by". A look that has words of its own keeps them;
 those it has as they are in English are printed in the language of the
 text.
 

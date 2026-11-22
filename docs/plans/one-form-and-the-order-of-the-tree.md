@@ -3,6 +3,14 @@
 From the owner's words of 2026-11-22 (the last section of `docs/brief.md`).
 Three stages; each is checked and committed before the next. The records are
 written with the stages: 0118 for the first, 0119 for the second and third.
+**Built**: stage 1 (record 0118, on 2026-11-22), stages 2 and 3 (record 0119,
+the same day, on the branch `one-form`). Where the building differs from what
+is written here, the record says so: the form was built as a top of Look with
+*Save to*, *Save as document type…* and *Reset* and a last part, *Document
+type*, rather than as a third choice of *These changes hold for*; **Take the
+look from…** is *Look taken from*; and the parts of a type are those of the
+document it is made from, not a list edited in the type (record 0119, the
+choices 4 and 12). The round of translation of stage 3 is not done.
 
 ## What is to be true at the end
 
@@ -17,7 +25,7 @@ written with the stages: 0118 for the first, 0119 for the second and third.
 4. One form says how a document is made, for one document and for a document
    type. "Template" and "layout" are not said to the writer.
 
-## Stage 1: the order of the tree
+## Stage 1: the order of the tree (built, record 0118)
 
 **The kinds.** `project/parts.ts` and `crates/core/src/templates/kinds.rs`
 get the kinds of what is made: `title-page`, `half-title`, `keywords`,
@@ -72,7 +80,7 @@ they read, with a helper in the harness; a new `e2e/parts-in-order.mjs`;
 then every script that reads a title page or a bibliography, found by what
 it reads.
 
-## Stage 2: one form
+## Stage 2: one form (built, record 0119)
 
 **Look is the form.** Its line *These changes hold for* gets the document
 type as a third choice, where the type is the writer's own: what is set
@@ -100,7 +108,7 @@ under **Changed in this document**, each with **Reset**.
 opens the form at the type. A type of the writer's own has **Edit** and
 **Delete** on its row.
 
-## Stage 3: the words
+## Stage 3: the words (built, record 0119; the translations follow)
 
 "Template" is "document type" in every message of `en` and `nb`, in the
 guide and in the names the writer sees; nothing is "as the … has it" or "my
