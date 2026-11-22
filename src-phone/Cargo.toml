@@ -1,0 +1,48 @@
+# Glaukopis on a phone: the sources of the shell (`../src-tauri/src`), as a
+# package of their own that is built for Android and for nothing else. It
+# is a package apart, and not a second kind of library of `glaukopis`, so
+# that a build for a computer makes nothing for the phone: a shared library
+# of the whole application beside the program would be linked with every
+# one of them. Built for anything but Android, this package is empty
+# (`build.rs`, and the first line of the library).
+#
+# Its dependencies are those of `../src-tauri/Cargo.toml`, without what is a
+# computer's alone: keep them the same.
+[package]
+name = "glaukopis-phone"
+description = "Glaukopis on a phone: the shell, built for Android"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+
+[lib]
+name = "glaukopis_app"
+path = "../src-tauri/src/lib.rs"
+crate-type = ["cdylib"]
+test = false
+doctest = false
+bench = false
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+# For Android alone: where the package is empty it depends on nothing.
+[target.'cfg(target_os = "android")'.dependencies]
+# Android has no SQLite to link to.
+glaukopis-core = { path = "../crates/core", default-features = false, features = ["bundled-sqlite"] }
+tauri = { version = "2.11", features = [] }
+tauri-plugin-dialog = "2"
+tauri-plugin-opener = "2"
+base64 = "0.22"
+zip = { version = "8", default-features = false, features = ["deflate"] }
+serde.workspace = true
+serde_json.workspace = true
+tracing.workspace = true
+tracing-subscriber = { workspace = true, features = ["local-time"] }
+time = { workspace = true, features = ["local-offset"] }
+
+[features]
+# Serve the built interface from inside the library instead of the dev server.
+custom-protocol = ["tauri/custom-protocol"]

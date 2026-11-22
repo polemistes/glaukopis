@@ -152,20 +152,30 @@ impl Default for Client {
     }
 }
 
+/// How a secure connection is made: by the system's TLS on a computer, and by
+/// rustls on Android, which has none to link to. Both trust the same
+/// authorities, Mozilla's list as it is compiled in, which is what ureq
+/// trusts where nothing else is said.
+pub(crate) fn tls() -> ureq::tls::TlsConfig {
+    #[cfg(not(target_os = "android"))]
+    let provider = ureq::tls::TlsProvider::NativeTls;
+    #[cfg(target_os = "android")]
+    let provider = ureq::tls::TlsProvider::Rustls;
+    ureq::tls::TlsConfig::builder().provider(provider).build()
+}
+
 impl Client {
     pub fn new() -> Self {
-        let tls = ureq::tls::TlsConfig::builder().provider(ureq::tls::TlsProvider::NativeTls).build();
         let agent = ureq::Agent::config_builder()
-            .tls_config(tls)
+            .tls_config(tls())
             .timeout_global(Some(Duration::from_secs(25)))
             .timeout_connect(Some(Duration::from_secs(10)))
             .http_status_as_error(false)
             .max_redirects(8)
             .build()
             .new_agent();
-        let tls = ureq::tls::TlsConfig::builder().provider(ureq::tls::TlsProvider::NativeTls).build();
         let patient = ureq::Agent::config_builder()
-            .tls_config(tls)
+            .tls_config(tls())
             .timeout_global(Some(Duration::from_secs(20 * 60)))
             .timeout_connect(Some(Duration::from_secs(10)))
             .http_status_as_error(false)
@@ -443,7 +453,11 @@ fn describe(url: &str, error: &ureq::Error) -> String {
     tracing::warn!(%host, %error, "a question over the network failed");
     match error {
         ureq::Error::BodyExceedsLimit(most) => tr!("network-too-large", host = host, most = most.div_ceil(1 << 20)),
-        ureq::Error::Tls(_) | ureq::Error::NativeTls(_) | ureq::Error::Der(_) | ureq::Error::TlsRequired => {
+        #[cfg(not(target_os = "android"))]
+        ureq::Error::NativeTls(_) | ureq::Error::Der(_) => tr!("network-tls", host = host),
+        #[cfg(target_os = "android")]
+        ureq::Error::Rustls(_) => tr!("network-tls", host = host),
+        ureq::Error::Tls(_) | ureq::Error::TlsRequired => {
             tr!("network-tls", host = host)
         }
         ureq::Error::TooManyRedirects | ureq::Error::RedirectFailed => tr!("network-redirects", host = host),

@@ -1,10 +1,20 @@
-//! The desktop application: a window, and commands that call the core.
+//! The application: a window, and commands that call the core. On a computer
+//! it is the package `glaukopis`; the same sources are the package
+//! `glaukopis-phone` (`../src-phone`), built for Android alone, and empty
+//! where that package is built for anything else.
+#![cfg(not(phone_elsewhere))]
+// On a phone only the phone's role is started (`phone.rs`), and what the
+// roles of a computer are made of lies unused there. Until the roles are
+// each a file of their own (the plan's stage 1), that is allowed.
+#![cfg_attr(mobile, allow(dead_code, unused_imports))]
 
 mod commands;
 #[cfg(test)]
 mod contract;
 mod error;
 mod log;
+#[cfg(mobile)]
+mod phone;
 mod state;
 
 use std::path::PathBuf;
@@ -37,6 +47,13 @@ fn previous_compositor() -> bool {
     // nothing reads the environment while it is written.
     unsafe { std::env::set_var(COMPOSITOR_SWITCH, "0") };
     true
+}
+
+/// Where Android starts the application: in the role of the phone.
+#[cfg(mobile)]
+#[tauri::mobile_entry_point]
+fn start() {
+    phone::run()
 }
 
 pub fn run() {
@@ -97,6 +114,7 @@ pub fn run() {
     // the claim on the folder meets a second start, as it does where the
     // plugin cannot work.
     let builder = tauri::Builder::default();
+    #[cfg(desktop)]
     let builder = if paths::data_dir_from_environment() {
         builder
     } else {

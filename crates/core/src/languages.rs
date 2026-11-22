@@ -534,9 +534,8 @@ pub(crate) fn get(server: &str, file: &str, limit: u64) -> Result<Vec<u8>> {
         return fs::read(&path).context(|| tr!("io-reading", path = &path));
     }
     let url = address(server, file);
-    let tls = ureq::tls::TlsConfig::builder().provider(ureq::tls::TlsProvider::NativeTls).build();
     let agent = ureq::Agent::config_builder()
-        .tls_config(tls)
+        .tls_config(crate::net::tls())
         .timeout_global(Some(Duration::from_secs(30 * 60)))
         .timeout_connect(Some(Duration::from_secs(15)))
         .http_status_as_error(false)

@@ -539,6 +539,14 @@
     padding: 6px 10px;
     border-bottom: 1px solid var(--line);
   }
+  /* Under a finger the row is on a screen it may not fit across: it goes on
+     in a second row, and nothing of it lies outside the screen. */
+  @media (pointer: coarse) {
+    .tools {
+      flex-wrap: wrap;
+      row-gap: 4px;
+    }
+  }
   .between {
     width: 8px;
   }

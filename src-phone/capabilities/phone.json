@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/mobile-schema.json",
+  "identifier": "phone",
+  "description": "What the page of the phone may do: be shown, and choose files in the system's picker",
+  "windows": ["note"],
+  "permissions": ["core:default", "dialog:allow-open"]
+}

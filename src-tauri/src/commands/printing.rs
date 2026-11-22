@@ -33,7 +33,7 @@ pub async fn print_pages(
     {
         linux::print(&window, paper, to_file).await.map(|()| true)
     }
-    #[cfg(not(target_os = "linux"))]
+    #[cfg(all(desktop, not(target_os = "linux")))]
     {
         let _ = paper;
         if to_file.is_some() {
@@ -43,6 +43,12 @@ pub async fn print_pages(
             });
         }
         window.print().map(|()| false).map_err(|e| crate::error::CommandError { kind: "print", message: e.to_string() })
+    }
+    // A phone's web view has no printing to ask for, and the phone's page asks for none.
+    #[cfg(mobile)]
+    {
+        let _ = (window, paper, to_file);
+        Err(crate::error::CommandError { kind: "unsupported", message: "nothing is printed from a phone".into() })
     }
 }
 
