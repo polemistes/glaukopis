@@ -20,6 +20,7 @@ pub mod kept;
 pub mod mirror;
 pub mod remote;
 pub mod settings;
+pub mod shelves;
 pub mod whole;
 
 pub use engine::{Hears, State, Status, Sync};
