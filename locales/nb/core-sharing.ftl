@@ -37,6 +37,25 @@ core-sharing-not-as-named = Det som ble sendt, er ikke det navnet sier at det er
 core-sharing-file-too-large = Filen er større enn denne serveren tar imot: én fil kan være på høyst { $most }.
 core-sharing-project-full = Det er ikke plass til filen: filene i ett prosjekt kan til sammen være på høyst { $most } på denne serveren.
 
+## Det serveren sier nei til ved synkronisering av en skribents egne
+## datamaskiner, som den holder sammen i det den kaller et hjem.
+
+core-sharing-no-home = Serveren har ikke lenger det disse datamaskinene synkroniserer.
+core-sharing-later = Noe ble skrevet på en annen datamaskin med en nyere versjon av Glaukopis. Oppdater denne for å synkronisere det.
+core-sharing-home-not-admitted = Serveren slipper ikke lenger inn denne datamaskinen: den kan være fjernet fra dem som synkroniseres.
+core-sharing-home-full = Serveren synkroniserer datamaskinene til så mange skribenter som den er satt opp til.
+core-sharing-many-computers = Seksten datamaskiner synkroniseres allerede, og det er det meste; fjern én først.
+core-sharing-many-codes = Det er allerede fem åpne koder; trekk tilbake én.
+core-sharing-no-computer = Det finnes ingen slik datamaskin blant dem som synkroniseres.
+core-sharing-no-computer-name = Datamaskinen har ikke noe navn.
+core-sharing-bad-kind = Hva slags dokument det er, skrives med én til seksten små bokstaver.
+core-sharing-bad-document = Serveren kan ikke bruke id-en til dokumentet.
+core-sharing-many-documents = Serveren har så mange dokumenter for disse datamaskinene som den kan ha.
+core-sharing-not-an-exchange = Serveren kunne ikke lese det som ble sendt.
+core-sharing-unreadable-change = En endring som ble sendt, kunne ikke leses.
+core-sharing-document-too-large = Et prosjekt, notatblokken eller biblioteket ville bli større enn denne serveren tar vare på.
+core-sharing-home-files-full = Det er ikke plass til filen: filene som synkroniseres, kan til sammen være på høyst { $most } på denne serveren.
+
 ## Bildene til figurene, som sendes og hentes ett og ett.
 
 core-sharing-picture-too-large = { $host } tar ikke imot et så stort bilde.

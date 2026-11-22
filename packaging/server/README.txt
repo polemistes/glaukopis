@@ -2,8 +2,9 @@ The collaboration server of Glaukopis
 =====================================
 
 Glaukopis works on its own. This server is needed only when several people
-are to write in the same project at the same time, and only on the one
-computer that is to be the server. It is one program with one folder of
+are to write in the same project at the same time, or when one writer is to
+have the same things on more than one computer, and only on the one computer
+that is to be the server. It is one program with one folder of
 data, and needs no installation. The whole guide is server.md, beside this
 file.
 
@@ -12,7 +13,7 @@ Windows
 
 Unzip the folder where the program is to stay, open PowerShell in it, and
 start the server with a folder for its data and a password, which is asked
-of those who share projects through it:
+of those who share projects through it, or synchronize their computers:
 
     .\glaukopis-server.exe --listen 0.0.0.0:8375 --data C:\GlaukopisServer --password "something long"
 

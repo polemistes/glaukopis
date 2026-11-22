@@ -260,6 +260,9 @@ fn kind(named: &str, status: u16) -> &'static str {
         "invalid" => "invalid",
         "no-file" => "no-file",
         "too-large" => "too-large",
+        // Of the homes through which a writer's computers are synchronized.
+        "no-home" => "no-home",
+        "later" => "later",
         _ => match status {
             401 => "not-admitted",
             404 => "no-room",
@@ -291,8 +294,15 @@ fn explain(kind: &str, from_server: &str, host: &str) -> String {
 
 /// A refusal in the words of the interface, where the application has them.
 fn in_words(kind: &str, from_server: &str, host: &str) -> Option<String> {
+    // What is said of a home, through which a writer's computers are
+    // synchronized, is told apart from what is said of a project of the
+    // same kind by the server's own words.
+    let of_a_home = from_server.contains("home");
     Some(match kind {
         "no-room" => tr!("core-sharing-no-room"),
+        "no-home" => tr!("core-sharing-no-home"),
+        "later" => tr!("core-sharing-later"),
+        "not-admitted" | "full" if of_a_home => return in_own_words(from_server),
         "not-admitted" => tr!("core-sharing-not-admitted"),
         "not-owner" => tr!("core-sharing-not-owner"),
         "bad-code" => tr!("core-sharing-bad-code"),
@@ -341,9 +351,29 @@ fn in_own_words(from_server: &str) -> Option<String> {
             tr!("core-sharing-bad-file-name")
         }
         "what was sent is not what its name says it is: its SHA-256 is another" => tr!("core-sharing-not-as-named"),
+        // Of the homes through which a writer's computers are synchronized.
+        "the token is not valid for this home: the computer may have been removed from it" => {
+            tr!("core-sharing-home-not-admitted")
+        }
+        "the server holds as many homes as it is allowed to" => tr!("core-sharing-home-full"),
+        "a home may have sixteen computers; remove one first" => tr!("core-sharing-many-computers"),
+        "there are five open codes already; withdraw one" => tr!("core-sharing-many-codes"),
+        "there is no such computer in the home" => tr!("core-sharing-no-computer"),
+        "the computer has no name" => tr!("core-sharing-no-computer-name"),
+        "the kind of a document is one to sixteen small letters" => tr!("core-sharing-bad-kind"),
+        "the id of the document is not one the server can use" => tr!("core-sharing-bad-document"),
+        "the home keeps as many documents as it may" => tr!("core-sharing-many-documents"),
+        "what was sent is not an exchange as this server reads it" => tr!("core-sharing-not-an-exchange"),
+        "a change that was sent could not be read" => tr!("core-sharing-unreadable-change"),
+        "the document would be larger than this server keeps" => tr!("core-sharing-document-too-large"),
         _ => {
             if let Some(most) = most("the file is larger than this server takes: one file may hold ", " at the most") {
                 tr!("core-sharing-file-too-large", most = most)
+            } else if let Some(most) = most(
+                "there is not room for the file: the files of a home may hold ",
+                " together at the most on this server",
+            ) {
+                tr!("core-sharing-home-files-full", most = most)
             } else {
                 let most = most(
                     "there is not room for the file: the files of one project may hold ",
@@ -747,5 +777,15 @@ mod tests {
         assert_eq!(refusal_in_words("invalid", 400, "something new"), None);
         assert!(refusal_in_words("whatever", 404, "").is_some(), "known by its status");
         assert_eq!(explain("invalid", "something new", "h"), "Something new.");
+
+        // A refusal of a home is not said as one of a project of the same kind.
+        let home = "the token is not valid for this home: the computer may have been removed from it";
+        assert_ne!(refusal_in_words("not-admitted", 401, home), refusal_in_words("not-admitted", 401, "the token"));
+        assert_ne!(
+            refusal_in_words("full", 503, "the server holds as many homes as it is allowed to"),
+            refusal_in_words("full", 503, "the server holds as many projects as it is allowed to")
+        );
+        assert_eq!(kind("no-home", 404), "no-home");
+        assert_eq!(kind("later", 409), "later");
     }
 }

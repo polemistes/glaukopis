@@ -6,7 +6,8 @@ fn random(bytes: &mut [u8]) {
     getrandom::fill(bytes).expect("the system gives random numbers");
 }
 
-fn hex(bytes: &[u8]) -> String {
+/// Bytes written as hex, in small letters.
+pub fn hex(bytes: &[u8]) -> String {
     const DIGITS: &[u8; 16] = b"0123456789abcdef";
     let mut s = String::with_capacity(bytes.len() * 2);
     for b in bytes {
@@ -14,6 +15,23 @@ fn hex(bytes: &[u8]) -> String {
         s.push(DIGITS[(b & 15) as usize] as char);
     }
     s
+}
+
+/// The bytes written as hex, in small letters or capitals; None where it is not hex.
+pub fn unhex(text: &str) -> Option<Vec<u8>> {
+    fn digit(b: u8) -> Option<u8> {
+        match b {
+            b'0'..=b'9' => Some(b - b'0'),
+            b'a'..=b'f' => Some(b - b'a' + 10),
+            b'A'..=b'F' => Some(b - b'A' + 10),
+            _ => None,
+        }
+    }
+    let text = text.as_bytes();
+    if !text.len().is_multiple_of(2) {
+        return None;
+    }
+    text.chunks(2).map(|pair| Some((digit(pair[0])? << 4) | digit(pair[1])?)).collect()
 }
 
 /// A token of 256 random bits.
@@ -96,6 +114,17 @@ pub fn normalise_code(typed: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn hex_is_read_as_it_is_written() {
+        let bytes: Vec<u8> = (0..=255).collect();
+        assert_eq!(unhex(&hex(&bytes)).unwrap(), bytes);
+        assert_eq!(unhex("00FFaB").unwrap(), vec![0, 255, 171]);
+        assert_eq!(unhex("").unwrap(), Vec::<u8>::new());
+        for bad in ["0", "0g", "zz", " 00", "é0"] {
+            assert_eq!(unhex(bad), None, "{bad}");
+        }
+    }
 
     #[test]
     fn tokens_and_codes() {

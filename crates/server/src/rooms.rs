@@ -17,21 +17,31 @@
 //! would be answered until the room was free. For the same reason no lock
 //! that every call needs is held while waiting for a room: who is present is
 //! kept beside the room's lock, and a room that is busy is not idle.
+//!
+//! The documents a writer's computers keep in a home (`homes.rs`) are rooms
+//! as well, opened by a key and a directory of their own (`Rooms::open_in`),
+//! and kept, written and put away as a project's room is. No one is present
+//! in them: a computer brings its changes and takes what it lacks in one
+//! call, the exchange (`Room::exchange`), and a room of a home keeps beside
+//! its state what is said of it without reading it (`said.json`).
 
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::io;
+use std::ops::Range;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex as Guarded, MutexGuard, TryLockError};
 use std::time::{Duration, Instant};
 
 use axum::body::Bytes;
+use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use tokio::sync::{Mutex, mpsc};
 use yrs::encoding::read::Cursor;
 use yrs::sync::{Awareness, Message, MessageReader, SyncMessage};
 use yrs::updates::decoder::{Decode, DecoderV1};
 use yrs::updates::encoder::{Encode, Encoder, EncoderV1};
-use yrs::{ClientID, Doc, Map, ReadTxn, StateVector, Transact, Update};
+use yrs::{ClientID, Doc, Map, ReadTxn, StateVector, Transact, Update, merge_updates_v1};
 
 use crate::registry::room_dir;
 
@@ -174,6 +184,12 @@ struct Inner {
     size: usize,
     /// The most it may hold.
     most: usize,
+    /// The digest of what the document holds (`digest_of`), while it is
+    /// known: made when it is asked for, and forgotten when the document changes.
+    digest: Option<String>,
+    /// What is said of a document of a home without reading it, which is
+    /// written beside its state. None for the room of a project.
+    said: Option<Said>,
 }
 
 pub struct Room {
@@ -225,6 +241,16 @@ impl Inner {
     fn note_present(&self) {
         let members = self.peers.values().map(|p| p.member.clone()).collect();
         *self.present.lock().unwrap_or_else(|poisoned| poisoned.into_inner()) = members;
+    }
+
+    /// The digest of what the document holds, made where it is not known.
+    fn digest(&mut self) -> String {
+        if let Some(digest) = &self.digest {
+            return digest.clone();
+        }
+        let digest = digest_of(&self.awareness.doc().transact());
+        self.digest = Some(digest.clone());
+        digest
     }
 
     /// The most that may wait to be sent to one, in bytes.
@@ -335,6 +361,7 @@ impl Inner {
                 let update = Update::decode_v1(&bytes)?;
                 self.awareness.doc().transact_mut().apply_update(update)?;
                 self.unsaved = true;
+                self.digest = None;
                 // Where the change raised the form of the texts, those who do
                 // not know the new form are let go before it is passed on:
                 // nothing of it reaches them.
@@ -432,6 +459,143 @@ fn read_state(bytes: &[u8]) -> Result<Doc, String> {
     Ok(doc)
 }
 
+// ---------------------------------------------------------------------------
+// What a document holds, said short
+
+/// The digest of a document that holds nothing, as a document that is not on
+/// the server is taken to be.
+pub const EMPTY_DIGEST: &str = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+
+/// The digest of what a document holds: the SHA-256, in hex, of each client
+/// in the order of its number, with the number, its clock and the ranges it
+/// deleted, in order and joined where they touch. A document is its changes,
+/// and these say which it has, so two documents with the same digest hold
+/// the same. Said so, it is the same on every run, and for a document read
+/// from disk, whose pieces the library may have joined otherwise.
+pub fn digest_of(txn: &impl ReadTxn) -> String {
+    let snapshot = txn.snapshot();
+    let mut clients: BTreeMap<u64, (u32, Vec<Range<u32>>)> = BTreeMap::new();
+    for (client, clock) in snapshot.state_map.iter() {
+        clients.entry(client.get()).or_default().0 = *clock;
+    }
+    for (client, ranges) in snapshot.delete_set.iter() {
+        clients.entry(client.get()).or_default().1.extend(ranges.iter().filter(|r| !r.is_empty()).cloned());
+    }
+    let mut hasher = Sha256::new();
+    for (client, (clock, mut ranges)) in clients {
+        // A client of which nothing is held says nothing of the document.
+        if clock == 0 && ranges.is_empty() {
+            continue;
+        }
+        ranges.sort_by_key(|r| (r.start, r.end));
+        let mut joined: Vec<Range<u32>> = Vec::with_capacity(ranges.len());
+        for range in ranges {
+            match joined.last_mut() {
+                Some(last) if range.start <= last.end => last.end = last.end.max(range.end),
+                _ => joined.push(range),
+            }
+        }
+        hasher.update(client.to_le_bytes());
+        hasher.update(clock.to_le_bytes());
+        hasher.update((joined.len() as u32).to_le_bytes());
+        for range in &joined {
+            hasher.update(range.start.to_le_bytes());
+            hasher.update(range.end.to_le_bytes());
+        }
+    }
+    format!("{:x}", hasher.finalize())
+}
+
+/// How many of the last changes to a document of a home are kept in what is said of it.
+pub const KEPT_CHANGES: usize = 32;
+
+/// What is said of a document of a home without reading it, kept beside its
+/// state as `said.json`: its digest, how much its state holds, and the last
+/// changes, each by the digest after it and the computer that brought it.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct Said {
+    pub digest: String,
+    pub bytes: usize,
+    #[serde(default)]
+    pub changes: Vec<Change>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Change {
+    /// The digest of the document after the change.
+    pub digest: String,
+    /// The computer that brought it.
+    pub device: String,
+}
+
+impl Said {
+    /// Whether what the document held before a computer's changes came had
+    /// come from another computer than `device`, since that computer last
+    /// saw it (`seen`). With a `seen`, some change after the one whose digest
+    /// it is was brought by another, or it is not among the changes kept, so
+    /// that nothing can be told of what came after; without one, the
+    /// computer has seen nothing of it, and it held something (`held`).
+    pub fn from_another(&self, seen: Option<&str>, device: &str, held: bool) -> bool {
+        let Some(seen) = seen else { return held };
+        match self.changes.iter().rposition(|c| c.digest == seen) {
+            Some(at) => self.changes[at + 1..].iter().any(|c| c.device != device),
+            None => true,
+        }
+    }
+
+    fn note(&mut self, digest: &str, device: &str) {
+        self.changes.push(Change { digest: digest.to_owned(), device: device.to_owned() });
+        if self.changes.len() > KEPT_CHANGES {
+            let over = self.changes.len() - KEPT_CHANGES;
+            self.changes.drain(..over);
+        }
+    }
+}
+
+/// What a computer brings to one exchange of a document of a home.
+pub struct Exchange {
+    /// The computer that brings it.
+    pub device: String,
+    /// The digest of the server's document as the computer last saw it.
+    pub seen: Option<String>,
+    /// What the computer had then.
+    pub since: Option<StateVector>,
+    /// The changes it has made since, each as one update.
+    pub changes: Vec<Vec<u8>>,
+    /// The form of the texts the computer knows: see `form_of`.
+    pub form: u32,
+}
+
+/// What an exchange gives back.
+#[derive(Debug)]
+pub struct Exchanged {
+    /// The digest of the document as it stands now.
+    pub digest: String,
+    /// Its state vector, encoded.
+    pub now: Vec<u8>,
+    /// What the server had beyond `since` before the changes came, where it
+    /// had something the computer had not seen.
+    pub news: Option<Vec<u8>>,
+    /// Whether the two wrote apart: both had something the other lacked,
+    /// and what the server had came from another computer.
+    pub apart: bool,
+    /// Whether the document changed.
+    pub changed: bool,
+    /// About how much the document holds.
+    pub bytes: usize,
+}
+
+/// Why an exchange was refused. Nothing of it was taken in.
+#[derive(Debug, PartialEq, Eq)]
+pub enum Unexchanged {
+    /// The document's texts are in a later form than the computer knows.
+    Later,
+    /// The changes would make the document larger than is kept.
+    TooLarge,
+    /// A change could not be read.
+    Unreadable,
+}
+
 impl Room {
     fn load(id: &str, dir: PathBuf, most: usize) -> io::Result<Room> {
         let state = dir.join("state.bin");
@@ -468,6 +632,17 @@ impl Room {
             Err(e) if e.kind() == io::ErrorKind::NotFound => (Doc::new(), 0),
             Err(e) => return Err(e),
         };
+        // What is said of a document of a home; a project's room has none.
+        let said = match std::fs::read(dir.join("said.json")) {
+            Ok(bytes) => match serde_json::from_slice::<Said>(&bytes) {
+                Ok(said) => Some(said),
+                Err(e) => {
+                    tracing::warn!(room = id, %e, "what is said of a document could not be read; it is said anew");
+                    Some(Said::default())
+                }
+            },
+            Err(_) => None,
+        };
         let present = Arc::new(Guarded::new(Vec::new()));
         let form = form_of(&doc);
         Ok(Room {
@@ -485,6 +660,8 @@ impl Room {
                 present: present.clone(),
                 size,
                 most,
+                digest: None,
+                said,
             }),
             present,
             writing: Mutex::new(()),
@@ -617,7 +794,7 @@ impl Room {
     }
 
     fn write(&self) -> io::Result<bool> {
-        let state = {
+        let (state, said) = {
             let mut inner = self.inner();
             if !inner.unsaved || inner.gone {
                 return Ok(false);
@@ -625,13 +802,31 @@ impl Room {
             inner.unsaved = false;
             let state = inner.awareness.doc().transact().encode_state_as_update_v1(&StateVector::default());
             inner.size = state.len();
-            state
+            // What is said of the document is of this state, and written with it.
+            let said = match inner.said.is_some() {
+                true => {
+                    let digest = inner.digest();
+                    inner.said.as_mut().map(|said| {
+                        said.digest = digest;
+                        said.bytes = state.len();
+                        said.clone()
+                    })
+                }
+                false => None,
+            };
+            (state, said)
         };
         let written = (|| {
             std::fs::create_dir_all(&self.dir)?;
             let tmp = self.dir.join(".state.bin.tmp");
             std::fs::write(&tmp, &state)?;
-            std::fs::rename(&tmp, self.dir.join("state.bin"))
+            std::fs::rename(&tmp, self.dir.join("state.bin"))?;
+            if let Some(said) = &said {
+                let tmp = self.dir.join(".said.json.tmp");
+                std::fs::write(&tmp, serde_json::to_vec_pretty(said)?)?;
+                std::fs::rename(&tmp, self.dir.join("said.json"))?;
+            }
+            Ok(())
         })();
         match written {
             Ok(()) if self.inner().gone => {
@@ -645,6 +840,86 @@ impl Room {
                 Err(e)
             }
         }
+    }
+
+    /// One exchange of a document of a home: the computer is given what the
+    /// server had that it had not seen, and the server takes in what the
+    /// computer brings, under the room's lock, so that nothing comes between.
+    /// To be done aside (`Room::aside`). `noted` is told of what was done
+    /// before the lock is let go, so that what it keeps of the digests is
+    /// kept in the order of the changes. None where the room was put away,
+    /// or taken off the server, after it was found: it is then to be found again.
+    pub fn exchange(&self, asked: &Exchange, noted: impl FnOnce(&Exchanged)) -> Option<Result<Exchanged, Unexchanged>> {
+        let mut inner = self.inner();
+        if inner.put_away || inner.gone {
+            return None;
+        }
+        // A computer that does not know the form of the texts is sent nothing, and takes nothing in.
+        if asked.form < inner.form {
+            return Some(Err(Unexchanged::Later));
+        }
+        if inner.peers.is_empty() {
+            // Kept in memory for a while after it was last used.
+            inner.empty_since = Some(Instant::now());
+        }
+        let before = inner.digest();
+        let had = asked.seen.as_deref() != Some(before.as_str());
+        let news = had.then(|| {
+            let since = asked.since.clone().unwrap_or_default();
+            inner.awareness.doc().transact().encode_state_as_update_v1(&since)
+        });
+
+        if !asked.changes.is_empty() {
+            // What would make the document larger than the server keeps is not taken in.
+            let brought: usize = asked.changes.iter().map(Vec::len).sum();
+            if inner.size + brought > inner.most {
+                let size = inner.awareness.doc().transact().encode_state_as_update_v1(&StateVector::default()).len();
+                inner.size = size;
+                if inner.size + brought > inner.most {
+                    tracing::warn!(room = %self.id, size = inner.size, "an exchange would make a document larger than is kept");
+                    return Some(Err(Unexchanged::TooLarge));
+                }
+            }
+            // Taken in whole, or not at all: the changes are made one first.
+            let Ok(merged) = merge_updates_v1(&asked.changes) else {
+                return Some(Err(Unexchanged::Unreadable));
+            };
+            let Ok(update) = Update::decode_v1(&merged) else {
+                return Some(Err(Unexchanged::Unreadable));
+            };
+            let applied = inner.awareness.doc().transact_mut().apply_update(update);
+            if let Err(e) = applied {
+                tracing::warn!(room = %self.id, %e, "the changes of an exchange could not be taken in");
+                inner.digest = None;
+                return Some(Err(Unexchanged::Unreadable));
+            }
+            inner.size += brought;
+            inner.digest = None;
+            let form = form_of(inner.awareness.doc());
+            if form > inner.form {
+                inner.form = form;
+                inner.dismiss_below(form);
+            }
+        }
+
+        let after = inner.digest();
+        let changed = after != before;
+        let said = inner.said.get_or_insert_default();
+        let apart = changed && had && said.from_another(asked.seen.as_deref(), &asked.device, before != EMPTY_DIGEST);
+        if changed {
+            said.note(&after, &asked.device);
+            inner.unsaved = true;
+        }
+        let exchanged = Exchanged {
+            digest: after,
+            now: inner.awareness.doc().transact().state_vector().encode_v1(),
+            news,
+            apart,
+            changed,
+            bytes: inner.size,
+        };
+        noted(&exchanged);
+        Some(Ok(exchanged))
     }
 
     /// Whether the room may be put away now; if so, it is marked as put
@@ -693,11 +968,17 @@ impl Rooms {
     /// put away is marked so: one who found it before, and enters it after,
     /// is sent to find it again.
     pub async fn open(&self, id: &str) -> Result<Arc<Room>, EnterError> {
+        self.open_in(id, room_dir(&self.data, id)).await
+    }
+
+    /// The room known by `key`, kept in `dir`, as `open` finds a project's:
+    /// for the documents of a home, which are kept elsewhere than rooms.
+    pub async fn open_in(&self, key: &str, dir: PathBuf) -> Result<Arc<Room>, EnterError> {
         let mut open = self.open.lock().await;
-        if let Some(room) = open.get(id) {
+        if let Some(room) = open.get(key) {
             return Ok(room.clone());
         }
-        let dir = room_dir(&self.data, id);
+        let id = key;
         let name = id.to_owned();
         let most = self.most;
         let room = tokio::task::spawn_blocking(move || Room::load(&name, dir, most))
@@ -747,6 +1028,20 @@ impl Rooms {
             room.aside(Room::abandon).await;
             // A writing that was under way is let finish, so that it does not
             // put the directory back afterwards.
+            let _ = room.writing.lock().await;
+        }
+    }
+
+    /// Closes every room whose key begins with `prefix`, as `abandon` does
+    /// one: for a home that is taken off the server with its documents.
+    pub async fn abandon_under(&self, prefix: &str) {
+        let rooms: Vec<Arc<Room>> = {
+            let mut open = self.open.lock().await;
+            let keys: Vec<String> = open.keys().filter(|key| key.starts_with(prefix)).cloned().collect();
+            keys.iter().filter_map(|key| open.remove(key)).collect()
+        };
+        for room in rooms {
+            room.aside(Room::abandon).await;
             let _ = room.writing.lock().await;
         }
     }
@@ -1339,6 +1634,181 @@ mod tests {
         drop(held);
         rooms.unload_idle().await;
         assert_eq!(rooms.open_count().await, 0, "put away once it is idle and free");
+    }
+
+    fn digest(doc: &Doc) -> String {
+        digest_of(&doc.transact())
+    }
+
+    fn whole(doc: &Doc) -> Vec<u8> {
+        doc.transact().encode_state_as_update_v1(&StateVector::default())
+    }
+
+    #[test]
+    fn the_digest_says_what_a_document_holds_and_nothing_else() {
+        assert_eq!(digest(&Doc::new()), EMPTY_DIGEST, "a document that holds nothing");
+        let a = Doc::with_client_id(7);
+        let text = a.get_or_insert_text("text");
+        text.insert(&mut a.transact_mut(), 0, "Sing, goddess, ");
+        text.insert(&mut a.transact_mut(), 15, "the wrath");
+        let before = digest(&a);
+        assert_eq!(before, digest(&a), "the same on every asking");
+
+        // Read from what is written, as from the disk, it is the same.
+        let read = read_state(&whole(&a)).unwrap();
+        assert_eq!(digest(&read), before);
+
+        // Another that came to hold the same by another way holds the same.
+        let b = Doc::with_client_id(8);
+        b.transact_mut().apply_update(Update::decode_v1(&whole(&a)).unwrap()).unwrap();
+        assert_eq!(digest(&b), before);
+
+        // A deletion alone changes it; the same deletion, made in two pieces
+        // that touch, says the same as one.
+        text.remove_range(&mut a.transact_mut(), 0, 3);
+        text.remove_range(&mut a.transact_mut(), 0, 3);
+        let deleted = digest(&a);
+        assert_ne!(deleted, before);
+        assert_eq!(a.transact().state_vector(), b.transact().state_vector(), "nothing was added");
+        let text_b = b.get_or_insert_text("text");
+        text_b.remove_range(&mut b.transact_mut(), 0, 6);
+        assert_eq!(digest(&b), deleted);
+        assert_eq!(digest(&read_state(&whole(&a)).unwrap()), deleted, "and so after the disk");
+
+        // Changes of two clients, taken in in either order.
+        let c = Doc::with_client_id(9);
+        c.get_or_insert_text("text").insert(&mut c.transact_mut(), 0, "μῆνιν");
+        let (first, second) = (whole(&a), whole(&c));
+        let one = Doc::new();
+        let other = Doc::new();
+        for (doc, order) in [(&one, [&first, &second]), (&other, [&second, &first])] {
+            for update in order {
+                doc.transact_mut().apply_update(Update::decode_v1(update).unwrap()).unwrap();
+            }
+        }
+        assert_eq!(digest(&one), digest(&other));
+        assert_ne!(digest(&one), deleted);
+    }
+
+    #[test]
+    fn what_came_from_another_computer_is_told_by_the_changes_kept() {
+        let mut said = Said::default();
+        for (digest, device) in [("d1", "a"), ("d2", "a"), ("d3", "b"), ("d4", "a")] {
+            said.note(digest, device);
+        }
+        assert!(!said.from_another(Some("d4"), "a", true), "nothing after what was seen");
+        assert!(said.from_another(Some("d2"), "a", true), "the other brought d3");
+        assert!(!said.from_another(Some("d3"), "a", true), "after d3, only a's own");
+        assert!(said.from_another(Some("d3"), "b", true));
+        assert!(said.from_another(Some("d0"), "a", true), "what is not kept tells nothing: taken as apart");
+        assert!(said.from_another(None, "a", true), "nothing seen of a document that holds something");
+        assert!(!said.from_another(None, "a", false), "nor of one that holds nothing");
+
+        for n in 0..40 {
+            said.note(&format!("e{n}"), "a");
+        }
+        assert_eq!(said.changes.len(), KEPT_CHANGES);
+        assert_eq!(said.changes.last().unwrap().digest, "e39");
+    }
+
+    /// A change of a computer, as one update.
+    fn change_of(doc: &Doc, words: &str) -> Vec<u8> {
+        let before = doc.transact().state_vector();
+        let text = doc.get_or_insert_text("text");
+        let at = text.len(&doc.transact());
+        text.insert(&mut doc.transact_mut(), at, words);
+        doc.transact().encode_state_as_update_v1(&before)
+    }
+
+    fn asked(device: &str, seen: Option<&str>, since: Option<StateVector>, changes: Vec<Vec<u8>>) -> Exchange {
+        Exchange { device: device.into(), seen: seen.map(str::to_owned), since, changes, form: 1 }
+    }
+
+    fn exchange(room: &Room, asked: &Exchange) -> Result<Exchanged, Unexchanged> {
+        room.exchange(asked, |_| {}).expect("the room is open")
+    }
+
+    #[tokio::test]
+    async fn an_exchange_gives_what_was_not_seen_and_takes_what_is_brought() {
+        let tmp = tempfile::tempdir().unwrap();
+        let rooms = Rooms::new(tmp.path().to_owned(), MAX_DOCUMENT_BYTES);
+        let dir = tmp.path().join("homes").join("h").join("docs").join("project").join("p");
+        let room = rooms.open_in("h/project/p", dir.clone()).await.unwrap();
+
+        // Asked for, and nothing brought: nothing is made.
+        let nothing = exchange(&room, &asked("a", None, None, vec![])).unwrap();
+        assert_eq!((nothing.digest.as_str(), nothing.changed, nothing.apart), (EMPTY_DIGEST, false, false));
+        assert!(!room.save().await.unwrap() && !dir.exists());
+
+        let a = Doc::with_client_id(1);
+        let first = exchange(&room, &asked("a", None, None, vec![change_of(&a, "Sing")])).unwrap();
+        assert!(first.changed && !first.apart);
+        assert_eq!(first.digest, digest(&a));
+        let seen_a = (first.digest.clone(), a.transact().state_vector());
+
+        // The other computer joins with something of its own: apart, and given what was there.
+        let b = Doc::with_client_id(2);
+        let joined = exchange(&room, &asked("b", None, None, vec![change_of(&b, "μῆνιν")])).unwrap();
+        assert!(joined.apart && joined.changed);
+        b.transact_mut().apply_update(Update::decode_v1(&joined.news.unwrap()).unwrap()).unwrap();
+        assert_eq!(joined.digest, digest(&b));
+
+        // The first, having written meanwhile, is told it wrote apart, and given what it lacks.
+        let (seen, since) = seen_a;
+        let back = exchange(&room, &asked("a", Some(&seen), Some(since), vec![change_of(&a, ", goddess")])).unwrap();
+        assert!(back.apart);
+        a.transact_mut().apply_update(Update::decode_v1(&back.news.unwrap()).unwrap()).unwrap();
+        assert_eq!(back.digest, digest(&a));
+
+        // Nothing new: no news, and nothing apart.
+        let quiet = exchange(&room, &asked("a", Some(&back.digest), Some(a.transact().state_vector()), vec![]));
+        let quiet = quiet.unwrap();
+        assert!(quiet.news.is_none() && !quiet.apart && !quiet.changed);
+
+        // One's own change whose answer was lost, sent again with more: not apart.
+        let lost = change_of(&a, " of wrath");
+        let taken = exchange(&room, &asked("a", Some(&back.digest), None, vec![lost.clone()])).unwrap();
+        let more = change_of(&a, "!");
+        let again = exchange(&room, &asked("a", Some(&back.digest), None, vec![lost, more])).unwrap();
+        assert!(again.changed && !again.apart, "all that came since was its own");
+        assert!(again.news.is_some(), "it had not seen the server's digest, {}", taken.digest);
+
+        // What cannot be read is refused whole; so is a later form, before anything is told.
+        let refused = exchange(&room, &asked("b", None, None, vec![change_of(&b, "x"), vec![0, 2, 3, 255, 255]]));
+        assert_eq!(refused.unwrap_err(), Unexchanged::Unreadable);
+        assert_eq!(room.exchange(&asked("b", None, None, vec![]), |_| {}).unwrap().unwrap().digest, again.digest);
+
+        // Written as a room is, with what is said of it.
+        assert!(room.save().await.unwrap());
+        let said: Said = serde_json::from_slice(&std::fs::read(dir.join("said.json")).unwrap()).unwrap();
+        assert_eq!(said.digest, again.digest);
+        assert_eq!(said.bytes, std::fs::read(dir.join("state.bin")).unwrap().len());
+        assert_eq!(said.changes.iter().map(|c| c.device.as_str()).collect::<Vec<_>>(), ["a", "b", "a", "a", "a"]);
+
+        // And read again so.
+        let again_rooms = Rooms::new(tmp.path().to_owned(), MAX_DOCUMENT_BYTES);
+        let reopened = again_rooms.open_in("h/project/p", dir).await.unwrap();
+        let nothing_new = exchange(&reopened, &asked("a", Some(&said.digest), None, vec![])).unwrap();
+        assert!(nothing_new.news.is_none(), "the digest is the same after the disk");
+    }
+
+    #[tokio::test]
+    async fn an_exchange_is_held_to_the_form_and_the_size_of_the_document() {
+        let tmp = tempfile::tempdir().unwrap();
+        let rooms = Rooms::new(tmp.path().to_owned(), 4096);
+        let room = rooms.open_in("h/project/p", tmp.path().join("p")).await.unwrap();
+        let a = Doc::with_client_id(1);
+        let before = a.transact().state_vector();
+        a.get_or_insert_map("form").insert(&mut a.transact_mut(), "2", true);
+        let raised = a.transact().encode_state_as_update_v1(&before);
+        let mut knowing = asked("a", None, None, vec![raised]);
+        knowing.form = 2;
+        exchange(&room, &knowing).unwrap();
+        assert_eq!(exchange(&room, &asked("b", None, None, vec![])).unwrap_err(), Unexchanged::Later);
+
+        let mut large = asked("a", None, None, vec![change_of(&a, &"x".repeat(5000))]);
+        large.form = 2;
+        assert_eq!(exchange(&room, &large).unwrap_err(), Unexchanged::TooLarge);
     }
 
     #[tokio::test]

@@ -7,6 +7,9 @@
 //! never in an address, where it would end up in the logs of whatever stands
 //! in front of the server. A WebSocket cannot be given headers by a browser, so
 //! it is opened with a ticket: good for one connection, and for a minute.
+//!
+//! The calls of the homes, by which a writer's computers keep the same
+//! things, are in `homes_api.rs`, and share what is here.
 
 use std::collections::HashMap;
 use std::io;
@@ -25,7 +28,8 @@ use serde::{Deserialize, Serialize};
 use tokio::io::AsyncReadExt;
 use tokio::sync::mpsc;
 
-use crate::files::{Begun, Kept, Refused};
+use crate::files::{Arriving, Begun, Kept, Refused};
+use crate::homes::HomeRefusal;
 use crate::registry::{self, Invitation, Refusal, Registry, RoomMeta, Who};
 use crate::rooms::{EnterError, LATER_FORM, Outgoing, close};
 use crate::{Shared, secrets};
@@ -34,7 +38,7 @@ use crate::{Shared, secrets};
 /// when an older application could no longer take part.
 pub const PROTOCOL: u32 = 1;
 
-const MINUTE: Duration = Duration::from_secs(60);
+pub(crate) const MINUTE: Duration = Duration::from_secs(60);
 
 // ---------------------------------------------------------------------------
 // Refusals, as they are told
@@ -50,7 +54,7 @@ const NO_TOKEN: &str = "no token was given";
 const TOO_MANY: &str = "too many attempts have come from this address; try again in a while";
 const PASSWORD_ASKED: &str = "this server asks for a password from those who publish projects on it";
 const PASSWORD_WRONG: &str = "the password is not the one this server asks for";
-const NOT_WHOLE: &str = "the file did not arrive whole";
+pub(crate) const NOT_WHOLE: &str = "the file did not arrive whole";
 const NO_TICKET: &str = "no ticket was given";
 const BAD_TICKET: &str = "the ticket is not valid: it may have been used, or it is too old";
 
@@ -74,15 +78,15 @@ pub struct Failure {
 }
 
 impl Failure {
-    fn new(status: StatusCode, kind: &'static str, message: impl Into<String>) -> Self {
+    pub(crate) fn new(status: StatusCode, kind: &'static str, message: impl Into<String>) -> Self {
         Failure { status, kind, message: message.into() }
     }
 
-    fn no_token() -> Self {
+    pub(crate) fn no_token() -> Self {
         Failure::new(StatusCode::UNAUTHORIZED, "not-admitted", NO_TOKEN)
     }
 
-    fn too_many() -> Self {
+    pub(crate) fn too_many() -> Self {
         Failure::new(StatusCode::TOO_MANY_REQUESTS, "too-many", TOO_MANY)
     }
 }
@@ -118,9 +122,12 @@ impl From<Refused> for Failure {
     fn from(refused: Refused) -> Self {
         let (status, kind) = match &refused {
             Refused::NoRoom => (StatusCode::NOT_FOUND, "no-room"),
+            Refused::NoHome => (StatusCode::NOT_FOUND, "no-home"),
             Refused::NoFile => (StatusCode::NOT_FOUND, "no-file"),
             Refused::BadName | Refused::NotAsNamed => (StatusCode::BAD_REQUEST, "invalid"),
-            Refused::FileTooLarge(_) | Refused::RoomFull(_) => (StatusCode::PAYLOAD_TOO_LARGE, "too-large"),
+            Refused::FileTooLarge(_) | Refused::RoomFull(_) | Refused::HomeFull(_) => {
+                (StatusCode::PAYLOAD_TOO_LARGE, "too-large")
+            }
             Refused::Io(e) => {
                 tracing::error!(%e, "the disk could not be used for a file");
                 (StatusCode::INTERNAL_SERVER_ERROR, "server")
@@ -130,7 +137,26 @@ impl From<Refused> for Failure {
     }
 }
 
-type Answer<T> = Result<T, Failure>;
+impl From<HomeRefusal> for Failure {
+    fn from(refusal: HomeRefusal) -> Self {
+        let (status, kind) = match &refusal {
+            HomeRefusal::NoHome => (StatusCode::NOT_FOUND, "no-home"),
+            HomeRefusal::NotAdmitted => (StatusCode::UNAUTHORIZED, "not-admitted"),
+            HomeRefusal::BadCode => (StatusCode::NOT_FOUND, "bad-code"),
+            HomeRefusal::Full => (StatusCode::SERVICE_UNAVAILABLE, "full"),
+            HomeRefusal::ManyComputers | HomeRefusal::ManyCodes | HomeRefusal::NoComputer | HomeRefusal::NoName => {
+                (StatusCode::BAD_REQUEST, "invalid")
+            }
+            HomeRefusal::Io(e) => {
+                tracing::error!(%e, "the disk could not be written");
+                (StatusCode::INTERNAL_SERVER_ERROR, "server")
+            }
+        };
+        Failure::new(status, kind, refusal.to_string())
+    }
+}
+
+pub(crate) type Answer<T> = Result<T, Failure>;
 
 // ---------------------------------------------------------------------------
 // Keeping count of attempts
@@ -209,7 +235,7 @@ impl Tickets {
 // ---------------------------------------------------------------------------
 // Who is calling
 
-fn bearer(headers: &HeaderMap) -> Answer<&str> {
+pub(crate) fn bearer(headers: &HeaderMap) -> Answer<&str> {
     let value = headers.get(header::AUTHORIZATION).and_then(|v| v.to_str().ok()).ok_or_else(Failure::no_token)?;
     let (scheme, token) = value.trim().split_once(' ').ok_or_else(Failure::no_token)?;
     if !scheme.eq_ignore_ascii_case("bearer") || token.trim().is_empty() {
@@ -221,7 +247,7 @@ fn bearer(headers: &HeaderMap) -> Answer<&str> {
 /// The address the call came from. Behind a proxy that is the last address of
 /// `X-Forwarded-For`: the one the proxy itself saw, and the only one that
 /// could not have been made up by the caller.
-fn caller(server: &Shared, headers: &HeaderMap, addr: SocketAddr) -> IpAddr {
+pub(crate) fn caller(server: &Shared, headers: &HeaderMap, addr: SocketAddr) -> IpAddr {
     if server.config.trust_proxy {
         let forwarded = headers
             .get_all("x-forwarded-for")
@@ -345,6 +371,8 @@ struct Info {
     version: &'static str,
     protocol: u32,
     password_required: bool,
+    /// Whether the server keeps homes, for the computers of one writer.
+    homes: bool,
 }
 
 async fn info(State(server): State<Shared>) -> Json<Info> {
@@ -353,6 +381,7 @@ async fn info(State(server): State<Shared>) -> Json<Info> {
         version: env!("CARGO_PKG_VERSION"),
         protocol: PROTOCOL,
         password_required: server.config.password.is_some(),
+        homes: true,
     })
 }
 
@@ -373,31 +402,36 @@ struct Published {
     token: String,
 }
 
+/// Whether one may put something of their own on the server, a project or a
+/// home: with the server's password, where it asks one, and no more often
+/// than is counted for each address. What is put is counted.
+pub(crate) async fn may_publish(server: &Shared, from: IpAddr, password: Option<&str>) -> Answer<()> {
+    let mut limiter = server.limiter.lock().await;
+    if !limiter.allows(from, "refused", 10, 10 * MINUTE) || !limiter.allows(from, "published", 30, 60 * MINUTE) {
+        return Err(Failure::too_many());
+    }
+    if let Some(required) = &server.config.password {
+        let given = password.unwrap_or("");
+        if !secrets::same(&secrets::hash(given), &secrets::hash(required)) {
+            limiter.record(from, "refused");
+            return Err(Failure::new(
+                StatusCode::UNAUTHORIZED,
+                "password",
+                if given.is_empty() { PASSWORD_ASKED } else { PASSWORD_WRONG },
+            ));
+        }
+    }
+    limiter.record(from, "published");
+    Ok(())
+}
+
 async fn publish(
     State(server): State<Shared>,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
     headers: HeaderMap,
     Json(body): Json<Publish>,
 ) -> Answer<(StatusCode, Json<Published>)> {
-    let from = caller(&server, &headers, addr);
-    {
-        let mut limiter = server.limiter.lock().await;
-        if !limiter.allows(from, "refused", 10, 10 * MINUTE) || !limiter.allows(from, "published", 30, 60 * MINUTE) {
-            return Err(Failure::too_many());
-        }
-        if let Some(required) = &server.config.password {
-            let given = body.password.as_deref().unwrap_or("");
-            if !secrets::same(&secrets::hash(given), &secrets::hash(required)) {
-                limiter.record(from, "refused");
-                return Err(Failure::new(
-                    StatusCode::UNAUTHORIZED,
-                    "password",
-                    if given.is_empty() { PASSWORD_ASKED } else { PASSWORD_WRONG },
-                ));
-            }
-        }
-        limiter.record(from, "published");
-    }
+    may_publish(&server, caller(&server, &headers, addr), body.password.as_deref()).await?;
     let token = server.registry.lock().await.create(&body.room, &body.name, server.config.max_rooms)?;
     tracing::info!(room = %body.room, "a project was published");
     Ok((StatusCode::CREATED, Json(Published { room: body.room, token })))
@@ -560,17 +594,17 @@ const UNWRITTEN: usize = 16;
 
 /// Does what is done on the disk on a thread for such work, so that the
 /// others who are served are not kept waiting for it.
-async fn aside<T: Send + 'static>(work: impl FnOnce() -> Result<T, Refused> + Send + 'static) -> Answer<T> {
+pub(crate) async fn aside<T: Send + 'static>(work: impl FnOnce() -> Result<T, Refused> + Send + 'static) -> Answer<T> {
     let done = tokio::task::spawn_blocking(work).await.unwrap_or_else(|e| Err(Refused::Io(io::Error::other(e))));
     Ok(done?)
 }
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
-struct FilesView {
-    files: Vec<Kept>,
+pub(crate) struct FilesView {
+    pub(crate) files: Vec<Kept>,
     /// The most one file may hold here, so that none is sent in vain.
-    max_file_bytes: u64,
+    pub(crate) max_file_bytes: u64,
 }
 
 async fn files(State(server): State<Shared>, Path(room): Path<String>, headers: HeaderMap) -> Answer<Json<FilesView>> {
@@ -587,7 +621,11 @@ async fn file(
 ) -> Answer<Response> {
     server.registry.lock().await.admit(&room, bearer(&headers)?)?;
     let (file, size) = aside(move || server.files.open(&room, &hash)).await?;
-    // Sent as it is read, a piece at a time: no file is held in memory whole.
+    Ok(sent(file, size))
+}
+
+/// A file, sent as it is read, a piece at a time: no file is held in memory whole.
+pub(crate) fn sent(file: std::fs::File, size: u64) -> Response {
     let pieces = futures_util::stream::unfold(tokio::fs::File::from_std(file), |mut file| async move {
         let mut piece = vec![0; PIECE];
         match file.read(&mut piece).await {
@@ -601,11 +639,11 @@ async fn file(
     });
     let told =
         [(header::CONTENT_TYPE, "application/octet-stream".to_owned()), (header::CONTENT_LENGTH, size.to_string())];
-    Ok((told, Body::from_stream(pieces)).into_response())
+    (told, Body::from_stream(pieces)).into_response()
 }
 
 #[derive(Serialize)]
-struct FileStored {
+pub(crate) struct FileStored {
     hash: String,
     size: u64,
     /// Whether it was stored now. If not, the room had it already.
@@ -613,18 +651,13 @@ struct FileStored {
 }
 
 impl FileStored {
-    fn answer(kept: Kept, stored: bool) -> (StatusCode, Json<FileStored>) {
+    pub(crate) fn answer(kept: Kept, stored: bool) -> (StatusCode, Json<FileStored>) {
         let status = if stored { StatusCode::CREATED } else { StatusCode::OK };
         (status, Json(FileStored { hash: kept.hash, size: kept.size, stored }))
     }
 }
 
-/// Takes in a file of a room.
-///
-/// What is sent is taken as it comes, and not by way of axum, whose limit on
-/// what it takes in is for what it collects in memory. The limits here are
-/// those of the store, which counts what it writes and takes no more when one
-/// of them is passed.
+/// Takes in a file of a room (see `receive`).
 async fn store(
     State(server): State<Shared>,
     Path((room, hash)): Path<(String, String)>,
@@ -632,7 +665,7 @@ async fn store(
     body: Body,
 ) -> Answer<(StatusCode, Json<FileStored>)> {
     let token = bearer(&headers)?;
-    let announced = headers.get(header::CONTENT_LENGTH).and_then(|v| v.to_str().ok()).and_then(|v| v.parse().ok());
+    let announced = announced(&headers);
     let begun = {
         // The list of rooms is held while the file is begun, and again while
         // it is given its name, so that the room is not taken off the server
@@ -642,6 +675,43 @@ async fn store(
         let (server, room, hash) = (server.clone(), room.clone(), hash.clone());
         aside(move || server.files.begin(&room, &hash, announced)).await?
     };
+    let arriving = match receive(begun, &headers, body, server.config.max_file_bytes).await? {
+        Received::Had(kept) => return Ok(FileStored::answer(kept, false)),
+        Received::Arrived(arriving) => arriving,
+    };
+
+    let registry = server.registry.lock().await;
+    // The room may be gone since, or the one who sends no longer among its collaborators.
+    registry.admit(&room, token)?;
+    let (kept, stored) = {
+        let server = server.clone();
+        aside(move || server.files.keep(arriving)).await?
+    };
+    drop(registry);
+    if stored {
+        tracing::debug!(%room, hash = %kept.hash, size = kept.size, "a file was stored");
+    }
+    Ok(FileStored::answer(kept, stored))
+}
+
+/// How much the sender of a file says it holds, if it says.
+pub(crate) fn announced(headers: &HeaderMap) -> Option<u64> {
+    headers.get(header::CONTENT_LENGTH).and_then(|v| v.to_str().ok()).and_then(|v| v.parse().ok())
+}
+
+/// What came of a file that was sent.
+pub(crate) enum Received {
+    /// The store had it already.
+    Had(Kept),
+    /// It arrived whole, and is to be given its name (`Files::keep`).
+    Arrived(Arriving),
+}
+
+/// Takes in what is sent of a file that was begun, as it comes, and not by
+/// way of axum, whose limit on what it takes in is for what it collects in
+/// memory. The limits here are those of the store, which counts what it
+/// writes and takes no more when one of them is passed.
+pub(crate) async fn receive(begun: Begun, headers: &HeaderMap, body: Body, max_file_bytes: u64) -> Answer<Received> {
     let mut body = body.into_data_stream();
     let mut arriving = match begun {
         Begun::Had(kept) => {
@@ -651,12 +721,12 @@ async fn store(
             // told whether to send.
             let mut came = 0;
             while !headers.contains_key(header::EXPECT)
-                && came <= server.config.max_file_bytes
+                && came <= max_file_bytes
                 && let Some(Ok(piece)) = body.next().await
             {
                 came += piece.len() as u64;
             }
-            return Ok(FileStored::answer(kept, false));
+            return Ok(Received::Had(kept));
         }
         Begun::Arriving(arriving) => arriving,
     };
@@ -696,19 +766,7 @@ async fn store(
     if !whole {
         return Err(Failure::new(StatusCode::BAD_REQUEST, "invalid", NOT_WHOLE));
     }
-
-    let registry = server.registry.lock().await;
-    // The room may be gone since, or the one who sends no longer among its collaborators.
-    registry.admit(&room, token)?;
-    let (kept, stored) = {
-        let server = server.clone();
-        aside(move || server.files.keep(arriving)).await?
-    };
-    drop(registry);
-    if stored {
-        tracing::debug!(%room, hash = %kept.hash, size = kept.size, "a file was stored");
-    }
-    Ok(FileStored::answer(kept, stored))
+    Ok(Received::Arrived(arriving))
 }
 
 // ---------------------------------------------------------------------------
@@ -859,6 +917,7 @@ pub fn router(server: Shared) -> Router {
         .route("/api/rooms/{room}/files/{hash}", get(file).put(store))
         .route("/api/join", post(join))
         .route("/ws/{room}", get(socket))
+        .merge(crate::homes_api::routes())
         .with_state(server)
 }
 
@@ -903,23 +962,58 @@ mod tests {
     fn every_refusal_of_files() -> Vec<Refused> {
         let all = vec![
             Refused::NoRoom,
+            Refused::NoHome,
             Refused::NoFile,
             Refused::BadName,
             Refused::NotAsNamed,
             Refused::FileTooLarge(crate::MAX_FILE_BYTES),
+            Refused::FileTooLarge(crate::files::MAX_HOME_FILE_BYTES),
             Refused::FileTooLarge(1_000_000),
             Refused::RoomFull(crate::MAX_ROOM_BYTES),
+            Refused::HomeFull(crate::files::MAX_HOME_BYTES),
+            Refused::HomeFull(1536 << 20),
             Refused::Io(std::io::Error::other("no space left on the device")),
         ];
         for refused in &all {
             match refused {
                 Refused::NoRoom
+                | Refused::NoHome
                 | Refused::NoFile
                 | Refused::BadName
                 | Refused::NotAsNamed
                 | Refused::FileTooLarge(_)
                 | Refused::RoomFull(_)
+                | Refused::HomeFull(_)
                 | Refused::Io(_) => {}
+            }
+        }
+        all
+    }
+
+    /// Every refusal of the homes, as `every_refusal`.
+    fn every_refusal_of_homes() -> Vec<HomeRefusal> {
+        let all = vec![
+            HomeRefusal::NoHome,
+            HomeRefusal::NotAdmitted,
+            HomeRefusal::BadCode,
+            HomeRefusal::Full,
+            HomeRefusal::ManyComputers,
+            HomeRefusal::ManyCodes,
+            HomeRefusal::NoComputer,
+            HomeRefusal::NoName,
+            HomeRefusal::Io(std::io::Error::other("no space left on the device")),
+        ];
+        for refusal in &all {
+            match refusal {
+                HomeRefusal::NoHome
+                | HomeRefusal::NotAdmitted
+                | HomeRefusal::BadCode
+                | HomeRefusal::Full
+                | HomeRefusal::ManyComputers
+                | HomeRefusal::ManyCodes
+                | HomeRefusal::NoComputer
+                | HomeRefusal::NoName
+                | HomeRefusal::Io(_) => {}
             }
         }
         all
@@ -930,6 +1024,8 @@ mod tests {
         let mut failures: Vec<Failure> = SENTENCES.iter().map(|(k, s, m)| Failure::new(*s, k, *m)).collect();
         failures.extend(every_refusal().into_iter().map(Failure::from));
         failures.extend(every_refusal_of_files().into_iter().map(Failure::from));
+        failures.extend(every_refusal_of_homes().into_iter().map(Failure::from));
+        failures.extend(crate::homes_api::SENTENCES.iter().map(|(k, s, m)| Failure::new(*s, k, *m)));
         for failure in &failures {
             let words =
                 glaukopis_core::sharing::refusal_in_words(failure.kind, failure.status.as_u16(), &failure.message);
@@ -942,6 +1038,17 @@ mod tests {
         let most = Failure::from(Refused::FileTooLarge(crate::MAX_FILE_BYTES));
         let words = glaukopis_core::sharing::refusal_in_words(most.kind, 413, &most.message).unwrap();
         assert!(words.contains("50 MB"), "{words}");
+
+        // What is said of a home is not said of a project: the words that
+        // are the same for a kind are told apart by the server's sentence.
+        let of = |failure: Failure| {
+            glaukopis_core::sharing::refusal_in_words(failure.kind, failure.status.as_u16(), &failure.message).unwrap()
+        };
+        assert_ne!(of(Refusal::NotAdmitted.into()), of(HomeRefusal::NotAdmitted.into()));
+        assert_ne!(of(Refusal::Full.into()), of(HomeRefusal::Full.into()));
+        assert_ne!(of(Refusal::NoRoom.into()), of(HomeRefusal::NoHome.into()));
+        let words = of(Refused::HomeFull(crate::files::MAX_HOME_BYTES).into());
+        assert!(words.contains("10 GB"), "{words}");
     }
 
     #[test]
