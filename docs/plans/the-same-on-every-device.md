@@ -151,7 +151,7 @@ The files of a home may hold `--max-home-mb` megabytes together (`GLAUKOPIS_SERV
 
 Sent and answered as bytes (`application/octet-stream`); numbers are 32 bits, little-endian.
 
-- **Sent**: the length of a head; the head, JSON `{ "seen": <digest or null>, "since": <a state vector in hex, or null> }`; the number of changes; each change, its length before it. The head may hold 64 KiB; all of it what a document may, and a megabyte.
+- **Sent**: the length of a head; the head, JSON `{ "seen": <digest or null>, "since": <a state vector in hex, or null>, "quiet": <true where the writer wrote nothing of what is brought> }`; the number of changes; each change, its length before it. The head may hold 64 KiB; all of it what a document may, and a megabyte.
 - **Answered**: the length of a head; the head, JSON `{ "digest", "now", "news", "apart" }`; then the news, to the end.
 
 Under the room's lock, aside as a room's work is done:
@@ -160,8 +160,10 @@ Under the room's lock, aside as a room's work is done:
 2. `had` is whether `seen` is not `before`. The news is then the state as one update beyond `since` (all of it where there is no `since`); else nothing.
 3. Each change is taken in, as a room takes one in: counted against what a document may hold, refused whole where it cannot be read. The form of the texts is guarded as a room guards it: a computer that says a form (`?form=`) below the document's is refused with `409`, `later`, before anything is taken or sent.
 4. `after` is the digest. Where it is not `before`, the document has changed: it is written as a room's is, the change is put in `said.json` with the computer that brought it, and the home's stamp is another.
-5. `apart` is: `after` is not `before`; and `had`; and what the server had came from another computer. That is: with a `seen`, some change after the one whose digest is `seen` was brought by another computer, or `seen` is not among the changes kept; without a `seen`, the document held something.
+5. `apart` is: `after` is not `before`; and what was brought is not `quiet`; and `had`; and what the server had came from another computer and was not quiet either. That is: with a `seen`, some change after the one whose digest is `seen` was brought by another computer, or `seen` is not among the changes kept; without a `seen`, the document held something.
 6. The answer says `digest` (`after`), `now` (the state vector, in hex), `news` (`had`), `apart`.
+
+A change is **quiet** where the application wrote it by itself: with the history of a project on, a window that opens the project writes who is who into it. Bytes do not say which is which, so a window says it with each change it writes to the log, a project the writer wrote in is marked (`sync.wrote` in its folder), and the engine tells the server. Two computers wrote apart where the writer wrote on both. (Found by the script, which was told of writing apart on the computer that had only opened the project.)
 
 A document that is not there is made by the first exchange that brings a change. One that is asked for and brings none makes nothing. A room of a home is kept in memory as a room is, a minute after it was last used.
 
@@ -186,7 +188,7 @@ In `crates/server/tests/homes.rs`, over HTTP, as `tests/server.rs` tries the roo
 
 ### What is kept of a document here
 
-`projects/<id>/sync.json` (and `notebook/sync.json`): `{ "home", "seen", "since", "state": [len, modified], "log": [len, modified] }`. It lies with the document, so that a project that goes to the trash and comes back says the right thing of itself. One made for another home says nothing.
+`projects/<id>/sync.json` (and `notebook/sync.json`, and `sync/home/sync.json` for the home document): `{ "home", "doc", "seen", "since", "lies" }`, where `lies` is how the state and the log lay (how much each held and when it was written). It lies with the document, so that a project that goes to the trash and comes back says the right thing of itself. One made for another home, or for another document, says nothing. Beside it `sync.had`: the moment the document here was at then. A document that no longer holds that moment has lost something on its way to the disk (a window saved a state that lacked what had just come into the log), and all of the server's is asked for again; a server that proves to hold less than was last seen of it is sent everything again.
 
 A document needs an exchange when its files are not what they were at the last, or when the server's digest is not `seen`.
 
