@@ -251,8 +251,12 @@ impl Client {
             let body = bounded(response.body_mut(), 1024 * 1024).map_err(|e| Error::Network(describe(url, &e)))?;
             return Ok(Bytes { status, body });
         }
-        let mut reader = response.body_mut().with_config().limit(limit).reader();
+        // The library of the network refuses to read on once its limit is
+        // reached, even at the end: it is given one more, and what came is
+        // counted here.
+        let mut reader = response.body_mut().with_config().limit(limit.saturating_add(1)).reader();
         let mut piece = vec![0u8; 1 << 16];
+        let mut came: u64 = 0;
         loop {
             let read = reader.read(&mut piece).map_err(|e| {
                 // What the library of the network found wrong comes wrapped in an error of reading.
@@ -264,6 +268,11 @@ impl Client {
             })?;
             if read == 0 {
                 break;
+            }
+            came += read as u64;
+            // More than was asked for is a fault of this file, not of the server as a whole.
+            if came > limit {
+                return Err(Error::invalid(describe(url, &ureq::Error::BodyExceedsLimit(limit))));
             }
             into.write_all(&piece[..read]).map_err(|e| Error::io(tr!("io-writing", path = path), e))?;
         }

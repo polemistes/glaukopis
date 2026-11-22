@@ -11,9 +11,8 @@ use serde::Deserialize;
 use serde_json::{Value, json};
 
 use crate::error::{Error, Result};
-use crate::library::figures::KeepImages;
 use crate::net::{self, Client};
-use crate::sharing::{Remote, RemoteFile, Synced, Used};
+use crate::sharing::{Remote, RemoteFile};
 use crate::tr;
 
 use super::{hex, unhex};
@@ -253,13 +252,6 @@ impl<'a> Home<'a> {
             news: if head.get("news").and_then(Value::as_bool) == Some(true) { news.to_vec() } else { Vec::new() },
             apart: head.get("apart").and_then(Value::as_bool) == Some(true),
         })
-    }
-
-    /// Brings the images the writer's projects use to be the same here and
-    /// in the home: those the home lacks are sent, those lacking here are
-    /// fetched, as the images of a shared project are (`sharing`).
-    pub fn pictures(&self, images: &impl KeepImages, used: &[Used]) -> Result<Synced> {
-        self.remote.sync_pictures_in(&self.path(""), &self.token, images, used)
     }
 
     /// Takes a document off the server.
