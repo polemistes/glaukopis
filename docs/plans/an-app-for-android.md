@@ -23,7 +23,7 @@ The assistant's answer to "What do you think", so that it can be disagreed with.
 1. A second platform to keep alive: one more file with every release, one more web view (Android's is Chromium's, the system's own, as WebView2 is on Windows; nothing is bundled), and the finger as a second way in beside the mouse.
 2. One thing is not known: how the editor of the texts behaves under a phone's keyboard, with its suggestions and corrections. It is tried before anything else is built (stage 0), and the plan changes there if it does not hold.
 3. Giving it out without a fee is possible, and is being narrowed by Google (see *Given out*).
-4. A phone cannot hold everything, so "two synchronized devices hold the same things" is bent for a phone (the third choice below).
+4. A phone cannot hold everything, so "two synchronized devices hold the same things" is bent for a phone. The owner agreed (below).
 
 ## Decided by the owner
 
@@ -33,24 +33,31 @@ The assistant's answer to "What do you think", so that it can be disagreed with.
 4. **Work goes to less expensive models** where that does not compromise quality at all.
 5. From before: **nothing that costs a fee**, as things are now (2026-11-15); **an app shows projects as well, through the server** (2026-11-15), which is now the later part.
 
+Agreed on 2026-11-22, when the plan had been read:
+
+6. **A phone holds the notebook, the files its notes hold, and the references without their files.** Not the projects, until maps come, and then those that are opened; not the files of the library; not the settings, the styles, the formats, the templates or the words. The rule of the synchronization was that nothing is chosen; this chooses for a phone, because a library's files may be ten gigabytes.
+7. **Two dependencies, for Android only**; the computers stay as they are. The network client reads TLS with `rustls`, trusting what the phone trusts, since Android has no OpenSSL. And WorkManager, a library of AndroidX, by which Android runs a piece of work when there is a network: what was collected is sent with the app closed.
+8. **A *device*, not a *computer***, in the words of the synchronization, on the computers as on the phone: Bokmål *enhet*. The list of the home, *Add a device…*, *Name of this device*.
+9. **It works on any Android phone that people still use.** What that is taken to mean is in *Any phone that people still use*.
+10. **The owner's phone** is a Samsung Galaxy S22 Ultra with Android 16: what the app is tried on by hand.
+
 ## The assistant's, not confirmed
 
 To be told of again when it is built, with the other choices that await the owner.
 
 1. **The same application in another role**, on the system's web view, as said above.
 2. **A phone joins the writer's home with a code**, as a computer does. It can also be the first, and start the home. No account, and nothing new on the server.
-3. **A phone holds the notebook, the files its notes hold, and the references without their files.** Not the projects, until maps come, and then those that are opened; not the files of the library; not the settings, the styles, the formats, the templates or the words. The owner's rule of 2026-11-22 was that nothing is chosen; this chooses for a phone, because a library's files may be ten gigabytes.
-4. **With the app closed**, what was collected is sent as soon as the phone has a network. What was written elsewhere is fetched when the app is opened. Nothing runs at regular times in the background.
-5. **What is collected, and how**: see *Collecting*. A link shared is a note with the page as its source; nothing is fetched from the page.
-6. **After Share, the app opens on the note just made**, so that a word or a tag can be added; Back goes to where one was.
-7. **The first version is without**: the surface of a box, Join and Divide, links drawn between notes, the ways from a note into a text, import, starting texts, the tools of rich text. What a note holds of these is shown and kept, since the schema is the same.
-8. **Two dependencies, for Android only**; the computers stay as they are. The network client reads TLS with `rustls`, trusting what the phone trusts, since Android has no OpenSSL. And WorkManager, a library of AndroidX, by which Android runs a piece of work when there is a network (the fourth choice).
-9. **Android's own backup is turned off for the app**: the notes go to the writer's server and nowhere else.
-10. **Given out as a file**, signed with a key the owner makes and keeps, on the website's page of packages and with the release on GitHub; F-Droid when the app has settled; not Google Play. See *Given out* for what Google asks from 2027.
-11. **The app tells of a new version**, as the installations of Windows and macOS are told: nothing updates such a file by itself.
-12. **The words**: the app is *Glaukopis*. In the synchronization a phone is a *device* (*enhet*), and *computer* becomes *device* wherever a phone may be meant: the list of the home, *Add a device…*, *Name of this device*.
-13. **No app for iPhone**: Apple asks a yearly fee. Nothing here stands in its way later.
-14. **In the code the part is `phone`** (`src/lib/phone/`, `src-tauri/src/phone.rs`, `locales/*/phone.ftl`).
+3. **With the app closed**, what was collected is sent as soon as the phone has a network. What was written elsewhere is fetched when the app is opened. Nothing runs at regular times in the background.
+4. **What is collected, and how**: see *Collecting*. A link shared is a note with the page as its source; nothing is fetched from the page.
+5. **After Share, the app opens on the note just made**, so that a word or a tag can be added; Back goes to where one was.
+6. **The first version is without**: the surface of a box, Join and Divide, links drawn between notes, the ways from a note into a text, import, starting texts, the tools of rich text. What a note holds of these is shown and kept, since the schema is the same.
+7. **Android's own backup is turned off for the app**: the notes go to the writer's server and nowhere else.
+8. **Given out as a file**, signed with a key the owner makes and keeps, on the website's page of packages and with the release on GitHub; F-Droid when the app has settled; not Google Play. See *Given out* for what Google asks from 2027.
+9. **The app tells of a new version**, as the installations of Windows and macOS are told: nothing updates such a file by itself.
+10. **The app is called *Glaukopis*.**
+11. **No app for iPhone**: Apple asks a yearly fee. Nothing here stands in its way later.
+12. **In the code the part is `phone`** (`src/lib/phone/`, `src-tauri/src/phone.rs`, `locales/*/phone.ftl`).
+13. **"Still use" is taken to mean** Android 7 and later, both kinds of ARM processor, and a web view of version 111 or later: see *Any phone that people still use*.
 
 ## What stands in the code today
 
@@ -75,7 +82,7 @@ Read on 2026-11-22.
 - **The same role on a computer**, `glaukopis --phone`, for trying only: a window as narrow as a phone, the phone's commands, the phone's page. It is in no launcher and not in the guide. Through it the harness that is there reaches nearly all of the phone's page.
 - **The Android project** (`src-tauri/gen/android`) is made by `tauri android init` and committed, without what a build leaves in it: the manifest and the Kotlin of this plan live there.
 - **The page.** `src/main.ts` mounts `src/lib/phone/mount.ts` where the window is labelled `phone`, as it mounts the window of a note: nothing of the projects, the diagram or the typesetting is loaded. Vite is told of the web view of Android beside `safari15`.
-- **The core for Android.** TLS as the eighth choice says. Whether typesetting is left out of the phone's build behind a feature of the core is decided by measure in stage 0: it is never called there, and what it adds to the file is weighed against a core in two shapes. The reading of text stays in (see *Text read on the phone*).
+- **The core for Android.** TLS by `rustls`, as decided. Whether typesetting is left out of the phone's build behind a feature of the core is decided by measure in stage 0: it is never called there, and what it adds to the file is weighed against a core in two shapes. The reading of text stays in (see *Text read on the phone*).
 
 ### A phone among the writer's computers
 
@@ -125,14 +132,30 @@ One column, three places: the notes, a note, the settings. Each is a step of the
 ### Android's own
 
 - **Asked of the system**: the network. The camera is the phone's camera app, which asks for nothing on the app's behalf. No notifications, no place, no contacts, no storage.
-- **Backup to Google off** (`allowBackup`, and the rules of what is carried to a new phone): the ninth choice.
+- **Backup to Google off** (`allowBackup`, and the rules of what is carried to a new phone), so that the notes go nowhere but to the writer's server.
 - **Sent when closed.** After something was collected, Android is asked to run one round when there is a network (WorkManager; Tauri's Android project is built on AndroidX already, and this is one more library of it). The round is the core's `once`, reached through a small door of the shell that needs no window: the core has no Tauri in it.
 - **The token** of the device lies in the app's own folder, which no other app reads.
 - **The icon** is the owl, cut and scaled by `tauri icon`, on a plain ground.
 
+### Any phone that people still use
+
+The owner's word (2026-11-22). By Google's count of 1 October 2026, Android 7.0 or later is on 994 of 1000 devices in use, and Android 10 or later on 939; Android 7, 8 and 9 together are on about 55.
+
+| What decides it | What is done |
+| --- | --- |
+| The version of Android | Android 7.0 (2016) and later, which is as far back as Tauri goes. |
+| The web view | The page runs in the system's web view, and an old Android is left with an old one: Android 7 with version 119, Android 8 and 9 with 138, Android 10 and later with the newest (Chrome's numbers; that the web view's are the same is confirmed in stage 0). Of what the page uses, the newest came with version 111: colours mixed in CSS, in 77 places; `:has`, highlights and containers came with 105 (counted in the source). So every one of them will do, where it has been kept up. The app looks at the web view's version when it starts; where it is older than 111 it says so in plain words, and how it is brought up to date. |
+| The processor | Both kinds of ARM: 64 bits, and the 32 bits that cheap phones were sold with until a few years ago. The core has never been built for 32 bits: stage 0 builds it, and runs its tests once as a 32-bit program. |
+| The screen | From 320 points wide, the smallest phones, upwards; the scripts run the page at 320 and at 412. The letters follow the size the system is set to. |
+| The keyboard | Samsung's (the owner's phone), Google's (the emulator) and Microsoft's: the editor is tried under each. |
+| Phones without Google | The app asks nothing of Google's services, so it runs on a Huawei, and on LineageOS, GrapheneOS and /e/. |
+| The newest Android | What Android 15 and 16 ask of every app: the page drawn behind the system's bars and keeping clear of them, the gesture for Back, and native libraries laid out for memory pages of 16 KB. |
+
+How the oldest web views are tried is found out in stage 0. A tablet shows the phone's page; a wider one is left for later.
+
 ### Given out
 
-- One file for phones (arm64), built by `tauri android build` in a capped unit, and by a job of the Installers workflow when the owner asks for one.
+- One file for both kinds of ARM, built by `tauri android build` in a capped unit, and by a job of the Installers workflow when the owner asks for one.
 - **Signed with a key the owner makes and keeps**, outside the repository. An app signed with another key is not an update of the first, and the name `org.glaukopis.app` cannot be changed either: both are for good.
 - On the website's page of packages and with the release on GitHub. `version.json` tells the app of a newer one.
 - **F-Droid** later: it costs nothing and the licence fits; it builds from the source itself, which asks for a recipe of its own.
@@ -157,7 +180,7 @@ What it takes:
 1. **Tesseract and Leptonica built for Android** from their sources (Apache-2.0 and BSD), with the NDK, as a program that lies among the app's native libraries: the one place Android lets an app start a program from. The core is told that folder, as it is told of the one beside the application. Tried on the emulator before anything is built on it. The main thread's.
 2. **The language packages in the phone's settings**: the list there is, made to fit. None comes in the file.
 3. ***Read the text* on a picture of a note**, as on a computer.
-4. **For PDFs, the child's program built for Android** and brought along the same way. Android may end what an app does once it leaves the front, so an article is read while one waits, and a book is for a computer. A phone holds no PDF of the library (the third choice): what is read there is a PDF that came to the phone, in a note.
+4. **For PDFs, the child's program built for Android** and brought along the same way. Android may end what an app does once it leaves the front, so an article is read while one waits, and a book is for a computer. A phone holds no PDF of the library, as decided: what is read there is a PDF that came to the phone, in a note.
 
 **Photographs are measured first**, before any of this is built: ten or twenty pages photographed with the owner's phone as they would be, read on this machine with the models there are: as they are, cut to the text, and with Tesseract's own ways with uneven light. Tesseract is trained on flat scans. The measure says whether photographs read well enough, and what the phone must do to one before it is read: cut by finger, straightened, its corners pulled square.
 
@@ -174,9 +197,9 @@ What it takes:
 
 Each is committed when it is checked. Stages 0 to 4 are the app the owner asked for; the rest come later, each with a plan of its own.
 
-0. **The trial.** The Rust targets for Android; TLS; the shell built for Android with one window that holds the editor of the texts and keeps a note. On the emulator and on the owner's phone. It answers: whether the core builds, how large the file is, and so whether typesetting is left out; **whether the editor holds under a phone's keyboard** (typing with suggestions, Enter, Backspace over marks, lists, selecting, pasting); whether a share arrives; whether the camera opens; whether the harness reaches the emulator; how long a build takes and what it leaves on the disk. Should the editor not hold, the plan stops here and is told: the way left is notes written in a plain field and shown as they are, which is a lesser app and the owner's to choose. Ends with the record, and this plan corrected by what was found.
+0. **The trial.** The Rust targets for Android; TLS; the shell built for Android with one window that holds the editor of the texts and keeps a note. On the emulator and on the owner's phone. It answers: whether the core builds, for 64 bits and for 32, and whether its tests pass as a 32-bit program; how large the file is, and so whether typesetting is left out; **whether the editor holds under a phone's keyboard**, Samsung's on the owner's phone and Google's on the emulator (typing with suggestions, Enter, Backspace over marks, lists, selecting, pasting); whether the page keeps clear of the system's bars and follows Back on Android 16; how the oldest web views are tried; whether a share arrives; whether the camera opens; whether the harness reaches the emulator; how long a build takes and what it leaves on the disk. Should the editor not hold, the plan stops here and is told: the way left is notes written in a plain field and shown as they are, which is a lesser app and the owner's to choose. Ends with the record, and this plan corrected by what was found.
 1. **The role, and what a phone takes.** The shell divided by role, `glaukopis --phone`, the phone's data folder, backup off; the engine told what a device takes, with its tests against the server.
-2. **The notes shown, found and written; the synchronization set up.** The page of the phone. From here the owner has an app to use: a note written on the phone is on the computer.
+2. **The notes shown, found and written; the synchronization set up.** The page of the phone. *Device* for *computer* in the words of the synchronization, on the computers too, with an addendum to its record. From here the owner has an app to use: a note written on the phone is on the computer.
 3. **Collecting.** Share, the selection's menu, the photograph, pictures and files, *New note* on the icon; sent when closed.
 4. **Given out.** The signed file, the job of the workflow, the newer version told, the website's folder, the chapter of the guide, the other languages in a round.
 5. *Later, should the owner want it:* **text read on the phone.** Photographs measured first; then Tesseract brought along, the languages, *Read the text*; PDFs after.
@@ -195,7 +218,7 @@ The way that held on 2026-11-13 and 2026-11-16: the main thread reads the code, 
 | 1: what a device takes, in the engine, and its tests | the main thread | Small, and a wrong rule here loses what the server keeps. |
 | 2: the frame of the page, the notes, finding, the filter | Opus | Wide; what of `NoteList`, `NoteCard` and `page.svelte.ts` is used as it is and what is made anew is a judgement. |
 | 2: a note: the editor, the row over the keyboard, name, tags, box, source | Opus | Wide, and in the editor. |
-| 2: the settings of the phone | Sonnet | Small and said to the last word: a section that is there, made to fit. |
+| 2: the settings of the phone, and *device* for *computer* | Sonnet | Small and said to the last word: a section that is there, made to fit, and its words changed. |
 | 3: the kind `shared`, in the core's inbox and taken in by the page, with the tests of both | Sonnet | Small, said field by field, proven by its tests. |
 | 3: *New note*, *Photograph*, *Picture or file*, arriving on the note after Share | Sonnet | Small, on the parts of stage 2. |
 | 3: the Kotlin, the manifest, the door for a round when closed | the main thread | Some hundred lines that no agent can try: they run only in the app. |

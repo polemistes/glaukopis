@@ -2011,3 +2011,18 @@ Asked when the plan had been read:
 Answered in the plan (*Text read on the phone*): a stage of its own after
 the app is given out, not decided; photographs of pages are measured on a
 computer before anything is built for it.
+
+Of what the plan left to the owner (what a phone holds; two dependencies
+for Android only; *device* for *computer* in the words of the
+synchronization; which phone the owner has):
+
+> I agree with 1.-3. and my phone is samsung galaxy s22 ultra, with android 16. But the app should work for any android phone that people still use.
+
+- **A phone holds the notebook, the files its notes hold, and the
+  references without their files.**
+- **Two dependencies for Android only**: `rustls`, and WorkManager.
+- **A *device*, not a *computer***, in the words of the synchronization.
+- **It works on any Android phone that people still use.** The plan takes
+  that to mean Android 7 and later, both kinds of ARM processor, and a web
+  view of version 111 or later, which the owner has not confirmed.
+- **The owner's phone** is a Samsung Galaxy S22 Ultra with Android 16.
