@@ -33,7 +33,7 @@ const DATA = [
   '.row .container',
   '.work .title',
   '.fonts',
-  // The names of templates, layouts and styles, and what the built-in templates say of themselves.
+  // The names of document types, looks and styles, and what the built-in types say of themselves.
   '.side .look .whole .type-line .name',
   '.template',
   // The names of files in the tabs, the names of bookmarks, and the headings a PDF carries.
@@ -194,11 +194,50 @@ try {
   await app.screenshot('languages-4-details');
   await settingsSection('Dokumenttype');
   await english('the type in the document settings');
+  // The new document type is asked for in a small dialog over the window.
+  await app.click('dialog[open] .chooser [data-new-type]');
+  await app.waitFor('dialog[open] [data-new-name]', 5000);
+  await sleep(300);
+  await english('the new document type');
+  await app.screenshot('languages-4c-new-type');
+  await app.press('Escape');
+  await app.waitGone('dialog[open] [data-new-name]', 5000);
   await settingsSection('Språk');
   await english('the language in the document settings');
   const written = await app.exec(`return document.querySelector('dialog select').value`);
   check('a new project is written in the language of the system', written === 'nb', written);
   await closeSettings();
+
+  // ---- Look: the top of it with a change made, the name asked for, and the part for the document type ----
+  await app.click('.preview header [data-look]');
+  await app.waitFor('.side .look .chips', 15000);
+  await sleep(300);
+  await app.exec(
+    `const s = document.querySelector('.side .look .first select');
+     const o = document.createElement('option');
+     o.value = 'Gentium Plus';
+     o.textContent = 'Gentium Plus';
+     s.append(o);
+     s.value = 'Gentium Plus';
+     s.dispatchEvent(new Event('change', { bubbles: true }));`,
+  );
+  await app.waitFor('.side .look .whole [data-save-as]', 8000);
+  await sleep(600);
+  await english('Look, with a change made');
+  await app.click('.side .look .whole [data-save-as]');
+  await app.waitFor('.side .look .whole input.type-name', 3000);
+  await english('Look, with the name of a type asked for');
+  await app.screenshot('languages-4e-look-top');
+  await app.press('Escape');
+  await app.clickText('.side .look .whole .naming button', 'Avbryt');
+  await app.click('.side .look .chips button:last-child');
+  await sleep(700);
+  await english('the part of Look for the document type');
+  await app.screenshot('languages-4f-look-type');
+  await app.click('.side .look .whole [data-reset]');
+  await sleep(500);
+  await app.click('.preview header [data-look]');
+  await sleep(300);
   await app.keys(['Control', 't']);
   await sleep(300);
 
