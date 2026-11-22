@@ -5,8 +5,8 @@
 // kept; the numbers in the margin, set from the Numbers menu and edited in
 // place, the label then saying "numbered"; the Numbers menu's switch for
 // the lines of the page; page and column breaks from Insert, seen in the
-// text and in the preview; and the layout editor, which has a part for the
-// numbers, every kind with its look, and the columns of the page.
+// text and in the preview; and Look, which has a part for the numbers,
+// every kind with its look, and the columns of the page.
 
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
@@ -338,7 +338,7 @@ try {
               kinds: document.querySelectorAll('.side .look details[data-kind]').length };`,
   );
   check(
-    'the kinds part lists every kind, and one the layout says nothing of is shown as resolved',
+    'the kinds part lists every kind, and one Look says nothing of is shown as resolved',
     !!scene && !scene.said && scene.quiet && !!scene.resolved && scene.kinds >= 20,
     JSON.stringify(scene),
   );
@@ -363,7 +363,7 @@ try {
     `${gapBefore} ${gapAfter}`,
   );
   const lookTop = await app.lookTop();
-  check('the columns are the document’s change, not a new layout', lookTop.line === '1 change in this document' && lookTop.changes === 1, lookTop.line);
+  check('the columns are the document’s change, not a new document type', lookTop.line === '1 change in this document' && lookTop.changes === 1, lookTop.line);
   await app.exec(`${row('Columns')}.scrollIntoView({ block: 'center' });`);
   await sleep(150);
   await app.screenshot('runs-9-layout-columns');
