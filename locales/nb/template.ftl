@@ -15,9 +15,6 @@ template-group-journal = Tidsskrifter
 template-group-publisher = Forlag
 template-group-style-guide = Stilguider
 
-## Hvor et slag element står i dokumentet.
-
-
 ## Delene av et dokument som programmet lager selv.
 
 template-generated-half-title = Smusstittel
@@ -44,77 +41,23 @@ template-target-epub = E-bok
 
 ## Redigeringen av en mal.
 
-template-editor = Mal
-template-name = Navnet på malen
 # Navnet en egen mal først får, laget av navnet på malen den lages av.
 template-name-changed = { $name }, endret
-template-name-own = { $name }, min egen
-template-sections = Delene av malen
-template-delete = Slett denne malen
-template-save-own = Lagre som min egen
 template-saved = «{ $name }» er lagret blant dine egne dokumenttyper
-template-read-failed = Dokumenttypen kunne ikke leses.
 template-save-failed = Dokumenttypen kunne ikke lagres.
 template-delete-failed = Dokumenttypen kunne ikke slettes.
 template-keep-failed = Dokumenttypen kunne ikke tas vare på i prosjektet. På en annen datamaskin, og i en fil av prosjektet, får dokumentet standard dokumenttype i stedet.
 template-delete-title = Slette dokumenttypen «{ $name }»?
 template-delete-message = Elementer som bruker den, vil bruke dokumenttypen den ble laget av i stedet.
 template-delete-confirm = Slett dokumenttypen
-template-leave-title = Gå ut uten å lagre?
-template-leave-message = Endringene du har gjort i malen, går tapt.
-template-leave-confirm = Gå ut
-template-leave-cancel = Fortsett å redigere
-
-## Delene av redigeringen, slik de velges til venstre.
-
-template-section-about = Om denne malen
-template-section-looks = Oppsett og referansestil
-template-section-contents = Innhold
-template-section-kinds = Slag elementer
-template-section-passage-kinds = Slag avsnitt og ord
-template-section-requirements = Krav
-template-section-outputs = Filer
-
-## Om malen.
-
-template-description = Beskrivelse
-template-group = Gruppe
-template-based-on = Bygger på
-template-based-on-none = Ingenting bestemt
-
-## Oppsettet og referansestilen den bringer med seg.
-
-template-layout = Oppsett
-template-style = Referansestil
-# Oppsettet eller stilen skribenten har valgt i innstillingene.
-template-usual = Den vanlige, fra innstillingene
-
-## Innholdet: rekkefølgen i dokumentet.
-
-# Et punkt i innholdet som plasserer hvert element av et slag.
-template-contents-kind = Hvert element av slaget { $name }
-template-contents-add-part = En del …
-template-contents-add-kind = Et slag element …
-template-contents-up = Opp
-template-contents-down = Ned
-
-## Slagene i hånden.
-
-template-kinds-in-contents = Står i innholdet
 
 ## Kravene.
 
 template-requirement-words = Ord i teksten
 template-requirement-abstract-words = Ord i sammendraget
 template-requirement-keywords = Nøkkelord
-template-requirement-note = Hva grensene teller
 # Ved siden av tallet 0, der enheten står.
 template-no-limit = ingen grense
-
-## Filene malen lager.
-
-template-output-document = Dokumentet
-template-output-cover = Omslaget
 
 ## Navnene på dokumenttypene som følger med Glaukopis, slik velgeren av hva du skriver og knappen
 ## over forhåndsvisningen gir dem; tidsskrifter, forlag og stilguider beholder sine egne.
@@ -139,9 +82,6 @@ template-called-news-article = Nyhetsartikkel
 ## Fewer words, stage 3: the requirement of anonymity, in Look and in the editor of a document type.
 
 template-requirement-anonymity = Anonymt
-
-## Stage 4 of the settings, the zoom and the keys of the kinds: the kinds Ctrl+Alt and a digit gives.
-template-kind-keys = Taster
 
 ## Det som sies med ord om en dokumenttype som følger med Glaukopis, over det
 ## den har med seg: bare der navnet ikke sier hva den er.

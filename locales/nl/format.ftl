@@ -241,7 +241,6 @@ format-page-numbers-show = Pagina's worden genummerd
 
 ## About the format: where its requirements are from.
 
-format-source = Waar de eisen vandaan komen
 # The date the source was read on.
 format-source-read = Gelezen op { $date }.
 format-source-high = De waarden zijn die van de bron.

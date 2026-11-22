@@ -241,7 +241,6 @@ format-page-numbers-show = Οι σελίδες αριθμούνται
 
 ## About the format: where its requirements are from.
 
-format-source = Από πού είναι οι απαιτήσεις
 # The date the source was read on.
 format-source-read = Διαβάστηκε στις { $date }.
 format-source-high = Οι τιμές είναι αυτές της πηγής.

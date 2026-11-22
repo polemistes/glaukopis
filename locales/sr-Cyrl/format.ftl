@@ -241,7 +241,6 @@ format-page-numbers-show = Стране су нумерисане
 
 ## About the format: where its requirements are from.
 
-format-source = Одакле су захтеви
 # The date the source was read on.
 format-source-read = Прочитано { $date }.
 format-source-high = Вредности су из извора.

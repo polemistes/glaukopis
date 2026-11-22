@@ -241,7 +241,6 @@ format-page-numbers-show = As páginas são numeradas
 
 ## About the format: where its requirements are from.
 
-format-source = De onde vêm as exigências
 # The date the source was read on.
 format-source-read = Lido em { $date }.
 format-source-high = Os valores são os indicados na origem.

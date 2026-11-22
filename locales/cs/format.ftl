@@ -241,7 +241,6 @@ format-page-numbers-show = Strany jsou číslovány
 
 ## About the format: where its requirements are from.
 
-format-source = Odkud požadavky pocházejí
 # The date the source was read on.
 format-source-read = Přečteno { $date }.
 format-source-high = Hodnoty jsou ty ze zdroje.

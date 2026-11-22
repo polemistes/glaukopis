@@ -241,7 +241,6 @@ format-page-numbers-show = Paginile sunt numerotate
 
 ## About the format: where its requirements are from.
 
-format-source = De unde sunt cerințele
 # The date the source was read on.
 format-source-read = Citit la { $date }.
 format-source-high = Valorile sunt cele ale sursei.

@@ -241,7 +241,6 @@ format-page-numbers-show = 为页面编号
 
 ## About the format: where its requirements are from.
 
-format-source = 要求的出处
 # The date the source was read on.
 format-source-read = 查阅于 { $date }。
 format-source-high = 数值与出处一致。

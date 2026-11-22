@@ -241,7 +241,6 @@ format-page-numbers-show = Strani so oštevilčene
 
 ## About the format: where its requirements are from.
 
-format-source = Od kod so zahteve
 # The date the source was read on.
 format-source-read = Prebrano { $date }.
 format-source-high = Vrednosti so tiste iz vira.

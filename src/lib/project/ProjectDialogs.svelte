@@ -4,25 +4,17 @@
   an element (a copy compared, a kind, a kind of one's own, when it is, the
   kinds managed) is done in the project of the pane that has the focus;
   Document properties in the project it was asked for; the export of the
-  document of a side, whether the typesetting pane is open or not; and the
-  template editor, of which a template saved anew is copied afresh into the
-  project of the view where that carries it.
+  document of a side, whether the typesetting pane is open or not.
 -->
 <script lang="ts">
   import { onDestroy } from 'svelte';
-  import type { Template } from '$lib/api/templates';
   import AboutDocumentWindow from '$lib/document/AboutDocumentWindow.svelte';
   import { aboutDocumentUi } from '$lib/document/about-document.svelte';
-  import TemplateEditor from '$lib/document/TemplateEditor.svelte';
-  import { templateEditorUi } from '$lib/document/template-editor.svelte';
   import { ownKindsUi } from '$lib/editor/own-kinds.svelte';
-  import { t } from '$lib/i18n';
-  import { documents } from '$lib/preview/documents.svelte';
   import ExportDocument from '$lib/print/ExportDocument.svelte';
   import { exportUi } from '$lib/print/export.svelte';
   import WhenDialog from '$lib/timeline/WhenDialog.svelte';
   import { whenUi } from '$lib/timeline/when.svelte';
-  import { notifyError } from '$lib/ui/toast.svelte';
   import { comparing } from './copies.svelte';
   import CopyDialog from './CopyDialog.svelte';
   import KindDialog from './KindDialog.svelte';
@@ -46,21 +38,6 @@
 
   // The dialog is of the project that is open: it goes with the view.
   onDestroy(() => exportUi.close());
-
-  /**
-   * A template of the writer's own saved anew: where the project carries a
-   * copy of it, or an element has chosen it, the copy is made afresh (ADR
-   * 0038).
-   */
-  function templateSaved(id: string) {
-    if (!project || !documents.templateSummary(id)?.own) return;
-    if (!project.templateCopy(id) && !project.usesTemplate(id)) return;
-    const p = project;
-    documents
-      .templateOf(id)
-      .then((tp) => p.keepTemplate($state.snapshot(tp) as Template))
-      .catch((error) => notifyError(t('project-template-not-renewed'), error));
-  }
 </script>
 
 <!-- What is asked from the menu of an element is done in the project of the pane that has the focus. -->
@@ -119,23 +96,6 @@
       onclose={() => exportUi.close()}
     />
   {/key}
-{/if}
-
-{#if templateEditorUi.request}
-  {@const asked = templateEditorUi.request}
-  <TemplateEditor
-    id={asked.id}
-    fresh={asked.fresh}
-    copy={asked.copy}
-    onsaved={(id) => {
-      // Held before the editor goes: what it was asked for goes with it.
-      const given = asked.onsaved;
-      templateEditorUi.close();
-      given?.(id);
-      templateSaved(id);
-    }}
-    onclose={() => templateEditorUi.close()}
-  />
 {/if}
 
 {#if whenUi.element && focused}

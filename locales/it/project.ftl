@@ -83,8 +83,6 @@ project-badge-joined = { $name }, a cui partecipi
 # Two projects side by side.
 project-beside-failed = Il progetto non si è potuto aprire accanto a questo
 project-beside-no-comments = I commenti sono quelli del progetto che hai aperto: apri l'altro da solo per commentarvi
-# A template of the writer's own was saved anew, and the copy of it the project carries could not be made afresh.
-project-template-not-renewed = La copia del modello che il progetto tiene non si è potuta aggiornare
 # Said over the other pane while elements of one project are dragged over it.
 project-copy-to-project = Copia in «{ $name }»
 project-move-to-project = Sposta in «{ $name }»

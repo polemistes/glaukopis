@@ -241,7 +241,6 @@ format-page-numbers-show = Stranice su numerirane
 
 ## About the format: where its requirements are from.
 
-format-source = Odakle su zahtjevi
 # The date the source was read on.
 format-source-read = Pročitano { $date }.
 format-source-high = Vrijednosti su one iz izvora.

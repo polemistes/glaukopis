@@ -310,7 +310,6 @@ format-item-text = Eigne ord
 
 ## About the layout: where its requirements are from.
 
-format-source = Kvar krava kjem frå
 # The date the source was read on.
 format-source-read = Lesen { $date }.
 format-source-high = Verdiane er kjelda sine.

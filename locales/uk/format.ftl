@@ -241,7 +241,6 @@ format-page-numbers-show = Сторінки нумеруються
 
 ## About the format: where its requirements are from.
 
-format-source = Звідки вимоги
 # The date the source was read on.
 format-source-read = Прочитано { $date }.
 format-source-high = Значення — ті, що в джерелі вимог.

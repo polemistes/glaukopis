@@ -310,7 +310,6 @@ format-item-text = Mes propres mots
 
 ## About the layout: where its requirements are from.
 
-format-source = D’où viennent les exigences
 # The date the source was read on.
 format-source-read = Lu le { $date }.
 format-source-high = Les valeurs sont celles de la source.

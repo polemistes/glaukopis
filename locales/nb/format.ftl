@@ -304,7 +304,6 @@ format-item-text = Egne ord
 
 ## Om oppsettet: hvor kravene kommer fra.
 
-format-source = Hvor kravene kommer fra
 # Datoen kilden ble lest.
 format-source-read = Lest { $date }.
 format-source-high = Verdiene er kildens.

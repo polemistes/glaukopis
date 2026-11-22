@@ -44,78 +44,41 @@ template-target-epub = 電子書籍
 
 ## テンプレートのエディター。
 
-template-editor = テンプレート
-template-name = テンプレートの名前
 # 独自のテンプレートに最初に付く名前。もとにしたテンプレートの名前から作る。
 template-name-changed = { $name }（変更）
-# ほかのテンプレートから作った書き手の独自のテンプレート。名前を付ける前は、もとの名前で。
-template-name-own = { $name }（独自）
-template-sections = テンプレートの各部
-template-delete = このテンプレートを削除
-template-save-own = 独自のテンプレートとして保存
 template-saved = 「{ $name }」を独自のテンプレートに保存しました
-template-read-failed = テンプレートを読み込めませんでした。
 template-save-failed = テンプレートを保存できませんでした。
 template-delete-failed = テンプレートを削除できませんでした。
 template-keep-failed = テンプレートをプロジェクトに保存できませんでした。ほかのコンピューターやプロジェクトのファイルでは、文書は代わりに既定のテンプレートを使います。
 template-delete-title = テンプレート「{ $name }」を削除しますか？
 template-delete-message = このテンプレートを使っている要素は、代わりにもとにしたテンプレートを使います。
 template-delete-confirm = テンプレートを削除
-template-leave-title = 保存せずに閉じますか？
-template-leave-message = テンプレートに加えた変更は失われます。
-template-leave-confirm = 閉じる
-template-leave-cancel = 編集を続ける
 
 ## エディターの各部。左で選ぶ。
 
-template-section-about = このテンプレートについて
-template-section-looks = レイアウトと引用スタイル
-template-section-contents = 構成
-template-section-kinds = 要素の種類
-template-section-passage-kinds = 段落と語句の種類
-template-section-requirements = 要件
-template-section-outputs = ファイル
 
 ## テンプレートについて。
 
-template-description = 説明
-template-group = グループ
-template-based-on = もとにするもの
-template-based-on-none = 特になし
 
 ## テンプレートがもたらすレイアウトと引用スタイル。
 
-template-layout = レイアウト
-template-style = 引用スタイル
-# 書き手が設定で選んだレイアウトやスタイル。
-template-usual = 既定（設定で選んだもの）
 
 ## 構成：文書の順序。
 
-# 構成の項目のうち、ある種類のすべての要素を置くもの。
-template-contents-kind = すべての{ $name }
-template-contents-add-part = 部分…
-template-contents-add-kind = 要素の種類…
-template-contents-up = 上へ
-template-contents-down = 下へ
 
 ## 手元に出す種類。
 
-template-kinds-in-contents = 構成にある
 
 ## 要件。
 
 template-requirement-words = 本文の語数
 template-requirement-abstract-words = 要旨の語数
 template-requirement-keywords = キーワードの数
-template-requirement-note = 上限の数え方
 # 数が 0 のとき、単位の位置に出る。
 template-no-limit = 上限なし
 
 ## テンプレートが作るファイル。
 
-template-output-document = 文書
-template-output-cover = 表紙
 
 ## Glaukopisに付属のテキストの種類の名前。何を書くかの選択画面とプレビューの上の
 ## ボタンに出る。学術誌、出版社、スタイルガイドは自分の名前のまま。
@@ -142,6 +105,5 @@ template-called-news-article = ニュース記事
 template-requirement-anonymity = 匿名
 
 ## 設定、ズーム、種類のキー、第4段階：Ctrl+Alt と数字で選べる種類。
-template-kind-keys = キー
 
 template-described-plain = 汎用のテキスト。

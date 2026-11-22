@@ -310,7 +310,6 @@ format-item-text = 独自の文言
 
 ## レイアウトについて：その要件の出典。
 
-format-source = 要件の出典
 # 出典を参照した日付。
 format-source-read = { $date }に参照。
 format-source-high = 値は出典どおりです。
