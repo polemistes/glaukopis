@@ -26,3 +26,4 @@
 
 # What Tauri writes for the phone as it builds: schemas, and what a build leaves in the Android project.
 /src-phone/gen/schemas
+/packaging/android/out

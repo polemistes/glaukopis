@@ -103,6 +103,20 @@ writer's others (the core's `sync`), started with the windows: it is told of
 every change written (`touched`), and what another computer wrote goes to the
 windows as a change of another window does.
 
+**On a phone** (record 0121; the plan `docs/plans/an-app-for-android.md`) the
+same sources are a second package, `src-phone`, whose library is
+`src-tauri/src/lib.rs`: built for Android alone, empty where it is built for
+anything else, so that a build for a computer makes nothing for it. Its role
+is `src-tauri/src/phone.rs` (for now the window of a note); what is a
+computer's alone stands behind `cfg(desktop)`. Its dependencies are those of
+`src-tauri/Cargo.toml` without what is a computer's: keep them the same. The
+Android project, `src-phone/gen/android`, is kept in git: the manifest, the
+activity that keeps the page clear of the system's bars and the keyboard, the
+icon. Source `packaging/android/env.sh` for a build (Rust's own toolchain in
+`~/.rustup`, the SDK, the NDK), and run Tauri's tool from `src-phone` by its
+place, `../node_modules/.bin/tauri android build …`, never through pnpm,
+which starts it where it takes `src-tauri` for the application.
+
 ### The rest
 
 - `locales/<tag>/<part>.ftl`: every word the user sees, in Fluent; English is
@@ -116,9 +130,17 @@ windows as a change of another window does.
 - `e2e/`: scripts that drive the real application off-screen; `harness.mjs`
   is the client, `run.mjs` runs them. The first comment of each script says
   what it covers.
+- `e2e/android/`: the app on an emulator without a window (`emulator.sh`, a
+  new Android and the oldest the app runs on, each a capped unit on a port
+  of its own; never beside another capped unit): `device.mjs` reaches the
+  system by `adb` and the page by the web view's door for debugging,
+  `gboard.mjs` types on the real keyboard key by key. A script names its
+  device (`ANDROID_SERIAL`), and never reaches a phone that is plugged in.
 - `scripts/`: checks of the locales and templates, the language packages, the
   Norwegian dictionaries, the CSL update.
-- `packaging/`: `arch/` (PKGBUILD, and `release/` for the tagged one),
+- `packaging/`: `android/` (what a build for Android needs of the machine,
+  `env.sh`; the owl set for a launcher, `make-icon.py`; `out/`, not in git,
+  for an app built to be tried), `arch/` (PKGBUILD, and `release/` for the tagged one),
   `linux/` (the desktop file, the command `glaukopis-note`, and the file that
   tells Firefox of the helper, which the packages put in the system's
   place), `server/`, `web/`, `release-x.y.z/` (the website folder of a

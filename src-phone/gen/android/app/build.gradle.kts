@@ -20,7 +20,10 @@ android {
     defaultConfig {
         manifestPlaceholders["usesCleartextTraffic"] = "false"
         applicationId = "org.glaukopis.app"
-        minSdk = 24
+        // Android 8.0. Tauri's part for Android says 7.0, and does not start
+        // there: its JSON library (Jackson 2.15) asks for a class of Java
+        // that Android has from 8.0 (found on the emulator, 2026-11-22).
+        minSdk = 26
         targetSdk = 37
         versionCode = tauriProperties.getProperty("tauri.android.versionCode", "1").toInt()
         versionName = tauriProperties.getProperty("tauri.android.versionName", "1.0")
@@ -31,12 +34,10 @@ android {
             isDebuggable = true
             isJniDebuggable = true
             isMinifyEnabled = false
-            packaging {
-                jniLibs.keepDebugSymbols.add("*/arm64-v8a/*.so")
-                jniLibs.keepDebugSymbols.add("*/armeabi-v7a/*.so")
-                jniLibs.keepDebugSymbols.add("*/x86/*.so")
-                jniLibs.keepDebugSymbols.add("*/x86_64/*.so")
-            }
+            // The library comes without its debugging symbols, taken out
+            // when it is linked (`packaging/android/env.sh`): with them the
+            // app was over a gigabyte, and would not go onto an old device
+            // at all. Nothing here is debugged from Android Studio.
         }
         getByName("release") {
             optimization {

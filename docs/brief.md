@@ -2026,3 +2026,12 @@ synchronization; which phone the owner has):
   that to mean Android 7 and later, both kinds of ARM processor, and a web
   view of version 111 or later, which the owner has not confirmed.
 - **The owner's phone** is a Samsung Galaxy S22 Ultra with Android 16.
+
+And, of the trial that the plan puts before all building:
+
+> Start it.
+
+Done on the same day: record 0121 says what was found. Glaukopis runs on
+Android as the window of a note; the editor holds under Google's keyboard;
+nothing made with Tauri starts on Android 7, so the oldest is 8. Samsung's
+keyboard is the owner's phone's to answer.

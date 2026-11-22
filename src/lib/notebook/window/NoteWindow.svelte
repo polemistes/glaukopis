@@ -546,6 +546,21 @@
       flex-wrap: wrap;
       row-gap: 4px;
     }
+    /* The whole field takes the finger, not the lines written alone: the
+       web view of a phone gives a height in hundredths no meaning here,
+       and a tap under the last line met nothing. */
+    .field {
+      display: flex;
+      flex-direction: column;
+    }
+    .field :global(.rich-text) {
+      flex: 1 0 auto;
+      display: flex;
+      flex-direction: column;
+    }
+    .field :global(.ProseMirror) {
+      flex: 1 0 auto;
+    }
   }
   .between {
     width: 8px;

@@ -17,12 +17,12 @@ export PATH="$RUSTUP_HOME/shims/bin:$ANDROID_HOME/platform-tools:$PATH"
 
 # The C compilers of the NDK, for what is compiled from C (SQLite, ring),
 # and the linkers, where cargo is run without Tauri, which sets them itself.
-# 24 is Android 7.0, the least the app is built for.
+# 26 is Android 8.0, the least the app is built for.
 ndk_bin="$NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin"
-export CC_aarch64_linux_android="$ndk_bin/aarch64-linux-android24-clang"
-export CC_armv7_linux_androideabi="$ndk_bin/armv7a-linux-androideabi24-clang"
-export CC_x86_64_linux_android="$ndk_bin/x86_64-linux-android24-clang"
-export CC_i686_linux_android="$ndk_bin/i686-linux-android24-clang"
+export CC_aarch64_linux_android="$ndk_bin/aarch64-linux-android26-clang"
+export CC_armv7_linux_androideabi="$ndk_bin/armv7a-linux-androideabi26-clang"
+export CC_x86_64_linux_android="$ndk_bin/x86_64-linux-android26-clang"
+export CC_i686_linux_android="$ndk_bin/i686-linux-android26-clang"
 export AR_aarch64_linux_android="$ndk_bin/llvm-ar"
 export AR_armv7_linux_androideabi="$ndk_bin/llvm-ar"
 export AR_x86_64_linux_android="$ndk_bin/llvm-ar"
@@ -32,3 +32,7 @@ export CARGO_TARGET_ARMV7_LINUX_ANDROIDEABI_LINKER="$CC_armv7_linux_androideabi"
 export CARGO_TARGET_X86_64_LINUX_ANDROID_LINKER="$CC_x86_64_linux_android"
 export CARGO_TARGET_I686_LINUX_ANDROID_LINKER="$CC_i686_linux_android"
 unset ndk_bin
+
+# A library built for trying comes without its debugging symbols: with them
+# it is over a gigabyte, the app as much, and an old device does not take it.
+export CARGO_PROFILE_DEV_STRIP=debuginfo

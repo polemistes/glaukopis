@@ -24,6 +24,6 @@
       "../src-tauri/icons/128x128.png",
       "../src-tauri/icons/128x128@2x.png"
     ],
-    "android": { "minSdkVersion": 24 }
+    "android": { "minSdkVersion": 26 }
   }
 }

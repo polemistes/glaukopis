@@ -1,6 +1,6 @@
 # An app for Android — the build plan
 
-From the owner's words of 2026-11-22 (the last section of `docs/brief.md`: read it first, and the section of 2026-11-15 on the notebook, where the phone was left out). Nothing is built, and there is no record yet: the first is written with stage 0. Each stage is given its detailed part here (the files, the words, the checks) when it is begun, after the code it touches has been read.
+From the owner's words of 2026-11-22 (the last section of `docs/brief.md`: read it first, and the section of 2026-11-15 on the notebook, where the phone was left out). **Stage 0, the trial, was done on 2026-11-22** (record 0121, which says what was found): Glaukopis is built for Android and runs there as the window of a note, and this plan is corrected by it where it says so. The app itself is not built. Each stage is given its detailed part here (the files, the words, the checks) when it is begun, after the code it touches has been read.
 
 ## What it is
 
@@ -36,7 +36,7 @@ The assistant's answer to "What do you think", so that it can be disagreed with.
 Agreed on 2026-11-22, when the plan had been read:
 
 6. **A phone holds the notebook, the files its notes hold, and the references without their files.** Not the projects, until maps come, and then those that are opened; not the files of the library; not the settings, the styles, the formats, the templates or the words. The rule of the synchronization was that nothing is chosen; this chooses for a phone, because a library's files may be ten gigabytes.
-7. **Two dependencies, for Android only**; the computers stay as they are. The network client reads TLS with `rustls`, trusting what the phone trusts, since Android has no OpenSSL. And WorkManager, a library of AndroidX, by which Android runs a piece of work when there is a network: what was collected is sent with the app closed.
+7. **Two dependencies, for Android only**; the computers stay as they are. The network client reads TLS with `rustls`, since Android has no OpenSSL. (It was proposed as trusting what the phone trusts. The trial found that the computers trust Mozilla's list of authorities as it is compiled in, and the phone does the same.) And WorkManager, a library of AndroidX, by which Android runs a piece of work when there is a network: what was collected is sent with the app closed.
 8. **A *device*, not a *computer***, in the words of the synchronization, on the computers as on the phone: Bokmål *enhet*. The list of the home, *Add a device…*, *Name of this device*.
 9. **It works on any Android phone that people still use.** What that is taken to mean is in *Any phone that people still use*.
 10. **The owner's phone** is a Samsung Galaxy S22 Ultra with Android 16: what the app is tried on by hand.
@@ -57,7 +57,7 @@ To be told of again when it is built, with the other choices that await the owne
 10. **The app is called *Glaukopis*.**
 11. **No app for iPhone**: Apple asks a yearly fee. Nothing here stands in its way later.
 12. **In the code the part is `phone`** (`src/lib/phone/`, `src-tauri/src/phone.rs`, `locales/*/phone.ftl`).
-13. **"Still use" is taken to mean** Android 7 and later, both kinds of ARM processor, and a web view of version 111 or later: see *Any phone that people still use*.
+13. **"Still use" is taken to mean** Android 8 and later (the trial found that nothing made with Tauri starts on 7), both kinds of ARM processor, and a web view of version 111 or later: see *Any phone that people still use*.
 
 ## What stands in the code today
 
@@ -78,11 +78,11 @@ Read on 2026-11-22.
 
 ### The application in another role
 
-- **The shell.** The library of `src-tauri` is given the crate types Android asks for, and a role of its own in `src-tauri/src/phone.rs`: one window labelled `phone`, the data folder in the app's own place (`DataDir::at`), the engine, and only the commands the phone's page calls (the notebook's, the synchronization's, the languages, the settings, the log of the page). What is a desktop's alone stands behind `cfg(desktop)`: the single instance, windows made and placed, printing, the clipboard through GTK, the window of a note, Firefox. `lib.rs` is divided by role as this is done, not added to.
+- **The shell.** The sources of `src-tauri` are a second package, `src-phone`, built for Android alone and empty elsewhere, so that a build for a computer makes nothing for the phone (record 0121). The phone has a role of its own in `src-tauri/src/phone.rs`: one window labelled `phone`, the data folder in the app's own place (`DataDir::at`), the engine, and only the commands the phone's page calls (the notebook's, the synchronization's, the languages, the settings, the log of the page). What is a desktop's alone stands behind `cfg(desktop)`: the single instance, windows made and placed, printing, the clipboard through GTK, the window of a note, Firefox. `lib.rs` is divided by role as this is done, not added to.
 - **The same role on a computer**, `glaukopis --phone`, for trying only: a window as narrow as a phone, the phone's commands, the phone's page. It is in no launcher and not in the guide. Through it the harness that is there reaches nearly all of the phone's page.
-- **The Android project** (`src-tauri/gen/android`) is made by `tauri android init` and committed, without what a build leaves in it: the manifest and the Kotlin of this plan live there.
+- **The Android project** (`src-phone/gen/android`) was made by `tauri android init` and is committed, without what a build leaves in it: the manifest and the Kotlin of this plan live there. Tauri's tool is run from `src-phone` by its own place, never through pnpm, which starts it where it takes the application of the computers for the one to build.
 - **The page.** `src/main.ts` mounts `src/lib/phone/mount.ts` where the window is labelled `phone`, as it mounts the window of a note: nothing of the projects, the diagram or the typesetting is loaded. Vite is told of the web view of Android beside `safari15`.
-- **The core for Android.** TLS by `rustls`, as decided. Whether typesetting is left out of the phone's build behind a feature of the core is decided by measure in stage 0: it is never called there, and what it adds to the file is weighed against a core in two shapes. The reading of text stays in (see *Text read on the phone*).
+- **The core for Android.** TLS by `rustls`, as decided. Nothing is left out of the core for the phone: the trial found that the linker leaves out what the phone's role never calls, typesetting among it, and the app is 22 MB for one kind of processor.
 
 ### A phone among the writer's computers
 
@@ -139,23 +139,23 @@ One column, three places: the notes, a note, the settings. Each is a step of the
 
 ### Any phone that people still use
 
-The owner's word (2026-11-22). By Google's count of 1 October 2026, Android 7.0 or later is on 994 of 1000 devices in use, and Android 10 or later on 939; Android 7, 8 and 9 together are on about 55.
+The owner's word (2026-11-22). By Google's count of 1 October 2026, Android 8.0 or later is on 990 of 1000 devices in use, and Android 10 or later on 939.
 
 | What decides it | What is done |
 | --- | --- |
-| The version of Android | Android 7.0 (2016) and later, which is as far back as Tauri goes. |
-| The web view | The page runs in the system's web view, and an old Android is left with an old one: Android 7 with version 119, Android 8 and 9 with 138, Android 10 and later with the newest (Chrome's numbers; that the web view's are the same is confirmed in stage 0). Of what the page uses, the newest came with version 111: colours mixed in CSS, in 77 places; `:has`, highlights and containers came with 105 (counted in the source). So every one of them will do, where it has been kept up. The app looks at the web view's version when it starts; where it is older than 111 it says so in plain words, and how it is brought up to date. |
-| The processor | Both kinds of ARM: 64 bits, and the 32 bits that cheap phones were sold with until a few years ago. The core has never been built for 32 bits: stage 0 builds it, and runs its tests once as a 32-bit program. |
+| The version of Android | Android 8.0 (2017) and later. Tauri says 7.0 and does not start there: found in the trial, on the emulator. |
+| The web view | The page runs in the system's web view, and an old Android is left with an old one: Android 7 with version 119, Android 8 and 9 with 138, Android 10 and later with the newest (Chrome's numbers; that the web view's are the same is confirmed in stage 0). Of what the page uses, the newest came with version 111: colours mixed in CSS, in 77 places; `:has`, highlights and containers came with 105 (counted in the source). So every one of them will do, where it has been kept up. The app looks at the web view's version when it starts; where it is older than 111, or there is none, it says so in plain words, and how it is brought up to date. That is said by the Android part before the page is shown: the page does not run on a web view that old. |
+| The processor | Both kinds of ARM: 64 bits, and the 32 bits that cheap phones were sold with until a few years ago. Done in the trial: the core builds for both, and its tests pass as a 32-bit program on an emulator but for those that ask for files of the machine they were built on. |
 | The screen | From 320 points wide, the smallest phones, upwards; the scripts run the page at 320 and at 412. The letters follow the size the system is set to. |
 | The keyboard | Samsung's (the owner's phone), Google's (the emulator) and Microsoft's: the editor is tried under each. |
 | Phones without Google | The app asks nothing of Google's services, so it runs on a Huawei, and on LineageOS, GrapheneOS and /e/. |
-| The newest Android | What Android 15 and 16 ask of every app: the page drawn behind the system's bars and keeping clear of them, the gesture for Back, and native libraries laid out for memory pages of 16 KB. |
+| The newest Android | What Android 15 and 16 ask of every app. The page is drawn behind the system's bars, and the Android part keeps it clear of them and of the keyboard; the native library is laid out for memory pages of 16 KB (both done in the trial). The gesture for Back is the page's history's, with stage 2. |
 
-How the oldest web views are tried is found out in stage 0. A tablet shows the phone's page; a wider one is left for later.
+The oldest web views kept up (119 no longer counts; 138 on Android 8 and 9) could not be tried: the emulators' images come with the web view of their day. It waits for a real old phone. A tablet shows the phone's page; a wider one is left for later.
 
 ### Given out
 
-- One file for both kinds of ARM, built by `tauri android build` in a capped unit, and by a job of the Installers workflow when the owner asks for one.
+- One file for both kinds of ARM (some 22 MB for each kind), built by `tauri android build` in a capped unit, and by a job of the Installers workflow when the owner asks for one.
 - **Signed with a key the owner makes and keeps**, outside the repository. An app signed with another key is not an update of the first, and the name `org.glaukopis.app` cannot be changed either: both are for good.
 - On the website's page of packages and with the release on GitHub. `version.json` tells the app of a newer one.
 - **F-Droid** later: it costs nothing and the licence fits; it builds from the source itself, which asks for a recipe of its own.
@@ -197,8 +197,8 @@ What it takes:
 
 Each is committed when it is checked. Stages 0 to 4 are the app the owner asked for; the rest come later, each with a plan of its own.
 
-0. **The trial.** The Rust targets for Android; TLS; the shell built for Android with one window that holds the editor of the texts and keeps a note. On the emulator and on the owner's phone. It answers: whether the core builds, for 64 bits and for 32, and whether its tests pass as a 32-bit program; how large the file is, and so whether typesetting is left out; **whether the editor holds under a phone's keyboard**, Samsung's on the owner's phone and Google's on the emulator (typing with suggestions, Enter, Backspace over marks, lists, selecting, pasting); whether the page keeps clear of the system's bars and follows Back on Android 16; how the oldest web views are tried; whether a share arrives; whether the camera opens; whether the harness reaches the emulator; how long a build takes and what it leaves on the disk. Should the editor not hold, the plan stops here and is told: the way left is notes written in a plain field and shown as they are, which is a lesser app and the owner's to choose. Ends with the record, and this plan corrected by what was found.
-1. **The role, and what a phone takes.** The shell divided by role, `glaukopis --phone`, the phone's data folder, backup off; the engine told what a device takes, with its tests against the server.
+0. **The trial. Done on 2026-11-22: record 0121.** The editor holds under Google's keyboard; Samsung's is the owner's phone's to answer, with the app built for it. As it was planned: The Rust targets for Android; TLS; the shell built for Android with one window that holds the editor of the texts and keeps a note. On the emulator and on the owner's phone. It answers: whether the core builds, for 64 bits and for 32, and whether its tests pass as a 32-bit program; how large the file is, and so whether typesetting is left out; **whether the editor holds under a phone's keyboard**, Samsung's on the owner's phone and Google's on the emulator (typing with suggestions, Enter, Backspace over marks, lists, selecting, pasting); whether the page keeps clear of the system's bars and follows Back on Android 16; how the oldest web views are tried; whether a share arrives; whether the camera opens; whether the harness reaches the emulator; how long a build takes and what it leaves on the disk. Should the editor not hold, the plan stops here and is told: the way left is notes written in a plain field and shown as they are, which is a lesser app and the owner's to choose. Ends with the record, and this plan corrected by what was found.
+1. **The role, and what a phone takes.** The shell divided by role, `glaukopis --phone`; a web view too old said by the Android part; the engine told what a device takes, with its tests against the server. (The phone's data folder and the backup turned off were done in the trial.)
 2. **The notes shown, found and written; the synchronization set up.** The page of the phone. *Device* for *computer* in the words of the synchronization, on the computers too, with an addendum to its record. From here the owner has an app to use: a note written on the phone is on the computer.
 3. **Collecting.** Share, the selection's menu, the photograph, pictures and files, *New note* on the icon; sent when closed.
 4. **Given out.** The signed file, the job of the workflow, the newer version told, the website's folder, the chapter of the guide, the other languages in a round.
