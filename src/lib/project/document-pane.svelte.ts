@@ -19,6 +19,7 @@ import { commentsUi } from '$lib/comments/ui.svelte';
 import { foundUi } from '$lib/found/found.svelte';
 import type { Looking } from '$lib/history/looking';
 import { picturesUi, type PictureScope } from '$lib/figures/images.svelte';
+import { reviewAsk } from '$lib/review/asked.svelte';
 import { Review } from '$lib/review/review.svelte';
 import { sourceFor } from '$lib/review/source';
 import type { MapMode } from '$lib/state/router.svelte';
@@ -151,6 +152,28 @@ export class DocumentPane {
       untrack(() => {
         if (this.#brought >= 0 && shown !== this.#brought) host.toText(r.at);
         this.#brought = shown;
+      });
+    });
+
+    // A review asked for from elsewhere, of a project from a moment given
+    // (`review/asked`): the tab of changes is opened once a side of that
+    // project is the active one, and its review is given the moment. It
+    // depends on what is asked, the active side's project and the review;
+    // what is asked is taken once it is answered.
+    $effect(() => {
+      const asked = reviewAsk.asked;
+      if (!asked) return;
+      const id = host.id;
+      const review = this.review;
+      untrack(() => {
+        if (id !== asked.project) return;
+        if (!review) {
+          this.toggleReview(true);
+          return;
+        }
+        reviewAsk.asked = null;
+        review.setOwn(asked.own);
+        review.choose(asked.choice);
       });
     });
 

@@ -18,12 +18,13 @@ const { flushSync } = await import('svelte');
 const { DocumentPane } = await import('./document-pane.svelte');
 const { arrivals, arrive } = await import('./pane-adding.svelte');
 const { panes } = await import('./panes.svelte');
+const { reviewAsk } = await import('$lib/review/asked.svelte');
 
-/** A pane of a window with no side shown, following. */
-function following() {
+/** A pane of a window with no side shown, or one of the project given, following. */
+function following(id = '') {
   const pane = new DocumentPane({
     key: undefined,
-    id: '',
+    id,
     project: () => null,
     ownPane: () => undefined,
     holding: (element) => element,
@@ -36,6 +37,7 @@ function following() {
 
 afterEach(() => {
   arrivals.waiting = null;
+  reviewAsk.asked = null;
   panes.document = false;
   panes.tab = 'references';
 });
@@ -80,6 +82,30 @@ describe('the document pane', () => {
     panes.showTab('comments');
     flushSync();
     expect(panes.tab).toBe('comments');
+    stop();
+  });
+
+  it('opens the tab of changes for a review asked for from elsewhere, once the project asked for is the active one', () => {
+    const asked = {
+      project: 'p1',
+      choice: {
+        moment: { snapshot: new Uint8Array(), time: 0 },
+        kind: 'named' as const,
+        name: 'then',
+      },
+      own: true,
+    };
+    const other = following('p2');
+    reviewAsk.ask(asked);
+    flushSync();
+    expect(panes.document).toBe(false);
+    other.stop();
+    const { stop } = following('p1');
+    flushSync();
+    expect(panes.document).toBe(true);
+    expect(panes.tab).toBe('changes');
+    // Until the review is there to be given the moment, what was asked waits.
+    expect(reviewAsk.asked).toBe(asked);
     stop();
   });
 });
