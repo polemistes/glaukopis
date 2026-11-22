@@ -363,13 +363,17 @@
 
   // ---- the changes of the document, and its type ----
 
-  /** What the document sets otherwise than its type: the count at the top of the panel. */
-  const documentChanges = $derived(changesOf(project, at));
+  /**
+   * What the document sets otherwise than its type, where the changes hold:
+   * the count at the top of the panel. A type made of the document takes in
+   * the document's own, those of its element and those over it.
+   */
+  const documentChanges = $derived(changesOf(project, target));
 
   /** Takes every change of the document away, of the look and of what is required. */
   function reset() {
     if (pending) write();
-    resetDocument(project, at);
+    resetDocument(project, target);
   }
 
   /** Whether the type is the writer's own, and the application has it: what is set can go into it. */
@@ -413,7 +417,7 @@
   // document carries no changes of its own.
   $effect(() => {
     if (!editingType) return;
-    const c = documentChanges;
+    const c = changesOf(project, at);
     if (!c.look && !c.requirements && !c.chosen) return;
     const timer = setTimeout(() => void saveType(null), 250);
     return () => clearTimeout(timer);

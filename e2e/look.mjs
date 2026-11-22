@@ -1,12 +1,12 @@
 // The look of a document, in one place (ADR 0042). The Look button in the
 // head of the typesetting pane opens Look as a column beside the pages
 // (record 0064): what the document is, with a plain button that opens it in
-// Document properties, and the layout in a line stand at its top. A setting is found by its
+// Document properties, and the line of the document's changes stand at its top. A setting is found by its
 // words; the font changed there is the document's change, said under its
-// row and in the line at the top, and is in the Typst of the preview; the
-// layout's is taken again from the row. The foot of the kind menu opens
-// Look at the kind the cursor is in; a change there is kept as a layout of
-// the writer's own, which the document then uses with no changes. A change
+// row and in the line at the top, and is in the Typst of the preview; Reset
+// on the row takes it away. The foot of the kind menu opens Look at the
+// kind the cursor is in; a change there is saved as a document type of the
+// writer's own, which the document then has with no changes. A change
 // made on the project is said in an element under it as made there. The
 // document settings send to Look, and the palette changes the font.
 
@@ -91,8 +91,11 @@ try {
   await sleep(500);
   let top = await app.lookTop();
   check(
-    'Look opens from its button in the head of the typesetting pane, with what the document is at its top and the layout in a line',
-    top.what === 'Plain document' && top.layout === 'Layout: Manuscript' && top.changes === 0,
+    'Look opens from its button in the head of the typesetting pane, with what the document is at its top, no changes, and Save as document type…',
+    top.what === 'Plain document' && top.line === '' && top.changes === 0 &&
+      (await app.exists('.side .look .whole [data-save-as]')) &&
+      !(await app.exists('.side .look .whole [data-save-to]')) &&
+      !(await app.exists('.side .look .whole [data-reset]')),
     JSON.stringify(top),
   );
   check(
@@ -137,9 +140,9 @@ try {
      return Array.from(through.children).map((e) => e.dataset.part ?? (e.matches('.whole') ? 'whole' : e.matches('.search') ? 'search' : e.matches('.first') ? 'first' : e.matches('.chips') ? 'chips' : e.tagName.toLowerCase()));`,
   );
   check(
-    'then the search, the first rows, the chips, and the parts from the page inwards, with what the document contains and the layout last',
+    'then the search, the first rows, the chips, and the parts from the page inwards, with the parts and the document type last',
     JSON.stringify(order.filter((o) => o !== 'p')) ===
-      JSON.stringify(['whole', 'search', 'first', 'chips', 'page', 'type', 'paragraphs', 'headings', 'numbers', 'notes', 'figures', 'front', 'contents', 'layout']),
+      JSON.stringify(['whole', 'search', 'first', 'chips', 'page', 'type', 'paragraphs', 'headings', 'numbers', 'notes', 'figures', 'front', 'contents', 'document-type']),
     order.join(' '),
   );
   const first = await app.exec(
@@ -152,11 +155,16 @@ try {
     first.join(' | '),
   );
   check(
-    'the layout and the reference style are chosen in Look, the style under the notes',
-    (await app.lookChosen('Choose a layout')) === '' &&
+    'where the look is taken from and the reference style are chosen in Look, the style under the notes, the look under Document type',
+    (await app.lookChosen('Look taken from')) === '' &&
       (await app.lookChosen('Reference style')) === '' &&
       (await app.exists('.side .look .part[data-part="notes"] [data-style-row]')) &&
-      (await app.exists('.side .look .part[data-part="layout"] select')),
+      (await app.exists('.side .look .part[data-part="document-type"] select[data-taken-from]')),
+  );
+  check(
+    'the first choice of the look names it with where it is from',
+    (await app.exec(`return document.querySelector('.side .look select[data-taken-from] option')?.textContent.trim()`)) === 'Manuscript, your default',
+    await app.exec(`return document.querySelector('.side .look select[data-taken-from] option')?.textContent.trim()`),
   );
   await app.screenshot('look-1-panel');
 
@@ -169,9 +177,13 @@ try {
   check('the search finds the font by its words', found.includes('Font') && found.length <= 3, found.join(' | '));
   await app.lookChoose('Font', 'Gentium Plus');
   await sleep(800);
-  check('the font changed says it is changed here', /^Changed here · take Manuscript’s again$/.test((await fromOf('Font')) ?? ''), await fromOf('Font'));
+  check('the font changed says it is changed in this document', /^Changed in this document · Reset$/.test((await fromOf('Font')) ?? ''), await fromOf('Font'));
   top = await app.lookTop();
-  check('and the line of the layout counts the change', top.layout === 'Layout: Manuscript · 1 change' && top.changes === 1, top.layout);
+  check(
+    'and the line at the top counts the change, with Reset',
+    top.line === '1 change in this document' && top.changes === 1 && (await app.exists('.side .look .whole [data-reset]')),
+    top.line,
+  );
   check('the preview is made in that font', await typstHas(/Gentium Plus/));
   await app.screenshot('look-2-from');
   await app.exec(
@@ -181,9 +193,9 @@ try {
   await sleep(800);
   top = await app.lookTop();
   check(
-    'taking the layout’s again leaves no change, and the font is the layout’s',
+    'Reset on the row leaves no change, and the font is the type’s',
     top.changes === 0 && (await fromOf('Font')) === null && (await typstHas(/Gentium Plus/, false)),
-    top.layout,
+    top.line,
   );
 
   // --- The foot of the kind menu opens Look at the kind ---
@@ -218,10 +230,10 @@ try {
   await sleep(800);
   check(
     'a change of a kind is said in its look',
-    await app.exec(`return document.querySelector('.side .look details[data-kind="quote"]').hasAttribute('data-changed') && /Changed here/.test(document.querySelector('.side .look details[data-kind="quote"] .from')?.textContent ?? '')`),
+    await app.exec(`return document.querySelector('.side .look details[data-kind="quote"]').hasAttribute('data-changed') && /Changed in this document/.test(document.querySelector('.side .look details[data-kind="quote"] .from')?.textContent ?? '')`),
   );
   top = await app.lookTop();
-  check('and counted in the line of the layout', top.changes === 1, top.layout);
+  check('and counted in the line at the top', top.changes === 1, top.line);
   check(
     'and the preview sets the quotation so',
     await typstHas(/#show quote\.where\(block: true\): it => \{\s*set text\([^)]*style: "italic"/),
@@ -269,28 +281,35 @@ try {
   await sleep(1500);
   await app.screenshot('look-3-kinds');
 
-  // --- Kept as a layout of one's own ---
-  await app.lookSection('Layout');
-  await app.clickText('.side .look .keep button', 'Keep these changes as a layout of my own');
-  await app.waitFor('.side .look .keep input.kept-name', 3000);
-  await app.exec(
-    `const i = document.querySelector('.side .look .keep input.kept-name'); i.value = 'Mine'; i.dispatchEvent(new Event('input', { bubbles: true }));`,
-  );
-  await app.clickText('.side .look .keep button', 'Keep');
-  await app.waitUntil(`return document.querySelector('.side .look .layout-line')?.textContent.replace(/\\s+/g, ' ').trim() === 'Layout: Mine'`, 10000, 'the layout kept').catch(() => {});
-  top = await app.lookTop();
-  const mine = join(app.dataDir, 'formats', 'mine.json');
-  const kept = existsSync(mine) ? JSON.parse(readFileSync(mine, 'utf8')) : null;
+  // --- Saved as a document type of one's own ---
+  await app.click('.side .look .whole [data-save-as]');
+  await app.waitFor('.side .look .whole input.type-name', 3000);
   check(
-    'the changes are kept as a layout of one’s own, based on the layout',
-    kept?.kinds?.quote?.italic === true && kept?.basedOn === 'manuscript' && kept?.kind === 'own',
-    JSON.stringify(kept?.kinds?.quote),
+    'Save as document type… asks a name, first the type’s with “changed”',
+    (await app.exec(`return document.querySelector('.side .look .whole input.type-name').value`)) === 'Plain document, changed',
   );
-  check('which the document uses, with no changes of its own', top.layout === 'Layout: Mine' && top.changes === 0, top.layout);
-  check('Look still names only what the document is', (await app.whatIs()) === 'Plain document', await app.whatIs());
-  // The line names the layout a moment before the layout itself has been read, and only then is it known to be one's own.
-  await app.waitFor('.side .look .keep button:nth-child(2)', 3000).catch(() => {});
-  check('a layout of one’s own offers to take changes into itself', await app.exists('.side .look .keep button:nth-child(2)'));
+  await app.exec(
+    `const i = document.querySelector('.side .look .whole input.type-name'); i.value = 'Mine'; i.dispatchEvent(new Event('input', { bubbles: true }));`,
+  );
+  await app.clickText('.side .look .whole .naming button', 'Save');
+  await app.waitUntil(`return document.querySelector('.side .look .whole .type-line .name')?.textContent.trim() === 'Mine'`, 10000, 'the type saved').catch(() => {});
+  await sleep(500);
+  top = await app.lookTop();
+  const mineType = join(app.dataDir, 'templates', 'mine.json');
+  const keptType = existsSync(mineType) ? JSON.parse(readFileSync(mineType, 'utf8')) : null;
+  const pagesOf = keptType?.layout ? join(app.dataDir, 'formats', `${keptType.layout}.json`) : '';
+  const kept = pagesOf && existsSync(pagesOf) ? JSON.parse(readFileSync(pagesOf, 'utf8')) : null;
+  check(
+    'the changes are saved in a document type of one’s own, made from the plain document, its pages based on the look it had',
+    keptType?.group === 'own' && keptType?.basedOn === 'plain' &&
+      kept?.kinds?.quote?.italic === true && kept?.basedOn === 'manuscript' && kept?.kind === 'own',
+    JSON.stringify({ type: keptType?.layout, quote: kept?.kinds?.quote }),
+  );
+  check('which the document has, with no changes of its own', top.what === 'Mine' && top.changes === 0, JSON.stringify(top));
+  check('Look names it as what the document is', (await app.whatIs()) === 'Mine', await app.whatIs());
+  // The type is known to be one's own once the list of types has been read again.
+  await app.waitFor('.side .look .whole [data-save-to]', 5000).catch(() => {});
+  check('a type of one’s own offers to take changes into itself', (await app.text('.side .look .whole [data-save-to]').catch(() => '')).trim() === 'Save to “Mine”');
   await app.screenshot('look-4-kept');
 
   // --- The header and the footer are places, and a chapter may begin on a right-hand page ---
@@ -349,7 +368,7 @@ try {
   await app.lookSection('Type');
   await app.lookWrite('Size', '13');
   await sleep(800);
-  check('a change on the project is said as made here', /^Changed here/.test((await fromOf('Size')) ?? ''), await fromOf('Size'));
+  check('a change on the project is said as made in this document', /^Changed in this document/.test((await fromOf('Size')) ?? ''), await fromOf('Size'));
   await app.click(book);
   await sleep(300);
   await app.keys(['Alt', 'Shift', 'ArrowDown']);
@@ -357,20 +376,19 @@ try {
   await app.openLook('Type');
   check(
     'and in an element under it, as made in the project',
-    (await fromOf('Size')) === 'Changed in “Odyssey” · take Mine’s again',
+    (await fromOf('Size')) === 'Changed in “Odyssey” · Reset',
     await fromOf('Size'),
   );
   await app.screenshot('look-5-inherited');
 
-  // --- The foot of Look opens what the document says of itself ---
-  await app.lookSection('Layout');
-  await app.clickText('.side .look .actions.about button', 'Document properties…');
+  // --- The top of Look opens what the document says of itself ---
+  await app.click('.side .look .whole [data-document-type]');
   await app.waitForText('dialog[open] h2', 'Document properties', 5000);
   const about = await app.exec(
     `return Array.from(document.querySelectorAll('dialog[open] .window nav button')).map((b) => b.textContent.trim())`,
   );
   check(
-    'the foot of Look opens Document properties, with its details, its type, its language and its checklist',
+    'Document type… at the top of Look opens Document properties, with its details, its type, its language and its checklist',
     JSON.stringify(about) === JSON.stringify(['Details', 'Document type', 'Language', 'Checklist']),
     about.join(' | '),
   );
@@ -391,7 +409,7 @@ try {
     (await app.exec(`return document.querySelector('.side .look .chips button.current')?.dataset.section`)) === 'type',
   );
 
-  // --- The chips go to their parts; the line of the layout goes to the layout ---
+  // --- The chips go to their parts, the document type last ---
   await app.lookSection('Notes and citations');
   const notes = await app.exec(
     `const f = document.querySelector('.side .look .through');
@@ -400,13 +418,10 @@ try {
               near: Math.round(p.getBoundingClientRect().top - f.getBoundingClientRect().top - f.querySelector('.chips').offsetHeight) };`,
   );
   check('a chip brings its part to the top, under the chips, and is marked', notes.chip === 'notes' && Math.abs(notes.near) < 40, JSON.stringify(notes));
-  await app.exec(`document.querySelector('.side .look .through').scrollTop = 0;`);
-  await sleep(300);
-  await app.click('.side .look .layout-line');
-  await sleep(500);
+  await app.lookSection('Document type');
   check(
-    'the line of the layout goes to the layout at the foot',
-    (await app.exec(`return document.querySelector('.side .look .chips button.current')?.dataset.section`)) === 'layout',
+    'the chip of the document type goes to it, at the foot',
+    (await app.exec(`return document.querySelector('.side .look .chips button.current')?.dataset.section`)) === 'document-type',
   );
 
   // --- What the document is decides whether the reference style is among the first rows ---
@@ -510,6 +525,9 @@ try {
   // 1 every fifth shows 5 first (0067), and the annotations are measured against a number shown.
   await app.openLook('Line numbers');
   await app.lookWrite('Show a number every', '1');
+  // The look of Nature numbers the lines of the page, whose numbers stand where the verse's
+  // are measured: off here, so that the 1 of the Muse line is the verse's.
+  await app.lookWrite('Number the lines', false);
   check(
     'Look has the two lengths under Line numbers, with the defaults in force',
     (await app.exec(`return ${app.lookRow('Numbers from the text')}?.querySelector('input')?.value ?? null`)) === '0.25' &&
@@ -688,7 +706,7 @@ try {
     JSON.stringify({ before: beforeLengths.view.note, after: viewAfter.note, viewCm }),
   );
   const said = await fromOf('Annotations from the text');
-  check('and the row says it is changed here', said?.startsWith('Changed here') ?? false, String(said));
+  check('and the row says it is changed in this document', said?.startsWith('Changed in this document') ?? false, String(said));
   await app.lookWrite('Numbers from the text', '1.25');
   await typstHas(/#gk-beside\("right", 1\.25cm, gk-number\("1"\)\);/);
   await sleep(2500);

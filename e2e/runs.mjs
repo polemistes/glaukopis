@@ -363,7 +363,7 @@ try {
     `${gapBefore} ${gapAfter}`,
   );
   const lookTop = await app.lookTop();
-  check('the columns are the document’s change, not a new layout', lookTop.layout === 'Layout: Manuscript · 1 change', lookTop.layout);
+  check('the columns are the document’s change, not a new layout', lookTop.line === '1 change in this document' && lookTop.changes === 1, lookTop.line);
   await app.exec(`${row('Columns')}.scrollIntoView({ block: 'center' });`);
   await sleep(150);
   await app.screenshot('runs-9-layout-columns');

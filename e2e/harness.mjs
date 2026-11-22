@@ -1070,7 +1070,7 @@ export class App {
 
   /**
    * Goes to a part of the look by its chip: "Page", "Type", "Paragraphs",
-   * "Notes and citations", "Layout"… Every part is on the panel at once;
+   * "Notes and citations", "Document type"… Every part is on the panel at once;
    * the rows are looked for in this part first after it (see `lookRow`).
    */
   async lookSection(section) {
@@ -1149,14 +1149,40 @@ export class App {
     );
   }
 
-  /** The top of the look: what the document is, and the layout in a line, "Layout: Manuscript · 2 changes". */
+  /**
+   * The top of the look: what the document is, how many changes it has over
+   * its type, and that line in words ("2 changes in this document"); and
+   * whether a type is being edited there.
+   */
   async lookTop() {
     return this.exec(
       `const w = document.querySelector('.side .look .whole');
        return { what: w?.querySelector('.type-line .name')?.textContent.trim() ?? '',
-                layout: w?.querySelector('.layout-line')?.textContent.replace(/\\s+/g, ' ').trim() ?? '',
-                changes: Number(w?.querySelector('.layout-line')?.dataset.changes ?? 0) };`,
+                line: w?.querySelector('.state-line .count')?.textContent.replace(/\\s+/g, ' ').trim() ?? '',
+                changes: Number(w?.querySelector('.state-line')?.dataset.changes ?? 0),
+                editing: w?.querySelector('[data-editing] span')?.textContent.trim() ?? '' };`,
     );
+  }
+
+  /**
+   * Adds a part to the document of the look, as the writer does since the
+   * order of the tree (record 0118): opens Look at Parts and presses Add for
+   * the kind named, or chooses it under Another part… where the type does
+   * not suggest it. The element stands last under the document's.
+   */
+  async addPart(name) {
+    await this.openLook('Parts');
+    const place = `Array.from(document.querySelectorAll('.side .look .place')).find((p) => p.querySelector('.place-head strong')?.textContent.trim() === ${JSON.stringify(name)})`;
+    const before = await this.exec(`return ${place}?.querySelectorAll('.element').length ?? 0`);
+    const add = await this.exec(`return ${place}?.querySelector('[data-make]') ?? null`);
+    if (add) await this.click(add);
+    else {
+      await this.click(await this.exec(`return document.querySelector('.side .look [data-make-another]')`));
+      await this.waitFor('[role="menu"] [role="menuitem"]', 3000);
+      await this.clickText('[role="menu"] [role="menuitem"]', name);
+    }
+    await this.waitUntil(`return (${place}?.querySelectorAll('.element').length ?? 0) > ${before}`, 5000, `the part ${name} to be added`);
+    await sleep(200);
   }
 
   async pageErrors() {

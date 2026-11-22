@@ -109,13 +109,13 @@ try {
   );
   check(
     'the change is Book one’s',
-    (await app.exec(`return Number(document.querySelector('.side .look .layout-line')?.dataset.changes ?? -1)`)) === 1,
+    (await app.exec(`return Number(document.querySelector('.side .look .state-line')?.dataset.changes ?? -1)`)) === 1,
   );
   await chooseScope('');
   await sleep(500);
   check(
     'and the whole document has none',
-    (await app.exec(`return Number(document.querySelector('.side .look .layout-line')?.dataset.changes ?? -1)`)) === 0,
+    (await app.exec(`return Number(document.querySelector('.side .look .state-line')?.dataset.changes ?? -1)`)) === 0,
   );
   await chooseScope(one);
   await sleep(300);
