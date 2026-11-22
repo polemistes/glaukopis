@@ -6,7 +6,7 @@
    * a code for one more, and leaving. What the server cannot be asked is
    * said where it was asked.
    */
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
   import Check from '@lucide/svelte/icons/check';
   import RefreshCw from '@lucide/svelte/icons/refresh-cw';
   import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
@@ -44,9 +44,12 @@
   let busy = $state(false);
 
   onMount(() => {
-    void sync.follow().then(() => {
-      if (sync.on) void sync.askHome();
-    });
+    void sync.follow();
+    // The computers are asked of the server each time the section is shown.
+    sync.home = null;
+    sync.homeProblem = null;
+    // A code that can no longer be used is not shown again.
+    if (sync.code && sync.code.expires * 1000 <= Date.now()) sync.code = null;
     // The name the system gives this computer is offered; the writer may change it before it is sent.
     syncComputer()
       .then((given) => {
@@ -105,6 +108,14 @@
     ),
   );
   const refused = $derived(status?.state === 'refused');
+
+  // The computers, while it is on and they are not yet known: asked once
+  // more where they could not be told. It depends on whether it is on and
+  // on what is known of them; the asking is read untracked.
+  $effect(() => {
+    if (!sync.on || refused || sync.home || sync.homeProblem !== null) return;
+    untrack(() => void sync.askHome());
+  });
   let codeFailure = $state<string | null>(null);
   let removeFailure = $state<string | null>(null);
   let making = $state(false);
