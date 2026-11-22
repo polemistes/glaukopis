@@ -151,7 +151,7 @@ The files of a home may hold `--max-home-mb` megabytes together (`GLAUKOPIS_SERV
 
 Sent and answered as bytes (`application/octet-stream`); numbers are 32 bits, little-endian.
 
-- **Sent**: the length of a head; the head, JSON `{ "seen": <digest or null>, "since": <a state vector in base64, or null> }`; the number of changes; each change, its length before it. The head may hold 64 KiB; all of it what a document may, and a megabyte.
+- **Sent**: the length of a head; the head, JSON `{ "seen": <digest or null>, "since": <a state vector in hex, or null> }`; the number of changes; each change, its length before it. The head may hold 64 KiB; all of it what a document may, and a megabyte.
 - **Answered**: the length of a head; the head, JSON `{ "digest", "now", "news", "apart" }`; then the news, to the end.
 
 Under the room's lock, aside as a room's work is done:
@@ -161,7 +161,7 @@ Under the room's lock, aside as a room's work is done:
 3. Each change is taken in, as a room takes one in: counted against what a document may hold, refused whole where it cannot be read. The form of the texts is guarded as a room guards it: a computer that says a form (`?form=`) below the document's is refused with `409`, `later`, before anything is taken or sent.
 4. `after` is the digest. Where it is not `before`, the document has changed: it is written as a room's is, the change is put in `said.json` with the computer that brought it, and the home's stamp is another.
 5. `apart` is: `after` is not `before`; and `had`; and what the server had came from another computer. That is: with a `seen`, some change after the one whose digest is `seen` was brought by another computer, or `seen` is not among the changes kept; without a `seen`, the document held something.
-6. The answer says `digest` (`after`), `now` (the state vector, in base64), `news` (`had`), `apart`.
+6. The answer says `digest` (`after`), `now` (the state vector, in hex), `news` (`had`), `apart`.
 
 A document that is not there is made by the first exchange that brings a change. One that is asked for and brings none makes nothing. A room of a home is kept in memory as a room is, a minute after it was last used.
 
