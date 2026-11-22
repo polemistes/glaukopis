@@ -213,9 +213,10 @@ The way that held on 2026-11-13 and 2026-11-16: the main thread reads the code, 
 
 | Part | Who | Why |
 | --- | --- | --- |
-| Stage 0, all of it | the main thread | Every finding changes the plan. The emulator and the builds run one at a time. |
+| Stage 0, all of it | the main thread, on the most capable model | Done. Every finding changed the plan. |
 | 1: the shell divided by role, `--phone` | the main thread | It goes on from the trial's own code, through `lib.rs`. |
-| 1: what a device takes, in the engine, and its tests | the main thread | Small, and a wrong rule here loses what the server keeps. |
+| The detailed part of each stage, written before it is built | the most capable model | It is the design: a builder is as good as what it is given. |
+| 1: what a device takes, in the engine, and its tests | the most capable model, which also reads it once more before it is merged | Small, and a wrong rule here loses what the server keeps. |
 | 2: the frame of the page, the notes, finding, the filter | Opus | Wide; what of `NoteList`, `NoteCard` and `page.svelte.ts` is used as it is and what is made anew is a judgement. |
 | 2: a note: the editor, the row over the keyboard, name, tags, box, source | Opus | Wide, and in the editor. |
 | 2: the settings of the phone, and *device* for *computer* | Sonnet | Small and said to the last word: a section that is there, made to fit, and its words changed. |
@@ -227,6 +228,9 @@ The way that held on 2026-11-13 and 2026-11-16: the main thread reads the code, 
 | The scripts `e2e/phone-*.mjs` | each agent for its part, not run | The main thread builds once and runs them. |
 | The guide | each agent for its part | The main thread makes one chapter of them. |
 | Every diff read, every merge, every build, the running app, the release | the main thread | |
+| A diff of what can lose the writer's things (the engine, the stores, what is sent to or taken off the server), read before it is merged | the most capable model | A second reading that has not seen the builder's reasons. |
+
+**The main thread need not be the most capable model** (the owner's question, 2026-11-23). It may be Opus: what it does itself in this table (the shell, the Kotlin, the recipes, reading diffs, merging, building, running the app) is building to what is written here. Whichever model it is, it gives each row to the model the row names, as an agent on that model, and so asks the most capable model for the three rows that name it. An agent begins with nothing but what it is told, so each of those is asked with this plan, the record of the trial and the files to read named, and for a reading before a merge with the diff and not with the builder's account of it. A main thread that finds itself deciding what the program does, where this plan does not say, stops and asks for that row's model instead of deciding.
 
 About two thirds of what is written (the page, its words, its tests, its scripts, the translations) goes to Opus and Sonnet. That is a guess before stage 0. What stays is where a fault costs the writer's things or cannot be seen without the running app.
 
