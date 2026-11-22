@@ -1938,3 +1938,41 @@ one form proposed for a document and for a document type:
 - **One form for how a document is made**, for one document and for a
   document type alike, in which every detail can be decided; a layout is no
   thing of its own to the writer.
+
+## 2026-11-22 — the same on every device
+
+Of working on more than one computer:
+
+> It would be nice to be able to be able to work on the same projects on more
+> than one device. I guess the server could be used for this, by sharing the
+> project with oneself. But I think it should be a separate thing, since
+> sharing a project is something else than setting up synchronization between
+> devices.
+
+Of choosing what is synchronized (asked, then answered by the owner):
+
+> For synchronization would it be a good idea to have settings for what parts
+> will be synchronized, even which projects?
+
+> Synchronization is also a kind of backup, so perhaps we just say that two
+> synclonized divices hold the same things and settings? The problem, as you
+> say, is what to do if two devices come out of sync. If they work on the same
+> project at two places without being connected to the server, for example.
+> Then I guess we must ask the user to change the name of one of the projects,
+> and resolve the changes themselvs? Or would we be able to do that
+> automatically? It sounds risky to me.
+
+And, of the answer (what is written apart is brought together by itself, a
+version from before is kept, and the changes are shown), with the rules for
+what was deleted on one and written in on the other, for the settings and
+the library, and for two that both hold things when they first meet:
+
+> Ok! Make it!
+
+- **A thing of its own**, not sharing with oneself: it is turned on once for
+  a computer, not for each project.
+- **Two synchronized devices hold the same things and settings.** Nothing is
+  chosen, part by part or project by project.
+- **It is also a kind of backup.**
+- **What is written apart is brought together by itself**; the writer is not
+  asked to keep two copies and compare them.
