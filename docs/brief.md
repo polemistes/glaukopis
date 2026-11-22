@@ -1982,3 +1982,24 @@ the library, and for two that both hold things when they first meet:
 - **It is also a kind of backup.**
 - **What is written apart is brought together by itself**; the writer is not
   asked to keep two copies and compare them.
+
+## 2026-11-22 — an app for Android
+
+Of the phone, which was left out when the notebook was planned (2026-11-15:
+"we leave out the phone for now, as well as the app"), asked on the day the
+synchronization between the writer's computers was built:
+
+> I think i may be a good idea to make an android app that captures notes and sends them to the Glaukopis Notebook. The app should also be able to sync and show notes. It may also be a good idea if the app can show and edit maps, but that will come later. What do you think. If you think it is a good idea, make a plan for it where work can be delegated to less expensive models if it does not compromise quality at all.
+
+- **An app for Android** that collects notes and sends them to the notebook.
+- **It synchronizes, and shows the notes.**
+- **Maps shown and edited may come, later.** On 2026-11-15 an app had "at
+  least" to show projects; now the notes come first and the maps after.
+- **Work goes to less expensive models** where that does not compromise
+  quality at all.
+
+The assistant's answer was yes: what an app asked of the server on
+2026-11-15 was built on this day, so that a phone is one more of the
+writer's computers. The plan is `docs/plans/an-app-for-android.md`. It says
+what the assistant proposes and the owner has not confirmed. Nothing is
+built.
