@@ -10,12 +10,7 @@
    * saved to the type at once. Only the body of the part: its heading and
    * its place are Look's.
    */
-  import {
-    templatesDelete,
-    templatesSave,
-    type OutputTarget,
-    type Template,
-  } from '$lib/api/templates';
+  import { templatesDelete, type OutputTarget, type Template } from '$lib/api/templates';
   import { LIMITS, type Limit } from '$lib/document/composition';
   import { TARGETS, targetWords } from '$lib/document/templates';
   import { CATALOGUE, GROUPS } from '$lib/editor/kinds';
@@ -27,6 +22,7 @@
   import { describeError } from '$lib/ui/toast.svelte';
   import { formatGroups, layoutName } from './choosing.svelte';
   import { Composition } from './composition.svelte';
+  import { changeOwnType } from './to-type';
 
   /** A change of the look, by the words of its row, and the element that makes it. */
   interface LookChange {
@@ -64,13 +60,7 @@
     if (!template || !ownType) return;
     error = null;
     try {
-      const saved = await templatesSave({
-        ...(JSON.parse(JSON.stringify(template)) as Template),
-        ...patch,
-      });
-      documents.forgetTemplate(saved.id);
-      await documents.reload();
-      project.keepTemplate(saved);
+      await changeOwnType(project, template, patch);
     } catch (e) {
       error = describeError(e) ?? t('template-save-failed');
     }

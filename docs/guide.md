@@ -3216,9 +3216,10 @@ the plain document. **Create** makes it, gives it to the element, closes
 *Document properties* and opens Look on it, with *Editing the document type
 “Gentium book”* and **Done** at its top. While a document type is edited,
 every change you make in Look goes into it at once, and the document carries
-no changes of its own; the parts it suggests are left as they were, the
-parts of the document going into it only where you save to it. **Done** ends
-the editing. A document type of your own in use has **Edit** in the
+no changes of its own. **Parts** then lists the parts the document type
+suggests: the **×** beside one takes it out, and **Another part…** puts one
+in, a part of the front before the text and one of the back after it.
+**Add** still adds an element to the document. **Done** ends the editing. A document type of your own in use has **Edit** in the
 chooser, which does the same.
 
 Under **Document type**, the last part of Look, a document type of your own

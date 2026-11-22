@@ -238,6 +238,48 @@ try {
   check('the other type is as it was', JSON.stringify(kept('templates', 'gentium-book')) === JSON.stringify(book), '');
   await app.screenshot('one-form-7-edited');
 
+  // --- The parts it suggests, changed in Parts while it is edited ---
+  await app.openLook('Parts');
+  await sleep(400);
+  const placesOf = () => app.exec(`return Array.from(document.querySelectorAll('.side .look .place')).map((p) => ({ kind: p.dataset.kind, out: !!p.querySelector('[data-take-out]') }))`);
+  const named = (t) => (t?.contents ?? []).map((c) => c.part ?? c.kind);
+  let places = await placesOf();
+  check(
+    'while it is edited, Parts lists the parts the type suggests, each with a way to take it out',
+    places.some((p) => p.kind === 'dedication') && places.length > 3 && places.every((p) => p.out),
+    JSON.stringify(places),
+  );
+  await app.click('.side .look [data-take-out="dedication"]');
+  let wait = Date.now() + 8000;
+  while (Date.now() < wait && named(kept('templates', 'my-novel')).includes('dedication')) await sleep(300);
+  await sleep(600);
+  places = await placesOf();
+  const without = kept('templates', 'my-novel');
+  check(
+    'a part taken out is gone from the type and from the list, and the look stays',
+    !named(without).includes('dedication') && !without.kinds.includes('dedication') && !places.some((p) => p.kind === 'dedication') && without.layout === edited.layout,
+    JSON.stringify({ contents: named(without), kinds: without?.kinds, places: places.map((p) => p.kind) }),
+  );
+  await app.click('.side .look [data-make-another]');
+  await app.waitFor('[role="menu"] [role="menuitem"]', 3000);
+  await app.clickText('[role="menu"] [role="menuitem"]', 'Appendix');
+  wait = Date.now() + 8000;
+  while (Date.now() < wait && !named(kept('templates', 'my-novel')).includes('appendix')) await sleep(300);
+  await sleep(600);
+  places = await placesOf();
+  const withAppendix = named(kept('templates', 'my-novel'));
+  check(
+    'Another part… puts one into the type, after the text, and it is listed',
+    withAppendix.indexOf('appendix') > withAppendix.indexOf('body') && places.some((p) => p.kind === 'appendix'),
+    JSON.stringify({ contents: withAppendix, places: places.map((p) => p.kind) }),
+  );
+  check(
+    'and no element was added to the document by it',
+    (await app.exec(`return document.querySelectorAll('.side .look .place[data-kind="appendix"] .element').length`)) === 0,
+    '',
+  );
+  await app.screenshot('one-form-7b-type-parts');
+
   // Done ends it: a change after it is the document's.
   await app.clickText('.side .look [data-editing] button', 'Done');
   await sleep(500);

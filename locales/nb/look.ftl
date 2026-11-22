@@ -42,6 +42,8 @@ look-at-bibliography = Litteraturliste
 
 look-parts-add = Legg til
 look-parts-another = En annen del …
+# Ved en del mens en egen dokumenttype redigeres: tar den ut av delene typen foreslår.
+look-parts-take-out = Ta ut av «{ $name }»
 look-contents-kinds-doubled = Bare det første brukes
 look-contents-limit-words = Ord i teksten, høyst
 look-contents-limit-abstract-words = Ord i sammendraget, høyst

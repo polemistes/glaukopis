@@ -228,3 +228,20 @@ export async function saveToType(
   await documents.reload();
   return saved;
 }
+
+/**
+ * Saves a change to a type of the writer's own as it is made, in Look
+ * (its name, what it offers, the parts it suggests), and keeps the
+ * project's copy of it. The saved type is given back.
+ */
+export async function changeOwnType(
+  project: Project,
+  type: Template,
+  patch: Partial<Template>,
+): Promise<Template> {
+  const saved = await templatesSave({ ...clone(type), ...patch });
+  documents.forgetTemplate(saved.id);
+  await documents.reload();
+  project.keepTemplate(saved);
+  return saved;
+}

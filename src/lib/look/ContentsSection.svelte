@@ -13,9 +13,16 @@
    * is: written as the element's own changes over the type
    * (`DocumentSettings.composition`), which the elements under it inherit,
    * each a step of undo of its own.
+   *
+   * While a type of the writer's own is edited, the list is the parts the
+   * type suggests: each can be taken out of it, and Another part… puts one
+   * into it (`type-parts.ts`), saved to the type at once. Add still adds an
+   * element to the document.
    */
   import ArrowRight from '@lucide/svelte/icons/arrow-right';
   import Plus from '@lucide/svelte/icons/plus';
+  import X from '@lucide/svelte/icons/x';
+  import type { Template } from '$lib/api/templates';
   import {
     LIMITS,
     suggestedParts,
@@ -27,9 +34,13 @@
   import type { Project } from '$lib/project/model/project.svelte';
   import { PARTS, partOf, placeWords, type PartSpec as PartKind } from '$lib/project/parts';
   import Button from '$lib/ui/Button.svelte';
+  import IconButton from '$lib/ui/IconButton.svelte';
   import { openMenu, type MenuItem } from '$lib/ui/menu.svelte';
   import type { Provenance } from '$lib/ui/settings/rows';
+  import { notifyError } from '$lib/ui/toast.svelte';
   import { Composition } from './composition.svelte';
+  import { changeOwnType } from './to-type';
+  import { withoutPart, withPart } from './type-parts';
 
   interface Props {
     project: Project;
@@ -37,9 +48,11 @@
     at: string;
     /** Shows an element in the text: one of a kind, from its line here. */
     ongo: (element: string) => void;
+    /** The type of the writer's own being edited, whose parts are listed and changed; nothing otherwise. */
+    editing?: Template | null;
   }
 
-  let { project, at, ongo }: Props = $props();
+  let { project, at, ongo, editing = null }: Props = $props();
 
   $effect(() => {
     documents.load();
@@ -73,12 +86,13 @@
   /**
    * The kinds listed: what the type suggests, in its usual order, and after
    * them those the document has that the type does not name, so that every
-   * part there is stands in the list.
+   * part there is stands in the list. While the type is edited, only what it
+   * suggests: the list is the type's.
    */
   const listed = $derived.by<PartKind[]>(() => {
     if (!used) return [];
-    const ids = suggestedParts(used);
-    for (const kind of partsOf.keys()) if (!ids.includes(kind)) ids.push(kind);
+    const ids = suggestedParts(editing ?? used);
+    if (!editing) for (const kind of partsOf.keys()) if (!ids.includes(kind)) ids.push(kind);
     return ids.flatMap((id) => {
       const kind = partOf(project, id);
       return kind ? [kind] : [];
@@ -116,10 +130,21 @@
     project.checkpoint();
   }
 
+  /** Saves the type being edited with a part taken out of what it suggests, or put in. */
+  async function changeParts(parts: Pick<Template, 'contents' | 'kinds'>) {
+    if (!editing) return;
+    try {
+      await changeOwnType(project, editing, parts);
+    } catch (e) {
+      notifyError(t('template-save-failed'), e);
+    }
+  }
+
   function addAnother(event: MouseEvent) {
+    const type = editing;
     const items: MenuItem[] = others.map((kind) => ({
       label: kind.label(),
-      action: () => addPart(kind),
+      action: () => (type ? void changeParts(withPart(type, kind.id)) : addPart(kind)),
     }));
     openMenu(event.currentTarget as HTMLElement, items, { align: 'start' });
   }
@@ -188,6 +213,15 @@
             {#snippet icon()}<Plus size={13} />{/snippet}
             {t('look-parts-add')}
           </Button>
+        {/if}
+        {#if editing}
+          {@const type = editing}
+          <IconButton
+            size="sm"
+            data-take-out={kind.id}
+            label={t('look-parts-take-out', { name: type.name })}
+            onclick={() => void changeParts(withoutPart(type, kind.id))}><X size={14} /></IconButton
+          >
         {/if}
       </div>
       {#each elements as element, i (element)}

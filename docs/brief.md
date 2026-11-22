@@ -1938,3 +1938,9 @@ one form proposed for a document and for a document type:
 - **One form for how a document is made**, for one document and for a
   document type alike, in which every detail can be decided; a layout is no
   thing of its own to the writer.
+
+Asked, once the one form was built, whether the parts a document type of
+one's own suggests should be changed in Parts while the type is edited,
+each with a way to take it out and a way to add one:
+
+> Yes build that.
