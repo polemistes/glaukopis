@@ -894,6 +894,45 @@ async fn a_phone_takes_no_document_off_the_server_and_says_no_project_gone_whate
     .await;
 }
 
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_phone_sends_nothing_of_the_home_document_where_the_server_holds_less_of_it_than_it_did() {
+    with_server(|address, _| {
+        let (computer, phone) = a_computer_and_a_phone(&address);
+        computer.set("theme", json!("dark"));
+        settle(&[&computer, &phone]);
+        let dark = Some("\"dark\"".to_owned());
+        assert_eq!(phone.home_kept().get("settings", "theme"), dark, "the phone has read the home document");
+        let unsent = phone.data.sync().join("home.unsent");
+        let marked = unsent.exists();
+
+        // The server loses the home document and holds another in its place,
+        // written by one the phone never saw: less than the phone last saw of
+        // it. A computer that meets such a server sends all of its own again.
+        let lesser = HomeDoc::new();
+        assert!(lesser.put("settings", "language", Some("\"nb\"")));
+        let all = lesser.whole();
+        computer.asked(|home| {
+            home.delete("home", "the").unwrap();
+            home.exchange("home", "the", None, None, &[all.as_slice()], sync::FORM, true).unwrap();
+        });
+        let digest = phone.listed()["home/the"].clone();
+
+        for _ in 0..2 {
+            phone.round();
+            assert_eq!(phone.listed()["home/the"], digest, "the phone sent nothing, at the second asking either");
+            assert_eq!(unsent.exists(), marked, "and the mark of something unsent is as it was");
+        }
+        assert!(!marked, "a phone has nothing of the home document to send");
+        let on_the_server = phone.maps_of_the_home("home");
+        assert_eq!(on_the_server.get("settings", "theme"), None, "what the phone holds of it was not sent again");
+        assert_eq!(on_the_server.map("settings").len(), 1);
+        let kept = phone.home_kept();
+        assert_eq!(kept.get("settings", "language").as_deref(), Some("\"nb\""), "it took in what the server holds");
+        assert_eq!(kept.get("settings", "theme"), dark, "beside what it had read before");
+    })
+    .await;
+}
+
 /// A picture of four points by three, in one colour.
 const PNG: [u8; 73] = [
     137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82, 0, 0, 0, 4, 0, 0, 0, 3, 8, 2, 0, 0, 0, 59, 150, 57,
