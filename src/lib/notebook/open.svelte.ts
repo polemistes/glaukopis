@@ -30,26 +30,36 @@ import { orgOfNotebook } from './org';
 /** How long after a change to the notebook it is looked at which files its notes hold. */
 const SAY_HELD_AFTER = 1000;
 
-/** The files the notes held when that was last said to the core, or saved with the whole notebook. */
+/**
+ * The files the notes held when that was last said to the core, or saved
+ * with the whole notebook, by this window; none before it has done either.
+ */
 interface Said {
-  files: string[];
+  files: string[] | null;
 }
 
 /**
- * Says to the core which files the notes hold as that changes, and not
- * only when the whole notebook is saved: the synchronization judges by it
- * what is not to be taken from this device, and the sweep of the next run
- * what is to stay in the store. A second after any change to the document,
- * whoever made it, the list is worked out, and said where it is another
- * than was last said or saved.
+ * Says to the core which files the notes hold: once when the notebook has
+ * been read, and from then on as that changes, and not only when the whole
+ * notebook is saved. The synchronization judges by it what is not to be
+ * taken from this device, and the sweep of the next run what is to stay in
+ * the store. A second after any change to the document, whoever made it,
+ * the list is worked out, and said where it is another than was last said
+ * or saved.
  *
  * Nothing is said before `ready`, which is when the sweep of this run has
  * answered: the sweep judges by what was said before as well, so that a
- * page that read less than there is takes nothing a saved note holds. For
- * the same reason what the notes held when the notebook was read is not
- * said: `said` begins as that.
+ * page that read less than there is takes nothing a saved note holds. Once
+ * it has answered, what the notes hold as they were read (`atRead`, and
+ * what came since) is said at once: what was said before has done what it
+ * was kept for, and it may be long out of date, since notes that came from
+ * the writer's other devices while no page had the notebook open, and
+ * notes deleted there, are in no list that was said. Where the sweep
+ * failed (`ready` gives false) it may be asked for again in this run, and
+ * what was said before is left for it: only another list than was read is
+ * said then.
  */
-function sayHeld(notebook: Notebook, said: Said, ready: Promise<void>) {
+function sayHeld(notebook: Notebook, said: Said, atRead: string[], ready: Promise<boolean>) {
   let begun = false;
   let changed = false;
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -58,7 +68,8 @@ function sayHeld(notebook: Notebook, said: Said, ready: Promise<void>) {
     if (notebook.closed) return;
     const files = notebook.summary().files;
     const before = said.files;
-    if (files.length === before.length && files.every((hash, i) => hash === before[i])) return;
+    if (before && files.length === before.length && files.every((hash, i) => hash === before[i]))
+      return;
     said.files = files;
     notebookSayHeld(files).catch((error) => {
       // Not said: it is said with the next change.
@@ -73,8 +84,10 @@ function sayHeld(notebook: Notebook, said: Said, ready: Promise<void>) {
     if (begun) soon();
     else changed = true;
   });
-  void ready.then(() => {
+  void ready.then((answered) => {
     begun = true;
+    if (answered) return look();
+    said.files ??= atRead;
     if (changed) soon();
   });
 }
@@ -120,7 +133,7 @@ class TheNotebook {
       console.warn('the changes of other windows to the notebook are not heard', error);
       return () => {};
     });
-    const said: Said = { files: [] };
+    const said: Said = { files: null };
     let notebook: Notebook;
     try {
       const loaded = await notebookLoad();
@@ -134,9 +147,9 @@ class TheNotebook {
       unlisten();
       throw error;
     }
-    said.files = notebook.summary().files;
-    let swept!: () => void;
-    sayHeld(notebook, said, new Promise<void>((resolve) => (swept = resolve)));
+    let swept!: (answered: boolean) => void;
+    const ready = new Promise<boolean>((resolve) => (swept = resolve));
+    sayHeld(notebook, said, notebook.summary().files, ready);
     // What was heard meanwhile, and from now on every change as it comes.
     read = notebook;
     for (const update of heard) {
@@ -159,10 +172,14 @@ class TheNotebook {
     });
     // The notebook is given to whoever asked for it without waiting for the sweep.
     if (this.sweeps)
-      notebookSweep(notebook.summary().files)
-        .catch((error) => console.warn('the files no note holds could not be swept', error))
-        .then(() => swept());
-    else swept();
+      notebookSweep(notebook.summary().files).then(
+        () => swept(true),
+        (error) => {
+          console.warn('the files no note holds could not be swept', error);
+          swept(false);
+        },
+      );
+    else swept(true);
     this.failure = null;
     this.current = notebook;
     return notebook;

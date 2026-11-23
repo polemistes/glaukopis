@@ -153,10 +153,13 @@ describe('the one notebook of the window', () => {
     const notebook = await theNotebook.open();
     await vi.advanceTimersByTimeAsync(5000);
     expect(api.notebookSweep).not.toHaveBeenCalled();
-    // What its notes hold is said all the same.
+    // What its notes hold is said all the same: when it has been read, and as it changes.
+    expect(api.notebookSayHeld).toHaveBeenCalledTimes(1);
+    expect(api.notebookSayHeld).toHaveBeenLastCalledWith([]);
     notebook.addFigure(notebook.addNote(), OWL);
     await vi.advanceTimersByTimeAsync(1000);
-    expect(api.notebookSayHeld).toHaveBeenCalledWith([HASH]);
+    expect(api.notebookSayHeld).toHaveBeenCalledTimes(2);
+    expect(api.notebookSayHeld).toHaveBeenLastCalledWith([HASH]);
   });
 
   it('nothing is said of what the notes hold before the sweep has answered', async () => {
@@ -171,16 +174,16 @@ describe('the one notebook of the window', () => {
     notebook.addFigure(notebook.addNote(), OWL);
     await vi.advanceTimersByTimeAsync(5000);
     expect(api.notebookSayHeld).not.toHaveBeenCalled();
+    // Once it has, at once, and as the notes are by then.
     answer!(0);
     await vi.advanceTimersByTimeAsync(0);
-    await vi.advanceTimersByTimeAsync(999);
-    expect(api.notebookSayHeld).not.toHaveBeenCalled();
-    await vi.advanceTimersByTimeAsync(1);
     expect(api.notebookSayHeld).toHaveBeenCalledTimes(1);
     expect(api.notebookSayHeld).toHaveBeenCalledWith([HASH]);
+    await vi.advanceTimersByTimeAsync(5000);
+    expect(api.notebookSayHeld).toHaveBeenCalledTimes(1);
   });
 
-  it('what the notes held when the notebook was read is not said', async () => {
+  it('what the notes hold as they were read is said once, when the sweep has answered', async () => {
     vi.useFakeTimers();
     const { theNotebook, Notebook } = await fresh();
     const before = new Notebook();
@@ -189,10 +192,35 @@ describe('the one notebook of the window', () => {
     before.addFigure(id, OWL);
     api.loaded = { state: Y.encodeStateAsUpdate(before.doc), updates: [] };
     const notebook = await theNotebook.open();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(api.notebookSweep).toHaveBeenCalledWith([HASH]);
+    expect(api.notebookSayHeld).toHaveBeenCalledTimes(1);
+    expect(api.notebookSayHeld).toHaveBeenCalledWith([HASH]);
+    // And not again while the notes hold the same.
+    await vi.advanceTimersByTimeAsync(5000);
+    notebook.setName(id, 'Named');
+    await vi.advanceTimersByTimeAsync(5000);
+    expect(api.notebookSayHeld).toHaveBeenCalledTimes(1);
+  });
+
+  it('where the sweep failed, what was said before is left until the notes hold other files', async () => {
+    vi.useFakeTimers();
+    const { theNotebook, Notebook } = await fresh();
+    const before = new Notebook();
+    const id = before.addNote();
+    before.holdFile(OWL, null);
+    before.addFigure(id, OWL);
+    api.loaded = { state: Y.encodeStateAsUpdate(before.doc), updates: [] };
+    api.notebookSweep.mockRejectedValueOnce(new Error('no disk'));
+    const notebook = await theNotebook.open();
     await vi.advanceTimersByTimeAsync(5000);
     notebook.setName(id, 'Named');
     await vi.advanceTimersByTimeAsync(5000);
     expect(api.notebookSayHeld).not.toHaveBeenCalled();
+    notebook.deleteNotes([id]);
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(api.notebookSayHeld).toHaveBeenCalledTimes(1);
+    expect(api.notebookSayHeld).toHaveBeenCalledWith([]);
   });
 
   it('a picture put into a note is said within the second, and not again while the notes hold the same', async () => {
@@ -200,17 +228,20 @@ describe('the one notebook of the window', () => {
     const { theNotebook, Notebook } = await fresh();
     const notebook = await theNotebook.open();
     await vi.advanceTimersByTimeAsync(0);
+    // As it was read: holding nothing.
+    expect(api.notebookSayHeld).toHaveBeenCalledTimes(1);
+    expect(api.notebookSayHeld).toHaveBeenLastCalledWith([]);
     const id = notebook.addNote();
     notebook.addFigure(id, OWL);
     await vi.advanceTimersByTimeAsync(999);
-    expect(api.notebookSayHeld).not.toHaveBeenCalled();
-    await vi.advanceTimersByTimeAsync(1);
     expect(api.notebookSayHeld).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(api.notebookSayHeld).toHaveBeenCalledTimes(2);
     expect(api.notebookSayHeld).toHaveBeenLastCalledWith([HASH]);
     // A second change that leaves the list as it was.
     notebook.setName(id, 'Named');
     await vi.advanceTimersByTimeAsync(5000);
-    expect(api.notebookSayHeld).toHaveBeenCalledTimes(1);
+    expect(api.notebookSayHeld).toHaveBeenCalledTimes(2);
     // What another window, or a round of the synchronization, wrote is said as what is written here.
     const other = new Notebook();
     const theirs = other.addNote();
@@ -219,7 +250,7 @@ describe('the one notebook of the window', () => {
     other.addFigure(theirs, plate);
     api.heard!(Y.encodeStateAsUpdate(other.doc));
     await vi.advanceTimersByTimeAsync(1000);
-    expect(api.notebookSayHeld).toHaveBeenCalledTimes(2);
+    expect(api.notebookSayHeld).toHaveBeenCalledTimes(3);
     expect(api.notebookSayHeld).toHaveBeenLastCalledWith([HASH, plate.hash]);
     // What was saved with the whole notebook is said already.
     notebook.deleteNotes([id]);
@@ -229,23 +260,24 @@ describe('the one notebook of the window', () => {
       files: [plate.hash],
     });
     await vi.advanceTimersByTimeAsync(5000);
-    expect(api.notebookSayHeld).toHaveBeenCalledTimes(2);
+    expect(api.notebookSayHeld).toHaveBeenCalledTimes(3);
   });
 
   it('what could not be said of the files is said with the next change', async () => {
     vi.useFakeTimers();
     const { theNotebook } = await fresh();
+    api.notebookSayHeld.mockRejectedValueOnce(new Error('no disk'));
     const notebook = await theNotebook.open();
     await vi.advanceTimersByTimeAsync(0);
-    api.notebookSayHeld.mockRejectedValueOnce(new Error('no disk'));
-    const id = notebook.addNote();
-    notebook.addFigure(id, OWL);
-    await vi.advanceTimersByTimeAsync(1000);
     expect(api.notebookSayHeld).toHaveBeenCalledTimes(1);
-    notebook.setName(id, 'Named');
+    // A change that leaves the notes holding what they held: said all the same, since it was not said.
+    notebook.addNote({ name: 'Named' });
     await vi.advanceTimersByTimeAsync(1000);
     expect(api.notebookSayHeld).toHaveBeenCalledTimes(2);
-    expect(api.notebookSayHeld).toHaveBeenLastCalledWith([HASH]);
+    expect(api.notebookSayHeld).toHaveBeenLastCalledWith([]);
+    notebook.addNote({ name: 'Another' });
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(api.notebookSayHeld).toHaveBeenCalledTimes(2);
   });
 
   it('a file a note comes to hold is told to the store', async () => {
