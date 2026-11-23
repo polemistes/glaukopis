@@ -23,8 +23,12 @@ export interface SyncStatus {
   last: string | null;
   /** What is wrong, in words; null where nothing is. */
   problem: string | null;
-  /** Whether something written here waits to be sent. (Optional in the meeting points of stage 2; part A makes it sure.) */
-  waiting?: boolean;
+  /**
+   * Whether the notebook or the library here holds what the server was not
+   * sent, as far as the disk says: worked out where a round could not reach
+   * the server, and false where it ended in any other way.
+   */
+  waiting: boolean;
 }
 
 /** A computer of the writer's. Times are seconds since 1970. */

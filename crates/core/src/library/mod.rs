@@ -103,6 +103,10 @@ pub struct Library {
     /// writer's other computers not to be told of it as of changes made
     /// here (`elsewhere`).
     damaged: elsewhere::Damaged,
+    /// Which of its files were not on the disk when they were read: one
+    /// that was lost reads as one emptied, and must not be told as that
+    /// (`elsewhere`).
+    missing: elsewhere::Missing,
     /// How many times its files were written in this run (`elsewhere::writes`).
     writes: std::cell::Cell<u64>,
 }
@@ -132,6 +136,7 @@ impl Library {
             index: std::cell::OnceCell::new(),
             keys: std::cell::OnceCell::new(),
             damaged: elsewhere::Damaged::default(),
+            missing: elsewhere::Missing::default(),
             writes: std::cell::Cell::new(0),
         };
         library.load()?;
@@ -156,7 +161,10 @@ impl Library {
                 Ok(text) => text,
                 Err(e) => self.read_in_part(e)?,
             },
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => String::new(),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+                self.missing.references = true;
+                String::new()
+            }
             Err(e) => return Err(e).context(|| tr!("io-reading", path = &self.file)),
         };
         self.stamp = stamp_of(&self.file);
@@ -195,9 +203,10 @@ impl Library {
             self.entries.push(entry);
         }
         self.reindex();
-        let (collections, aside) = Collections::load(&self.collections_file)?;
+        let (collections, aside, missing) = Collections::load(&self.collections_file)?;
         self.collections = collections;
         self.damaged.collections |= aside.is_some();
+        self.missing.collections |= missing;
         self.warnings.extend(aside.map(|a| a.message()));
         self.load_files()?;
 
@@ -227,9 +236,10 @@ impl Library {
     /// lacks. A record that cannot be read is set aside, not written over,
     /// and said to be.
     fn load_files(&mut self) -> Result<()> {
-        let (files, aside) = Files::load(&self.files_file)?;
+        let (files, aside, missing) = Files::load(&self.files_file)?;
         self.files = files;
         self.damaged.files |= aside.is_some();
+        self.missing.files |= missing;
         self.warnings.extend(aside.map(|a| a.message()));
         if self.files.reconcile(&self.dir) {
             self.files_dirty = true;
@@ -1997,6 +2007,60 @@ mod tests {
         assert_eq!(fs::read_to_string(&collections[0]).unwrap(), "{ \"collections\": [ {");
         assert_eq!(aside_in(&dir, "files.json").len(), 1);
         assert!(reopened.warnings.iter().any(|w| w.contains("collections.json.broken-")));
+    }
+
+    #[test]
+    fn a_file_not_there_when_it_was_read_is_said_once_and_a_library_emptied_by_the_writer_is_not() {
+        use elsewhere::Missing;
+        let (tmp, mut lib) = library();
+        // A library never written to has none of its three files.
+        assert_eq!(lib.take_missing(), Missing { references: true, collections: true, files: true });
+        assert_eq!(lib.take_missing(), Missing::default(), "said once");
+
+        // Something of each kind, and each taken out again: emptied by the writer.
+        let work = lib.add(&draft("@book{w, title={A Work}}")).unwrap();
+        let shelf = lib.collection_create("Shelf", None).unwrap();
+        let source = tmp.path().join("scan.pdf");
+        fs::write(&source, b"%PDF the scan").unwrap();
+        lib.attach(&work.id, &source).unwrap();
+        let hash = attachments::hash_bytes(b"%PDF the scan");
+        let dir = lib.dir().to_owned();
+        let three = ["library.bib", "collections.json", files::FILE];
+        let before: Vec<Vec<u8>> = three.iter().map(|name| fs::read(dir.join(name)).unwrap()).collect();
+        lib.remove_file(&hash).unwrap();
+        lib.collection_delete(&shelf.id).unwrap();
+        lib.remove(std::slice::from_ref(&work.id), false).unwrap();
+        for (name, before) in three.iter().zip(&before) {
+            let now = fs::read(dir.join(name)).unwrap_or_else(|_| panic!("{name} is written, not removed"));
+            assert_ne!(&now, before, "{name} is written when its last thing is taken out");
+        }
+        let mut emptied = Library::open_at(&dir).unwrap();
+        assert!(emptied.is_empty() && emptied.collections.list.is_empty() && emptied.files.files().is_empty());
+        assert_eq!(emptied.take_missing(), Missing::default(), "emptied by the writer, it reads as emptied");
+
+        // Each lost by itself: read as holding nothing, and said to have been missing.
+        let lost = [
+            Missing { references: true, ..Default::default() },
+            Missing { collections: true, ..Default::default() },
+            Missing { files: true, ..Default::default() },
+        ];
+        for (name, missing) in three.iter().zip(lost) {
+            let kept = fs::read(dir.join(name)).unwrap();
+            fs::remove_file(dir.join(name)).unwrap();
+            let mut again = Library::open_at(&dir).unwrap();
+            assert_eq!(again.take_missing(), missing, "{name}");
+            assert_eq!(again.take_missing(), Missing::default(), "said once");
+            fs::write(dir.join(name), kept).unwrap();
+        }
+
+        // The library's file lost while the library is open is missed when it is next looked at.
+        let mut open = Library::open_at(&dir).unwrap();
+        open.add(&draft("@book{again, title={Again}}")).unwrap();
+        assert_eq!(open.take_missing(), Missing::default());
+        fs::remove_file(open.file()).unwrap();
+        assert!(open.refresh().unwrap());
+        assert!(open.is_empty(), "it reads as a library that holds nothing");
+        assert_eq!(open.take_missing(), Missing { references: true, ..Default::default() });
     }
 
     #[test]

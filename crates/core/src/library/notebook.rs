@@ -494,4 +494,23 @@ mod tests {
         assert_eq!(listed(&lib), ["theirs.pdf", "lent.pdf"]);
         assert!(lib.files.files().iter().all(|f| f.notebook.is_none()));
     }
+
+    #[test]
+    fn a_record_emptied_by_the_sweep_is_written_and_reads_as_emptied_and_one_lost_is_said_to_be_missing() {
+        let (_tmp, mut lib) = library();
+        lib.notebook_take_image("pasted", &figures::fixtures::PNG).unwrap();
+        assert!(lib.take_missing().files, "a library never written to had no record");
+        assert_eq!(lib.notebook_sweep(&HashSet::new()).unwrap(), 1);
+        let record = lib.dir().join(files::FILE);
+        assert!(record.is_file(), "written when its last file is taken out, not removed");
+        let mut emptied = Library::open_at(lib.dir()).unwrap();
+        assert!(emptied.files.files().is_empty());
+        assert!(!emptied.take_missing().files, "emptied, it reads as emptied");
+
+        fs::remove_file(&record).unwrap();
+        let mut lost = Library::open_at(lib.dir()).unwrap();
+        assert!(lost.files.files().is_empty(), "lost, it reads the same");
+        assert!(lost.take_missing().files, "and is said to have been missing");
+        assert!(!lost.take_missing().files, "once");
+    }
 }

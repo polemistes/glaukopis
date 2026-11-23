@@ -484,6 +484,7 @@ fn what_is_sent_is_what_the_interface_declares() {
         state: glaukopis_core::sync::State::Idle,
         last: Some("2026-01-01T00:00:00Z".into()),
         problem: Some("A remark.".into()),
+        waiting: false,
     };
     let sync_home = glaukopis_core::sync::remote::Told {
         devices: vec![glaukopis_core::sync::remote::Device {

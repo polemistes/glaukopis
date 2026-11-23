@@ -550,6 +550,39 @@ async fn what_one_computer_cannot_read_of_its_library_is_taken_from_no_other_and
     .await;
 }
 
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_computer_that_loses_the_file_of_its_library_takes_no_reference_from_the_other_and_has_its_own_again() {
+    with_server(|address| {
+        let (a, b) = two(&address);
+        let nagy = a.add("@book{nagy1979, author={Nagy, Gregory}, title={The Best of the Achaeans}, date={1979}}");
+        let lord = b.add("@book{lord1960, author={Lord, Albert}, title={The Singer of Tales}, date={1960}}");
+        let homer = a.lib().collection_create("Homer", None).unwrap();
+        a.lib().collection_add(&homer.id, std::slice::from_ref(&nagy.id)).unwrap();
+        settle(&[&a, &b]);
+        let said = a.library_as_said();
+        assert_eq!(b.library_as_said(), said);
+
+        // `library.bib` alone is lost on the second, which reads its library anew: it holds no reference.
+        let bib = b.lib().file().to_owned();
+        std::fs::remove_file(&bib).unwrap();
+        *b.library.lock().unwrap() = Library::open(&b.data).unwrap();
+        assert!(b.lib().is_empty() && !b.lib().collections.list.is_empty());
+        b.round();
+        a.round();
+        assert!(a.has(&nagy.id) && a.has(&lord.id), "no reference is taken from the other");
+        assert_eq!(
+            a.lib().collections.get(&homer.id).unwrap().entries,
+            vec![nagy.id.clone()],
+            "nor out of a collection"
+        );
+        settle(&[&a, &b]);
+        assert_eq!(a.library_as_said(), said, "the first holds its library as before");
+        assert_eq!(b.library_as_said(), said, "and the second has its own again");
+        assert!(bib.is_file());
+    })
+    .await;
+}
+
 /// The way to a server, through which every request is written down as it
 /// goes: its method and its path. What the engine asks is counted so.
 async fn counting(server: &str) -> (String, Arc<Mutex<Vec<String>>>) {

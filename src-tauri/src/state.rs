@@ -32,6 +32,11 @@ pub struct AppState {
     /// Whether the files the notebook held alone and no note holds have
     /// been swept out of the store in this run: it is done once.
     pub notebook_swept: AtomicBool,
+    /// Whether the notebook was refused at its last exchange with the
+    /// writer's other devices when this run began, as the engine of the
+    /// synchronization kept it (`glaukopis_core::sync::notebook_refused`):
+    /// nothing is swept out of the store in such a run.
+    pub notebook_refused: bool,
     /// What the plugin for Firefox handed to the helper, until it is taken in.
     pub inbox: Inbox,
     /// Held while what lies in the inbox is taken, so that two windows never
@@ -169,6 +174,7 @@ impl AppState {
             projects,
             notebook: Arc::new(Notebook::new(&data)),
             notebook_swept: AtomicBool::new(false),
+            notebook_refused: glaukopis_core::sync::notebook_refused(&data),
             inbox: Inbox::new(&data),
             inbox_taking: Mutex::new(()),
             resources,

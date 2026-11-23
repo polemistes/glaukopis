@@ -214,10 +214,12 @@ impl Files {
 
     /// Reads the record; one that is not there is empty, and one that
     /// cannot be read is set aside (see `sidefile`), which `aside` says.
-    pub fn load(path: &Path) -> Result<(Self, Option<SetAside>)> {
+    /// The last says whether there was no file.
+    pub fn load(path: &Path) -> Result<(Self, Option<SetAside>, bool)> {
         let read = sidefile::read_json::<Files>(path)?;
         let aside = read.set_aside().cloned();
-        Ok((read.or_default(), aside))
+        let missing = read.missing();
+        Ok((read.or_default(), aside, missing))
     }
 
     pub fn save(&self, path: &Path) -> Result<()> {
@@ -953,8 +955,12 @@ mod tests {
 
         let path = lib.join(FILE);
         files.save(&path).unwrap();
-        assert_eq!(Files::load(&path).unwrap().0, files);
-        assert_eq!(Files::load(&tmp.path().join("none.json")).unwrap().0, Files::default());
+        let (read, aside, missing) = Files::load(&path).unwrap();
+        assert_eq!(read, files);
+        assert!(aside.is_none() && !missing);
+        let (none, aside, missing) = Files::load(&tmp.path().join("none.json")).unwrap();
+        assert_eq!(none, Files::default());
+        assert!(aside.is_none() && missing, "that there was no file is said");
     }
 
     /// The indexes follow the lists through every change, and are made again when the record is read.

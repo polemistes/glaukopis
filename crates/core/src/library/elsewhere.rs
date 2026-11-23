@@ -47,6 +47,24 @@ impl Damaged {
     }
 }
 
+/// Which of its files were not on the disk when the library last read them.
+/// A file that is not there reads as one that holds nothing, and a library
+/// never written to has none of the three. One that the writer emptied has
+/// them still, each written with nothing in it: a file is written when its
+/// last thing is taken out, never removed. So where a device and its home
+/// had agreed on something of a file and the file is not there, it was
+/// lost, and what it held was not taken out by the writer: that is for the
+/// one who knows what was agreed to say (`sync::engine`).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct Missing {
+    /// `library.bib`.
+    pub references: bool,
+    /// `collections.json`.
+    pub collections: bool,
+    /// The record of the files, with their folders.
+    pub files: bool,
+}
+
 impl Library {
     /// How many times the library has written one of its files in this run:
     /// what is written while it is held by one who writes from elsewhere is
@@ -60,6 +78,12 @@ impl Library {
     /// was last asked; asking forgets it.
     pub fn take_damaged(&mut self) -> Damaged {
         std::mem::take(&mut self.damaged)
+    }
+
+    /// Which of its files were not on the disk when the library read them,
+    /// since this was last asked; asking forgets it.
+    pub fn take_missing(&mut self) -> Missing {
+        std::mem::take(&mut self.missing)
     }
 
     /// Whether text of the library's file that could not be read holds an

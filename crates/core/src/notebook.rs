@@ -154,8 +154,23 @@ impl Notebook {
         write_atomic(&self.dir.join(INFO), serde_json::to_string_pretty(&info)?.as_bytes())
     }
 
+    /// Says which files the notes hold now, by their hashes, where that has
+    /// changed and the whole notebook is not saved: what is said of the
+    /// notebook is written with these files, how many notes there are and
+    /// when it was saved staying as they were. Where nothing was said of it
+    /// yet, or what was said cannot be read, it is said with no notes counted.
+    pub fn say_held(&self, files: &[String]) -> Result<()> {
+        let _writing = self.hold();
+        fs::create_dir_all(&self.dir).context(|| tr!("io-creating", path = &self.dir))?;
+        let path = self.dir.join(INFO);
+        let said = fs::read_to_string(&path).ok().and_then(|text| serde_json::from_str::<Info>(&text).ok());
+        let info = Info { files: files.to_vec(), ..said.unwrap_or_default() };
+        write_atomic(&path, serde_json::to_string_pretty(&info)?.as_bytes())
+    }
+
     /// The files the notes held, by their hashes, when the notebook was last
-    /// saved; none where it never was, or what was said cannot be read.
+    /// saved or it was last said (`say_held`); none where neither was done,
+    /// or what was said cannot be read.
     pub fn held(&self) -> Vec<String> {
         let Ok(text) = fs::read_to_string(self.dir.join(INFO)) else { return Vec::new() };
         serde_json::from_str::<Info>(&text).map(|info| info.files).unwrap_or_default()
@@ -233,5 +248,36 @@ mod tests {
         assert!(notebook.held().is_empty());
         fs::remove_file(notebook.dir().join(INFO)).unwrap();
         assert!(notebook.held().is_empty());
+    }
+
+    #[test]
+    fn what_is_said_of_the_files_between_two_savings_is_read_back_and_the_rest_stays() {
+        let (_tmp, notebook) = notebook();
+        let said = |notebook: &Notebook| -> serde_json::Value {
+            serde_json::from_str(&fs::read_to_string(notebook.dir().join(INFO)).unwrap()).unwrap()
+        };
+        // Said of a notebook that was never written: with no notes counted, and no time of a saving.
+        let first = vec!["a".repeat(64)];
+        notebook.say_held(&first).unwrap();
+        assert_eq!(notebook.held(), first);
+        assert_eq!((said(&notebook)["notes"].clone(), said(&notebook)["modified"].clone()), (0.into(), "".into()));
+        assert_eq!(notebook.load().unwrap(), Loaded::default(), "nothing of the document is written by it");
+
+        notebook.save_state(b"S", &Summary { notes: 5, files: vec!["b".repeat(64)] }).unwrap();
+        let saved = said(&notebook);
+        let now = vec!["b".repeat(64), "c".repeat(64)];
+        notebook.say_held(&now).unwrap();
+        assert_eq!(notebook.held(), now, "what is said is read again");
+        assert_eq!(said(&notebook)["notes"], 5, "the count of the notes stays");
+        assert_eq!(said(&notebook)["modified"], saved["modified"], "and when it was saved");
+        assert_eq!(notebook.load().unwrap().state.as_deref(), Some(&b"S"[..]), "the document is as it was");
+        notebook.say_held(&[]).unwrap();
+        assert!(notebook.held().is_empty(), "that the notes hold nothing is said too");
+        assert_eq!(said(&notebook)["notes"], 5);
+
+        // Over what cannot be read it is said anew.
+        fs::write(notebook.dir().join(INFO), "{ not json").unwrap();
+        notebook.say_held(&first).unwrap();
+        assert_eq!(notebook.held(), first);
     }
 }

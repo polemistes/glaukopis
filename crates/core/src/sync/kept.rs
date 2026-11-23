@@ -10,7 +10,8 @@
 //! sync/library.unsent
 //! sync/library/sync.json
 //! sync/base/<name>.json   what a store and its map agreed on when they last met (`mirror`)
-//! sync/<name>.json        what a round keeps from one run to the next (`note`)
+//! sync/<name>.json        what a round keeps from one run to the next (`note`): how the library's
+//!                         files lay (`library-lies`), whether the notebook was refused (`notebook-refused`)
 //! ```
 //!
 //! and, with each document that is synchronized, in its own folder:
@@ -229,6 +230,11 @@ impl Kept {
 
     pub fn note<T: Serialize>(&self, name: &str, value: &T) -> Result<()> {
         write_json(&self.dir.join(format!("{name}.json")), value)
+    }
+
+    /// Forgets what a round kept under a name: the next finds nothing kept of it.
+    pub fn forget_note(&self, name: &str) -> Result<()> {
+        remove(&self.dir.join(format!("{name}.json")))
     }
 
     fn base_file(&self, name: &str) -> PathBuf {
