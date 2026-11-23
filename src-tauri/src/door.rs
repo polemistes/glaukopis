@@ -323,6 +323,21 @@ mod tests {
         DataDir::open(root).unwrap().claim().unwrap().is_some()
     }
 
+    /// Whether the folder can be claimed within a while: a claim let go may
+    /// be held for an instant by a program another test is starting, which
+    /// between its fork and its exec holds every descriptor of this process
+    /// (see the tests of the shell's notebook).
+    fn let_go(root: &Path) -> bool {
+        let began = std::time::Instant::now();
+        while began.elapsed() < std::time::Duration::from_secs(10) {
+            if claimable(root) {
+                return true;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(5));
+        }
+        false
+    }
+
     fn begun(folder: &Folder, root: &Path) -> Begun {
         match folder.begin(root, "en") {
             Begin::Round(begun) => begun,
@@ -346,7 +361,7 @@ mod tests {
         joined_to_nowhere(&root);
         let folder = Folder::new();
         assert_eq!(folder.round(&root, "en"), Round::Again);
-        assert!(claimable(&root), "the claim went with the round");
+        assert!(let_go(&root), "the claim went with the round");
         assert!(!folder.role_runs());
     }
 
@@ -366,7 +381,7 @@ mod tests {
         assert!(folder.role_runs(), "the round's end leaves the role's as it is");
         assert!(!claimable(&root), "the role holds the folder, and it is not claimed a second time");
         drop(state);
-        assert!(claimable(&root));
+        assert!(let_go(&root));
     }
 
     #[test]
@@ -380,7 +395,7 @@ mod tests {
         folder.end(first);
         assert!(!claimable(&root), "the second still holds it");
         folder.end(second);
-        assert!(claimable(&root));
+        assert!(let_go(&root));
     }
 
     #[test]
