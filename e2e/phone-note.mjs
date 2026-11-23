@@ -82,7 +82,9 @@ async function back(app) {
 const paragraphs = (app) =>
   app.exec(
     `return Array.from(document.querySelectorAll(arguments[0] + ' > p')).map((p) => ({
-       kind: p.dataset.kind ?? 'text', done: p.hasAttribute('data-done'), text: p.textContent }));`,
+       kind: p.dataset.kind ?? 'text', done: p.hasAttribute('data-done'),
+       // The words alone: not the label the editor draws at the head of a run of points.
+       text: Array.from(p.childNodes).filter((n) => !(n.nodeType === 1 && n.getAttribute('contenteditable') === 'false')).map((n) => n.textContent).join('') }));`,
     TEXT,
   );
 
@@ -157,7 +159,8 @@ try {
   await phone.keys('Owls of Athens');
   await sleep(400);
   await back(phone);
-  const row = await phone.text(`[data-phone-row="${first}"]`);
+  // Read from the page: the driver's text of an element leaves out the row's title.
+  const row = await phone.exec(`return document.querySelector('[data-phone-row="${first}"]')?.textContent ?? ''`);
   check('the row of the list has the name written', row.includes('Owls of Athens'), row);
   await openNote(phone, first);
   await phone.screenshot('phone-note-1-opened');

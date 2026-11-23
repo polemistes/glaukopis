@@ -225,6 +225,8 @@ async function deskNote(app, name, words) {
     await app.clickText('[data-library-switch] [role="radio"]', 'Notebook');
     await app.waitFor('[data-notebook]', 8000);
   }
+  // The notebook is read before either button is there.
+  await app.waitUntil(`return !!document.querySelector('[data-notebook-empty], [data-new-note]')`, 8000, 'the notebook to be read');
   if (await app.exists('[data-notebook-empty]')) await app.clickText('[data-notebook-empty] button', 'New note');
   else await app.click('[data-new-note]');
   await app.waitFor('[data-note-editor] [data-note-text] .ProseMirror', 5000);
@@ -316,7 +318,7 @@ try {
   await phone.waitUntil(`return !!window.__glaukopisPhone`, 8000, 'the hooks of the page');
   const headings = await phone.exec(`return Array.from(document.querySelectorAll('[data-phone-settings] h2')).map((h) => h.textContent.trim())`);
   check('the settings say Synchronization, Language, Colours and About, in that order', headings.join(' | ') === 'Synchronization | Language | Colours | About', headings.join(' | '));
-  check('the top row says Settings and has Back', (await phone.text('[data-phone-bar]')).includes('Settings') && (await phone.exists('[data-phone-back]')));
+  check('the top row says Settings and has Back', (await phone.exec(`return document.querySelector('[data-phone-bar]')?.textContent ?? ''`)).includes('Settings') && (await phone.exists('[data-phone-back]')));
   await phone.screenshot('phone-sync-1-settings');
 
   const asked = await phone.exec(`
@@ -337,7 +339,7 @@ try {
   check('the language is chosen of a list that has the system’s first and Norwegian among the others', options[0] === 'system' && options.includes('nb') && options.includes('en'), options.join(' '));
   await choose('nb');
   await phone.waitForText('[data-phone-settings] h2', 'Synkronisering', 5000);
-  check('the words are those of the language chosen, at once', (await phone.text('[data-phone-bar]')).includes('Innstillinger'));
+  check('the words are those of the language chosen, at once', (await phone.exec(`return document.querySelector('[data-phone-bar]')?.textContent ?? ''`)).includes('Innstillinger'));
   const kept = () => (existsSync(join(phoneData, 'settings.json')) ? JSON.parse(readFileSync(join(phoneData, 'settings.json'), 'utf8')) : {});
   await until('the language to be written to the settings', () => kept().language === 'nb', 5000);
   check('and it is kept in the settings of the phone', kept().language === 'nb', String(kept().language));
