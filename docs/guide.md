@@ -3984,6 +3984,265 @@ read it. A deletion or a mistake is synchronized as faithfully as anything
 else: what covers it is the trash and the earlier versions, which every
 computer keeps of its own.
 
+## Glaukopis on a phone
+
+Glaukopis has an app for Android phones, Android 8.0 or newer: the
+notebook, and what you collect away from your desk, words, pages, pictures
+and files, which is on your computers the next time you open them. It has no
+projects and no typesetting; those are the computers'.
+
+The app is a file, `glaukopis-<version>.apk`, given out beside the other
+packages, and not through Google Play. Open it on the phone, and allow the
+browser or the app of files to install apps where Android asks. A newer file
+is installed the same way, over the older, and what is on the phone is kept.
+
+Glaukopis is shown by Android System WebView, a part of Android that is
+updated as an app is. Where a phone has none, or one too old, the app says so
+when it starts, and how to bring it up to date.
+
+### The notes
+
+On a phone Glaukopis is the notebook alone. It opens at the notes each
+time: all of them, the newest on top, or those of the box and the tags you
+chose last. Each row says the note's name, or how it begins where it has
+none, with a dot before it where the note came from outside and has not
+been looked at yet. Under it stand the day it was made and, where it took
+something in, where that came from, or **No source**; under that its tags.
+At the right is the first image it holds, small. A press on a row opens the
+note.
+
+The field at the top finds notes by their words, in what is shown; the
+**×** in it shows all again. The button beside it, **Filter**, opens a sheet
+from the foot of the screen: under **Boxes**, **All notes** and each box,
+the one shown marked; under **Tags**, each tag with how many notes have it,
+pressed to show only the notes that have it and pressed again to let it go.
+With more than one tag on, a note must have them all. **Done** closes the
+sheet. While a box is shown or a tag is on, the button says so.
+**Settings**, at the right end of the row, opens the settings.
+
+The round **+** at the foot makes a new note and opens it, ready to be
+written in. It lies in the box shown, or, where all notes are shown, in the
+box that receives notes from outside; and it has the tags that are on.
+
+A line over the notes is there only where something needs saying: that
+what you wrote is kept on the phone and sent when the server can be
+reached, or that something is wrong with the synchronization, or that it
+has stopped on this device. A press on the line opens the settings, where
+the section **Synchronization** says the rest. Where the phone is not
+synchronized, or the server merely cannot be reached and nothing waits to
+be sent, there is no line.
+
+The phone's **Back**, the button or the gesture, closes what lies over the
+page first, a sheet or a question, and then goes back where you were: from
+a note or the settings to the notes. At the notes it puts Glaukopis behind
+the other apps, as Back does in any app, and it is there as it was when you
+come back to it. The arrow at the head of a note and of the settings does
+the same.
+
+What is written is kept on the phone as you write it, and before Glaukopis
+goes behind the other apps. Notes that wait for Glaukopis to take them in
+are taken in when it starts and whenever it comes to the front again, and
+stand at the top of the list, not yet looked at.
+
+### A note on the phone
+
+A note opens when its row in the list is pressed, and a new one with the
+cursor at the end of its text. The arrow at the top left, or the phone's
+own Back, goes back to the notes; what is written is kept as it is
+written, with nothing to save.
+
+From the top: the note's **name**, in one line, which you may leave empty;
+its **tags**; the **box** it lies in; its text; and under the text the
+**sources** of what it holds, where it holds anything taken in. The whole
+of the space under the name is the text: press anywhere in it to write.
+
+Tags are written in their field as on a computer. A comma or **Enter**
+makes a tag of what you typed, a tag offered is taken by a press, and the
+**×** of a tag takes it away.
+
+The button with the name of the box opens the boxes. Press one and the
+note moves there. Under them, give a name and press **New box** to make a
+box and move the note into it at once. Boxes are renamed, put in order and
+deleted on a computer.
+
+A text on the phone is written as any text in Glaukopis, with fewer tools.
+The row at the foot, which stands over the keyboard, has **Bold**,
+**Italic**, **List** and **To do**, and **Undo** at its right end. A
+button that is on shows so; press it again to turn it off, and a list or a
+point to tick is ordinary text again. A point to tick is ticked by a press
+on its box. The keyboard stays up and the cursor where it was. A picture
+copied elsewhere on the phone is put in by pasting it. What was written on
+a computer with the other tools is shown and can be written in.
+
+Words pasted from outside Glaukopis are taken in, as on a computer, and
+their source says **No source** under the text until you give it one.
+Press a source to give it or change it: **Web page** with its address and
+title, **Reference**, found in the library by its words and chosen with a
+place in it, or **Other**, in your own words; then **Apply**. Under it,
+**Taken from it** shows each passage the note took from that source,
+**Bring back** where you have changed it since, and **My own words** where
+it was yours all along. Making a reference of a source is done on a
+computer.
+
+**More**, at the top right, has **Redo**, for what **Undo** took back, and
+**Delete**. A note deleted goes, and the line at the foot of the notes
+says so for a few seconds with **Undo**, which brings it back. Where a
+note you have open is deleted on another of your devices, you are taken
+back to the notes.
+
+### Sharing to Glaukopis from another app
+
+In a browser, a reader or any app that shares, **Share** offers **Glaukopis**
+among the apps it can share with: a page, words, pictures and files go to the
+notebook so. Words selected in another app can go there without Share as
+well: the menu over the selection offers **Glaukopis**, in some apps under
+its **⋮**. Nothing is fetched from a page that is shared: its address and its
+title are kept, and what it holds stays where it is.
+
+### When something is shared to Glaukopis
+
+What another app shares to Glaukopis comes into the notebook as a note, and
+Glaukopis comes to the front on it. The note lies in the box that receives
+notes from outside, not yet looked at, and the cursor is not in its text, so
+that the keyboard does not come up over what was shared until you press where
+you want to write.
+
+Words shared become a note of those words, as they came: nothing is taken
+off them, so that where a browser puts quotation marks around the words you
+selected in a page, they are there. Their source says **No source**, since
+the program cannot know where they are from; give one as for any words taken
+in. The note has no name, whatever the other app called what it shared, and
+the first of its words stand in the list in its place. An address shared
+with nothing else is the one case in which the note is named: by the title
+the other app gave, which is the title of the page, and its source is that
+page. Pictures and files shared become a note that holds them, each with
+itself as its source, and the words that came with them stand before them.
+
+**Back**, from a note arrived at so, puts Glaukopis behind the other apps,
+and the app you shared from is in front again; Glaukopis is where it was when
+you next open it. The arrow at the head of the note goes to the notes, or to
+the note you had open before, and Glaukopis stays in front.
+
+Where nothing could be taken in, no note is made, Glaukopis does not come to
+the front, and Android's small message says so. Where the notebook could not
+be read, what was shared waits and becomes a note when it can.
+
+### The icon's New note
+
+Held down, the icon of Glaukopis offers **New note**. It opens a new note
+in the box that receives notes from outside, with the cursor in its text and
+the keyboard up, ready to be written in. **Back** from it goes to the notes,
+as it does from any note you opened yourself, and the note is kept as you
+write it. A note left empty is one more in the list, as one made by the **+**
+of the notes is.
+
+### A picture or a file in a note
+
+Two buttons at the right of the row over the keyboard, before **Undo**, put
+things into the note you are writing.
+
+**Picture or file** opens the system's own choice of files, which takes any
+kind of file and several at once. A picture chosen stands in the text as a
+figure, where the cursor was when you pressed the button, or at the end of
+the text where it had none; a file that is no picture stands at the end of the
+note, by its name. Each has itself as its source,
+as a file dropped into a note on a computer has: its name and, of a
+photograph, when and where it was taken, where the file says so.
+
+**Photograph** opens the camera of the phone. Take the photograph and accept
+it there, and it is put into the note as a picture chosen is. The camera is
+the phone's own, and Glaukopis asks for nothing to use it. Where Android ended
+Glaukopis while the camera was in front, which it may on a phone with little
+memory, the photograph is not lost: it is a note of its own, not yet looked
+at, in the list when you come back.
+
+A file is taken in as it is, 50 megabytes at the most. While one is being
+taken in, the two buttons are dimmed. Where a file is too large, or could not
+be read, it is left out and a message at the foot of the screen says so, once
+for all that were chosen, with the reason for each; the others are taken in. A
+picture of a kind the figures cannot show, as a photograph kept in HEIF is
+where the phone is set so, is a file in the note, as on a computer. What was
+taken in is one step of **Undo** for each file.
+
+### Sent when Glaukopis is closed
+
+What you write or collect on the phone is sent to your other devices as you
+go, where the phone is in a synchronization. Where the phone had no network
+when you left Glaukopis, it is sent as soon as it has one, without Glaukopis
+being opened: Android runs that once there is a network, at a moment it
+chooses. Where the server cannot be reached though there is a network, it is
+tried again for some two hours, and after that when you next leave Glaukopis.
+Glaukopis asks nothing of you for this, and runs nothing at other times: what
+was written on your other devices comes when you open it.
+
+### The settings
+
+The settings of the phone are one page, reached by the button for them at the
+top of the notes. **Back** brings you to the notes again. Under the heading
+**Synchronization**, the page has **Language**, **Colours** and **About**,
+one under another.
+
+**Language** is a list of the languages Glaukopis is in, each by its own
+name. The first is **As the system**, with the name of the language that is:
+Glaukopis then speaks the language the phone speaks. Choose another and the
+words change at once, and are kept for the next time.
+
+**Colours** has three choices: **As the system**, **Light** and **Dark**. The
+first follows the phone, so that Glaukopis is dark when the phone is. The
+other colourings of the computer, **Mellow** and your own, are not offered on
+the phone; where the settings of the phone say one of them, none of the three
+is marked until you choose one.
+
+**About** says Glaukopis and its version, and under it that Glaukopis is free
+software and comes without warranty.
+
+### Synchronization on the phone
+
+A phone is one of your devices, as a computer is, and what it holds is what
+the others have of your notebook: the notes, with the pictures and files put
+in them, and the references of your library, without their files. It has no
+projects, and the settings of your computers stay on the computers. The
+sentence under **Synchronization** says so.
+
+**To begin**, make a code on a computer that is synchronized already, with
+**Add a device…** under **Synchronization** in its settings. On the phone,
+enter the address of the server, and a name for the phone: the name the
+phone gives itself, which is its model, is offered, and you may change it.
+Choose **Join with a code**, enter the code, and press **Join**. The notes of
+your computers come to the phone, and what is written on the phone goes to
+them. Where you have no other device yet, keep **Start here** and press
+**Start synchronizing**, and the phone is the first.
+
+The keyboard is asked for what each field wants: an address, with no capital
+letter and no correction; the code in capitals; the name as you write it.
+
+**From then on**, what you write on the phone reaches your other devices
+within half a minute, and what you write on them comes to the phone without
+your starting it again. While Glaukopis is behind another app, it asks the
+server nothing; it does when you leave it, and when you come back. Without the
+network, or without the server, you write as before, and the line over the
+notes says that what you wrote is **Kept here, and sent when the server is
+reached**. Where the synchronization says that something is wrong, the line
+says so, and pressing it opens the settings, which say what. **Synchronize
+now** does it at once, and beside it the settings say when it was last done.
+
+**The devices** are listed under **Synchronization**, the phone among them as
+the one you hold. **Add a device…** on the phone shows a code for one more,
+which can be used once, within an hour. Any device can be given another name
+with **Rename**, and another device can be taken out with **Remove**, as one
+that was lost; what is on it stays there.
+
+**Stop synchronizing on this device** takes the phone out, after it has asked.
+What is on the phone stays as it is, and what is written on your other
+devices no longer comes to it. Where the phone is the last device, nothing is
+left on the server, and the question says what that means: your projects and
+the files of your library are not on the phone, and what the server keeps of
+them is deleted. It can join again later with a code.
+
+**The pictures and files of old notes** stay on the phone when the notes are
+deleted, where they take room and are seen nowhere. The phone does not clear
+them away, as a computer does. Nothing is lost by it.
+
 ## The history of a project
 
 A project can keep its whole history: every change, with who made it and
