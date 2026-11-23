@@ -67,7 +67,7 @@ Read on 2026-11-22.
 - **The engine** (`crates/core/src/sync/engine.rs`): `Sync::new(data, projects, notebook, library, hears)`, one thread, `once` for one round; what it has to tell goes through `Hears`. The notebook is the document `notebook`/`the` of the home; the files follow their records in the library's document (`files`, `stored`), where a file of the notes says so (`<hash>/notebook`). The home document's `facts` say what the list shows of each project without its content.
 - **The shell builds the application in roles** (`src-tauri/src/lib.rs`, 927 lines): `run`, and `run_note_window` with a builder of its own, a short list of commands, a capability file of its own (`capabilities/note-window.json`) and a page of its own, which `src/main.ts` mounts where the window is labelled `note`. That is the pattern for the phone.
 - **The inbox** (`crates/core/src/notebook/inbox.rs`): a thing is written whole into `notebook/inbox/<id>/` (`item.json`, a `Collected` of the kind `page`, `selection`, `image`, `region` or `note`, with its files beside it) by whoever collects, with no application running; the page takes it in as a note in the box that receives, with the page it came from as its source (`src/lib/notebook/inbox.ts`).
-- **The notebook's interface**: the model (`src/lib/notebook/model/`) knows nothing of the page. `NotebookView.svelte` (1059 lines) is three columns for a wide window. `NoteList`, `NoteCard`, `NoteEditor`, `TagsField`, `SourceDialog`, `filters.ts` and `page.svelte.ts` are the parts a narrow page is made of.
+- **The notebook's interface**: the model (`src/lib/notebook/model/`) knows nothing of the page. `NotebookView.svelte` (1059 lines) is three columns for a wide window. Of its parts a narrow page uses `TagsField`, `page.svelte.ts`, `page-view.svelte.ts`, `sources.ts` and `filters.ts` as they are. `NoteList` is for the mouse and the keys, `NoteEditor` and `SourceDialog` bring the application's tools of writing, its router, the form of a reference and the reading of text with them, and `NoteCard` is the card of the document pane: the phone has its own in their place (corrected when stage 2 was detailed).
 - **The synchronization's section** (`src/lib/sync/SyncSettings.svelte`, 578 lines) with its commands (`sync_start`, `sync_join`, `sync_home`, `sync_code`, `sync_stop`, `sync_now`).
 - **Mouse and finger**: the interface listens to the pointer in most places (88 uses in 46 files), to the mouse alone in 24 files, opens menus by the right button in 22, and acts on a double click in 25. The phone's page uses none of the last three as the only way to anything.
 - **Tauri 2.12 with wry 0.57**: the web view of Android opens the camera for a field of files that asks for one (`RustWebChromeClient.onShowFileChooser`), and a plugin written in Kotlin is told of what other apps hand over (`Plugin.onNewIntent`).
@@ -78,7 +78,7 @@ Read on 2026-11-22.
 
 ### The application in another role
 
-- **The shell.** The sources of `src-tauri` are a second package, `src-phone`, built for Android alone and empty elsewhere, so that a build for a computer makes nothing for the phone (record 0121). The phone has a role of its own in `src-tauri/src/phone.rs`: one window labelled `phone`, the data folder in the app's own place (made and claimed as the application's is, `DataDir::open`: the phone's role is the only one at work in it), the engine, and only the commands the phone's page calls (the notebook's, the synchronization's, the languages, the settings, the log of the page). What is a desktop's alone stands behind `cfg(desktop)`: the single instance, windows made and placed, printing, the clipboard through GTK, the window of a note, Firefox. `lib.rs` is divided by role as this is done, not added to.
+- **The shell.** The sources of `src-tauri` are a second package, `src-phone`, built for Android alone and empty elsewhere, so that a build for a computer makes nothing for the phone (record 0121). The phone has a role of its own in `src-tauri/src/phone.rs`: one window labelled `phone`, the data folder in the app's own place (made and claimed as the application's is, `DataDir::open`: the phone's role is the only one at work in it), the engine, and only the commands the phone's page calls (the notebook's but for the sweep and the readable copy, the synchronization's, the languages, the settings, the log of the page, and the few of the files, the references and the server that a note and the settings show: listed in *Stage 2, in detail*). What is a desktop's alone stands behind `cfg(desktop)`: the single instance, windows made and placed, printing, the clipboard through GTK, the window of a note, Firefox. `lib.rs` is divided by role as this is done, not added to.
 - **The same role on a computer**, `glaukopis --phone`, for trying only: a window as narrow as a phone, the phone's commands, the phone's page. It is in no launcher and not in the guide. Through it the harness that is there reaches nearly all of the phone's page.
 - **The Android project** (`src-phone/gen/android`) was made by `tauri android init` and is committed, without what a build leaves in it: the manifest and the Kotlin of this plan live there. Tauri's tool is run from `src-phone` by its own place, never through pnpm, which starts it where it takes the application of the computers for the one to build.
 - **The page.** `src/main.ts` mounts `src/lib/phone/mount.ts` where the window is labelled `phone`, as it mounts the window of a note: nothing of the projects, the diagram or the typesetting is loaded. Vite is told of the web view of Android beside `safari15`.
@@ -124,7 +124,7 @@ One column, three places: the notes, a note, the settings. Each is a step of the
 
 - **The notes.** Newest first, one to a row: how it begins or its name, its first picture, when, its source in a line, its tags; those not yet looked at marked. A field to find in. A filter by box and tag, opened from the bottom of the screen.
 - **A note.** The editor of the texts. Over the keyboard a row of the tools a note needs: bold, italic, a list, *To do*, a picture, a photograph, undo. Its name, its tags, its box, its source (shown, and set as on a computer). *Delete*, undone from the line that says it was deleted.
-- **The settings.** Synchronization (the section there is, made to fit); the language; light or dark; the version, and that a newer one is out.
+- **The settings.** Synchronization (the section there is, made to fit); the language; light or dark; the version. That a newer one is out is told from stage 4.
 - **By finger.** Everything has a button, or a row in a menu opened by a button that is seen. A long press opens what the right button opens on a computer, and is never the only way. What is shown under the pointer (a ground, a colour, a thing that appears) is shown only where a pointer can be over a thing without pressing it: a touch screen leaves the last thing tapped as if the pointer stayed, and a tool turned off again looked on to the owner (found on the owner's phone, and mended for the buttons with an icon; the rest of the interface, some two hundred places, with the phone's page).
 - **Without a network** everything works. A line at the top says so only where something waits to be sent or is wrong.
 - The page is laid out in what the keyboard leaves. Light and dark, and the language, are the system's until chosen.
@@ -200,7 +200,7 @@ Each is committed when it is checked. Stages 0 to 4 are the app the owner asked 
 
 0. **The trial. Done on 2026-11-22: record 0121.** The editor holds under Google's keyboard; Samsung's is the owner's phone's to answer, with the app built for it. As it was planned: The Rust targets for Android; TLS; the shell built for Android with one window that holds the editor of the texts and keeps a note. On the emulator and on the owner's phone. It answers: whether the core builds, for 64 bits and for 32, and whether its tests pass as a 32-bit program; how large the file is, and so whether typesetting is left out; **whether the editor holds under a phone's keyboard**, Samsung's on the owner's phone and Google's on the emulator (typing with suggestions, Enter, Backspace over marks, lists, selecting, pasting); whether the page keeps clear of the system's bars and follows Back on Android 16; how the oldest web views are tried; whether a share arrives; whether the camera opens; whether the harness reaches the emulator; how long a build takes and what it leaves on the disk. Should the editor not hold, the plan stops here and is told: the way left is notes written in a plain field and shown as they are, which is a lesser app and the owner's to choose. Ends with the record, and this plan corrected by what was found.
 1. **The role, and what a phone takes. Done on 2026-11-23: record 0122.** The shell divided by role, `glaukopis --phone`; a web view too old said by the Android part; the engine told what a device takes, with its tests against the server. (The phone's data folder and the backup turned off were done in the trial.) Its detailed part is *Stage 1, in detail*, below.
-2. **The notes shown, found and written; the synchronization set up.** The page of the phone. *Device* for *computer* in the words of the synchronization, on the computers too, with an addendum to its record. From here the owner has an app to use: a note written on the phone is on the computer.
+2. **The notes shown, found and written; the synchronization set up.** The page of the phone. *Device* for *computer* in the words of the synchronization, on the computers too, with an addendum to its record. From here the owner has an app to use: a note written on the phone is on the computer. Its detailed part is *Stage 2, in detail*, below.
 3. **Collecting.** Share, the selection's menu, the photograph, pictures and files, *New note* on the icon; sent when closed.
 4. **Given out.** The signed file, the job of the workflow, the newer version told, the website's folder, the chapter of the guide, the other languages in a round.
 5. *Later, should the owner want it:* **text read on the phone.** Photographs measured first; then Tesseract brought along, the languages, *Read the text*; PDFs after.
@@ -431,7 +431,7 @@ Found by the reading, none of them a fault of stage 1; each is to be decided whe
 2. **The sweep's protection** (`kept_for_notes`) leans on `Notebook::held()`, which is written only when the page saves the whole notebook. The phone's page must save it so, or a sweep elsewhere is not told again.
 3. **A home document in a later form ends a phone's whole round**, before its notebook, though a phone writes nothing into it. So notes written on an outdated phone stay there until the app is updated. Whether a phone should go on with its notebook then is the owner's to say.
 4. **A file that stops being the notes'** stays on the phone, as decided above, and is not taken away; and a phone that leaves and joins again offers again the records of files it never held, which then show as missing. Nothing is lost by either.
-5. **A lost `library/files.json`** is caught on a computer because its store holds files the record lacks. A phone whose notes hold no file has an empty store, and would tell every record as taken out. No path that loses the file alone is known; the guard is to be weighed.
+5. **A lost `library/files.json`** is caught on a computer because its store holds files the record lacks. A phone whose notes hold no file has an empty store, and would tell every record as taken out. No path that loses the file alone is known; the guard is to be weighed. (Found when stage 2 was detailed: a lost `library.bib` or `collections.json` is caught nowhere, on a computer either, and reads as a library emptied. Stage 2 builds the guard for all three.)
 
 ### Chosen here, to be told
 
@@ -460,17 +460,17 @@ Five parts.
 
 | Part | Who | Where |
 | --- | --- | --- |
-| A. What the notes hold, kept: when a device sweeps, what is never taken from the notes, a file of the library lost; and what the engine tells the phone's page | the most capable model, as an agent in a worktree. Its diff is read once more by the most capable model, as a second agent that is given the diff and this section and not the builder's account, before it is merged | `crates/core/src/notebook.rs`, `crates/core/src/library/`, `crates/core/src/sync/`, `crates/server/tests/`, `src-tauri/src/commands/notebook.rs`, `src-tauri/src/state.rs`, `src/lib/api/notebook.ts`, `src/lib/notebook/open.svelte.ts` |
-| B. The phone's commands, Android's own, the meeting points, the running app | the main thread | `src-tauri/`, `src-phone/`, `crates/core/src/sync/mod.rs`, `crates/core/src/i18n.rs`, `src/main.ts`, `e2e/phone-role.mjs`, `e2e/android/` |
-| C. The page: its frame, the notes, finding, the filter | Opus, as an agent in a worktree | `src/lib/phone/`, `src/lib/ui/`, `src/app.css`, `e2e/phone-notes.mjs` |
-| D. A note | Opus, as an agent in a worktree | `src/lib/phone/`, `src/lib/notebook/TagsField.svelte`, `e2e/phone-note.mjs` |
-| E. The settings of the phone, and *device* for *computer* | Sonnet, as an agent in a worktree | `src/lib/phone/SettingsPlace.svelte`, `src/lib/sync/`, `locales/`, `docs/guide.md`, `e2e/phone-sync.mjs`, `e2e/synchronization.mjs` |
+| A. What the notes hold, kept: when a device sweeps, what is never taken from the notes, a file of the library lost; and what the engine tells the phone's page | the most capable model, as an agent in a worktree. Its diff is read once more by the most capable model, as a second agent that is given the diff and this section and not the builder's account, before it is merged | `crates/core/src/notebook.rs`, `crates/core/src/library/`, `crates/core/src/sync/`, `crates/server/tests/`, `src-tauri/src/commands/notebook.rs`, `src-tauri/src/state.rs`, one line each of `src-tauri/src/application.rs` and `src-tauri/src/contract.rs`, `src/lib/api/notebook.ts`, one field of `src/lib/api/sync.ts`, `src/lib/api/contract.generated.ts`, `src/lib/notebook/open.svelte.ts` |
+| B. The phone's commands, Android's own, the meeting points, the running app | the main thread | `src-tauri/`, `src-phone/`, `crates/core/src/sync/mod.rs`, `crates/core/src/i18n.rs`, `src/main.ts`, the meeting points (the stylesheets `src/app.css` and `src/placing.css` among them), `e2e/phone-role.mjs`, `e2e/android/` |
+| C. The page: its frame, the notes, finding, the filter | Opus, as an agent in a worktree | `src/lib/phone/` but for what is D's and E's, `src/lib/ui/` (`Button`, `TextField`, `Segmented`, `Dialog`), `src/lib/figures/pictures.svelte.ts`, `e2e/phone-notes.mjs` |
+| D. A note | Opus, as an agent in a worktree | `src/lib/phone/`: `NoteView`, `ToolRow`, `tools.ts`, `BoxSheet`, `SourceSheet`; `src/lib/notebook/TagsField.svelte`; `e2e/phone-note.mjs` |
+| E. The settings of the phone, and *device* for *computer* | Sonnet, as an agent in a worktree | `src/lib/phone/SettingsPlace.svelte`, `src/lib/sync/SyncSettings.svelte`, `src/lib/api/sync.ts` where `syncComputer` goes out, `locales/en/` and `locales/nb/`, `locales/GLOSSARY.md`, `docs/guide.md`, `e2e/phone-sync.mjs`, `e2e/synchronization.mjs` |
 
 A writer at a computer sees one thing of this stage: the words of the synchronization say *device* where they said *computer*. Nothing else of the application changes to the eye. `contract.generated.ts` changes by one field (`waiting` of the status).
 
 ### Where the parts meet
 
-Before any agent begins, the main thread makes one commit on main, **the meeting points**, and every agent starts from it. It holds, for each thing one part uses of another's, a file at its path with the shape said here and a body that does the least; the part that owns the path fills it in, and no other part touches it. It also holds every word of this stage (the section *Words*), so that no agent writes into a file of words another writes into, and the test of what is shown under a pointer with the shared files brought to pass it.
+Before any agent begins, the main thread makes one commit on main, **the meeting points**, and every agent starts from it. It holds, for each thing one part uses of another's, a file at its path with the shape said here and a body that does the least; the part that owns the path fills it in, and no other part touches it. It also holds the phone's own words (`phone.ftl`, in English and Bokmål: the section *Words*), which two parts use, and the test of what is shown under a pointer with the shared files brought to pass it.
 
 | What | Where | Shape | Filled in by | Used by |
 | --- | --- | --- | --- | --- |
@@ -486,17 +486,18 @@ Before any agent begins, the main thread makes one commit on main, **the meeting
 | The ground behind the system's bars | `window.glaukopisAndroid` | `ground(colour: string, dark: boolean): void`, `colour` as `#rrggbb`; there on Android only | B (Kotlin) | C |
 | What lies over the window | `src/lib/ui/over.ts` | `export const over: { opened: ((close: () => void) => () => void) \| null } = { opened: null }` | the meeting points; `Dialog.svelte` is taught it by C | C |
 | A picture tried again | `pictures.again()` of `src/lib/figures/pictures.svelte.ts` | `again(): Promise<void>`: what `#retry` does, to be asked from outside | C | C |
-| The hooks of the scripts | `window.__glaukopisPhone` | `{ box(name: string): string }` by C (makes a box and gives its id), and by D on the same object `picture(name: string, content64: string): Promise<void>` (puts a picture into the note in view, as a paste does). Set through `testHook` of `shell/testing.ts`; D adds its function with `Object.assign` where the object is there | C, D | the scripts |
+| The hooks of the scripts | `window.__glaukopisPhone` | by C: `box(name: string): string` (makes a box and gives its id), `note(made: { name?: string; words?: string; box?: string; tags?: string[] }): string` (makes a note through the model and gives its id), `remove(note: string): void` (deletes one through the model). By D, on the same object: `picture(name: string, content64: string): Promise<void>` (puts a picture into the note in view, as a paste does). Set through `testHook` of `shell/testing.ts`; D adds its function with `Object.assign` where the object is there | C, D | the scripts |
+| What the scripts press and read | attributes | of C: `data-phone-notes` (the place), `data-phone-find`, `data-phone-filter`, `data-phone-to-settings`, `data-phone-new`, `data-phone-row={id}`, `data-phone-line`; of D: `data-phone-name`, `data-phone-text`, `data-phone-tool` (`bold`, `italic`, `list`, `todo`, `undo`), `data-phone-more`, `data-phone-box`; of E: those the section of the synchronization has (`data-sync-…`), and `data-phone-language`, `data-phone-theme` | each its own | the scripts |
 
 What the three page parts hold to alike:
 
 - **By finger.** Everything that is pressed is at least 44 pixels high and wide. `IconButton` is used in its usual size, never `sm`. Nothing is reached only by a long press, the right button, a double click or the pointer resting on a thing, and nothing of the three is built at all. A tooltip is not counted on: a finger never sees one.
 - **Nothing is shown under a pointer but where there is one.** Every rule that says `:hover`, in every file the phone's page draws, stands inside `@media (hover: hover)`. `src/lib/phone/hover.test.ts`, made with the meeting points, reads the style of every `.svelte` file under `src/lib/phone/` and of the shared files it names, and fails on a `:hover` outside such a block. A part that comes to draw a shared file the test does not name adds it there in its own commit and makes it pass.
-- **Nothing that holds words has a height written in pixels**: a least height, and the words decide the rest. Android makes the letters larger where the system is set so, and a row of a fixed height would cut them.
+- **Nothing of the phone's own that holds words has a height written in pixels**: a least height, and the words decide the rest. Android makes the letters larger where the system is set so, and a row of a fixed height would cut them. The buttons and fields of `ui/` are let be: their one line of words has room in 44 pixels.
 - **One column, from 320 pixels wide.** Nothing is scrolled sideways, and nothing lies outside the window at 320.
-- **The words** are those of the notebook, the settings, the synchronization and the editor wherever one of them says it already (`notebook-new-note`, `notebook-search`, `common-delete`, `settings-theme`, …). The four that are the phone's own are in `phone.ftl`. No part adds a message: one that is missing is asked of the main thread.
+- **The words** are those of the notebook, the settings, the synchronization and the editor wherever one of them says it already (`notebook-new-note`, `notebook-search`, `common-delete`, `settings-theme`, …). The four that are the phone's own are in `phone.ftl`. C and D add no message and change none: one that is missing is asked of the main thread. E changes and adds those of its table, and no others.
 - **What is not loaded.** The phone's page imports no component of the projects, the diagram, the typesetting, the library's pane or the application's settings window, and neither `router.svelte.ts`, `projects.svelte.ts` nor `changes.svelte.ts`: their commands are not the phone's.
-- **For the scripts**, each thing a script presses or reads has an attribute `data-phone-…`, named in the part's account of itself.
+- **For the scripts**, what a script presses or reads has an attribute: those of the table above by the names there, and any more a part needs, `data-phone-…`, named in the first comment of its script.
 
 ### A. What the notes hold, kept
 
@@ -523,12 +524,12 @@ Read before building: `crates/core/src/library/notebook.rs` (the sweep) and `mod
   - `round` keeps `notebook-refused` (`Kept::note`, a `bool`): true where `notebook_round` gave an error that is not of the server, false where it gave none; left as it is where the round ended before or in it for the server's sake. It is written only where it is another than it was (`Round` remembers it).
   - `library_round`: rule 7, before it is worked out whether the round is quiet. A file not there when read, of `references`, `collections`, or `files` and `file-folders`, whose `sync/base/` holds names, is damaged, with the warning there is.
   - `Status` gets `waiting: bool`: whether the notebook or the library here holds what the server was not sent, as far as the disk says without asking it. It is worked out when a round ends: where the round could not reach the server, by the two looks below; false where it ended in any other way; left as it is while a round is under way, so that the page's line does not go and come with every try. The two looks: the notebook's files lie otherwise than at its last exchange and the document here holds something beyond what the server was last seen to have (`whole::beyond`, read only where the files lie otherwise); or the library's files lie otherwise than when it was last brought to be the same (`LibraryLies`), a library that holds nothing and was never exchanged counting as nothing. Of the projects it says nothing: the phone's page shows it, and a phone has none.
-  - `Sync::front(&self, front: bool)`: whether the app is in front. Either way a round is made at once. While it is not in front the thread asks nothing at regular times: it waits without the half minute, and is woken as ever by what is written here, by `now` and by `end`. `Wake` gets the field, and how long the thread waits at the most is a function of its own beside it, tested beside the code. A computer never calls it and is always in front.
-- `crates/core/src/sync/mod.rs`: `pub fn notebook_refused(data: &DataDir) -> bool`, what the engine kept, false where nothing is kept or the device is in no home.
+  - `Sync::front(&self, front: bool)`: whether the app is in front. Either way a round is made at once. While it is not in front the thread asks nothing at regular times: it waits without the half minute, and is woken as ever by what is written here, by `now` and by `end`. `Wake` gets the field, and how long the thread waits at the most is a function of its own beside it, tested beside the code. Each change is a line of the log (`tracing::info!`: not in front, and nothing asked at regular times; in front again). A computer never calls it and is always in front.
+- `crates/core/src/sync/mod.rs`: `pub fn notebook_refused(data: &DataDir) -> bool`, what the engine kept; false where nothing is kept, as on a device in no home, whose `sync/` went when it left.
 - `src-tauri/src/state.rs`: `AppState` gets `notebook_refused: bool`, read in `AppState::open`.
 - `src-tauri/src/commands/notebook.rs`: `notebook_sweep` does nothing, and says so in the log, where the notebook was refused when the run began or is now. `notebook_say_held(state, files: Vec<String>) -> CommandResult<()>`, new, calls `say_held`; it is registered in `application.rs` (B registers it for the phone).
 - `src/lib/api/notebook.ts`: `notebookSayHeld = (files: string[]) => call<void>('notebook_say_held', { files })`. `src/lib/api/sync.ts`: `waiting: boolean`.
-- `src/lib/notebook/open.svelte.ts`, in `#read`, in this order: it listens (`onNotebookUpdate`), keeping what it hears; reads the notebook from the disk and loads it; applies what it heard, and from then on applies at once; asks for the sweep where `sweeps`, and waits for the answer; and only then begins to say what the notes hold: a second after any change to the document, whoever made it, `summary().files` is worked out, and where it is another list than was last said or saved, `notebookSayHeld` is called with it. What the notes held when the notebook was read is not said: the sweep judges by what was said before as well, so that a page that read less than there is takes nothing a saved note holds. The readable copy is written only where `readable`.
+- `src/lib/notebook/open.svelte.ts`, in `#read`, in this order: it listens (`onNotebookUpdate`), keeping what it hears; reads the notebook from the disk and loads it; applies what it heard, and from then on applies at once; asks for the sweep where `sweeps`; and, once the sweep has answered (the notebook is given to whoever asked for it without waiting for that), begins to say what the notes hold: a second after any change to the document, whoever made it, `summary().files` is worked out, and where it is another list than was last said or saved, `notebookSayHeld` is called with it. What the notes held when the notebook was read is not said: the sweep judges by what was said before as well, so that a page that read less than there is takes nothing a saved note holds. The readable copy is written only where `readable`.
 
 **What holds it.**
 
@@ -536,16 +537,17 @@ Beside the code:
 
 - `notebook.rs`: what is said is read again by `held`; the count of the notes and the time stay.
 - `library/notebook.rs` and `mod.rs`: a file not there when read is said once; a library emptied by the writer is not.
-- `sync/library.rs`, with the two devices its tests have: a file the notes hold, which the library has too, is kept on the device that holds its note when the other sweeps the mark off and then removes the file from its library: the file is on the first one's disk, held by the notes alone, and the other has its record again after they meet twice. And: the mark alone taken off elsewhere stays on the device whose notes hold the file, and is on the other again.
+- `commands/notebook.rs` of the shell: in a folder whose `sync/` says the notebook was refused, `notebook_sweep` answers nought and a file the notebook holds alone, which no note holds, is still in the store; the same folder without that says one, and the file is gone.
+- `sync/library.rs`, with the two devices its tests have, two tests of a file that the library has and a note holds. The mark: the second device sweeps with nothing held, which takes the mark off there; they meet; on the first, whose notes hold the file, the mark is as it was, and after they have met twice the second has it again. The record: the mark is taken off the first one's record by hand, as a sweep elsewhere could take it before this rule, and the second removes the file from its library; they meet; the file is on the first one's disk, held by the notes alone, and after they have met twice the second has its record again.
 - `engine.rs`: how long the thread waits, in front and not.
 - `open.test.ts`: a change heard while the notebook is read is in the notebook after; the sweep is not asked for where `sweeps` is false; nothing is said of what the notes hold before the sweep has answered; a picture put into a note is said within the second, and a second change that leaves the list as it was is not said again; no readable copy where `readable` is false.
 
-Against the real server, in `crates/server/tests/phone.rs`:
+Against the real server, in `crates/server/tests/phone.rs`, four more beside the eleven of stage 1, which stay as they are (the sixth sweeps on a phone by the core's own function, to hold what a round does with a record that left a phone; a phone asks for no sweep any more):
 
-10. `a_file_a_phones_note_holds_is_kept_when_a_computer_sweeps_it_with_less_of_the_notebook`. A picture taken on the phone into a note; the phone says what its notes hold; both settle. The computer sweeps with nothing held (`notebook_sweep`), as one that read less of the notebook than there is. After the rounds of both, the phone holds the picture, the computer holds it again, byte for byte, and the server holds it.
-11. `a_device_whose_notebook_is_refused_says_so_and_says_it_no_more_when_it_is_taken_again`. As the second test of stage 1 makes a refusal: after the phone's round `notebook_refused` is true; the form put back and a round made, it is false.
-12. `a_phone_that_loses_the_record_of_its_files_tells_nothing_as_taken_out`. A computer with two references, a collection and a file of the library; a phone joins; both settle. The phone's `library.bib`, `collections.json` and `files.json` are deleted, its library read anew, and a picture taken into a note there before its round, so that the record of the files is on the disk again with one file in it. After the rounds of both, the computer holds its references, its collection and its file as before, byte for byte, and the phone has the references, the collection and the records again, and its picture.
-13. `a_phone_says_that_what_was_written_waits_while_the_server_is_not_reached`. A phone in a home, settled; the server is not reached; a round: `offline`, and `waiting` false. A note written: after the next round, `waiting` true. The server reached again: after the round, `idle`, and `waiting` false.
+1. `a_file_a_phones_note_holds_is_kept_when_a_computer_sweeps_it_with_less_of_the_notebook`. A picture taken on the phone into a note; the phone says what its notes hold; both settle. The computer sweeps with nothing held (`notebook_sweep`), as one that read less of the notebook than there is. After the rounds of both, the phone holds the picture, the computer holds it again, byte for byte, and the server holds it.
+2. `a_device_whose_notebook_is_not_taken_says_so_and_says_it_no_more_when_it_is`. A phone in a home, settled. The state of its notebook on the disk is made bytes that are no document, and a note's change written after it: the round gives one problem, and `notebook_refused` is true. The state put back as it was: after the next round it is false. And where a phone is older than the form of the notebook, as the second test of stage 1 makes it, it is true (the form of a notebook is never put back, so that a refusal ends is tried by the first half).
+3. `a_phone_that_loses_the_record_of_its_files_tells_nothing_as_taken_out`. A computer with two references, a collection and a file of the library; a phone joins; both settle. The phone's `library.bib`, `collections.json` and `files.json` are deleted, its library read anew, and a picture taken into a note there before its round, so that the record of the files is on the disk again with one file in it. After the rounds of both, the computer holds its references, its collection and its file as before, byte for byte, and the phone has the references, the collection and the records again, and its picture.
+4. `a_phone_says_that_what_was_written_waits_while_the_server_is_not_reached`. A phone in a home, settled; the server is not reached; a round: `offline`, and `waiting` false. A note written: after the next round, `waiting` true. The server reached again: after the round, `idle`, and `waiting` false.
 
 In `synchronized_library.rs`, one test: a computer that loses `library.bib` alone, and reads its library anew, takes no reference from the other, and has its own again after they meet.
 
@@ -581,7 +583,7 @@ The second reading goes through the seven rules against the diff, one by one, an
 
 **`sync_front(sync, front: bool)`**, new, in `commands/sync.rs`, calls `Sync::front`; registered for the phone alone.
 
-**`languages(system: Option<String>)`** (`commands/system.rs`). The system's language is what `GLAUKOPIS_LANGUAGE` says, where it is set (the scripts); else what the page says, where it says one; else what the core finds. `i18n::system_tag` gets the argument, or a second function beside it. A phone's page says `navigator.language`: the web view knows the language Android is set to, and the core reads it from a property of the system that an app is not everywhere let read. The application's page says nothing and is as it was.
+**`languages(system: Option<String>)`** (`commands/system.rs`). The system's language is what `GLAUKOPIS_LANGUAGE` says, where it is set (the scripts); else what the page says, where it says one; else what the core finds. In the core that is a second function, `i18n::system_tag_as(said: Option<&str>) -> String`, and `system_tag()` is that with nothing said. A phone's page says `navigator.language`: the web view knows the language Android is set to, and the core reads it from a property of the system that an app is not everywhere let read. The application's page says nothing and is as it was.
 
 **`src/main.ts`** mounts `$lib/phone/mount` (`mountPhone(target)`) where `isPhone()`, and the page of a note only where `isNoteWindow()`.
 
@@ -639,7 +641,7 @@ Then `PhonePage` is mounted, and after it, none of it waited for: the notebook i
 
 - **The row**: the field that finds (`notebook-search`, with its × while something is written, `notebook-search-clear`), the filter's button (`notebook-filters`, shown as on while a box is in view or a tag is on), the settings' button (`settings-title`, which goes to the place).
 - **The line** (`Line.svelte`, `line.ts`): there only where something waits or is wrong, by the status (`sync.status`): `sync-refused` where the state is `refused`; else `phone-waiting` where it is `offline` and `waiting`; else `phone-problem` where a problem is said and the state is not `offline`; else nothing, and so nothing where the device is in no home and nothing where the server is merely not reached. It is a button over the whole width, which goes to the settings, where the section of the synchronization says the rest. `line.ts` is the rule alone, with its test.
-- **The notes** (`NoteRows.svelte`): `notebook.find(query, { box, tags })`, newest first, with the box in view and the tags that are on from `pageView`. Each row: the dot of a note not looked at (`notebook-unseen`); its name or how it begins (`rowOf`), else `notebook-empty-note`; under it the day, and its source in a line (`sourceLabel` of the first of `chipsOf`, where it has one); under that its tags, in one line that is cut; at the right its first picture, small (`Thumb`). A row pressed goes to the note. Only the rows in view are drawn, as `NoteList` does it, and their one height is measured from a row that is drawn, not written as a number. `rows.ts` holds what a row says beyond `rowOf`, with its test.
+- **The notes** (`NoteRows.svelte`): `notebook.find(query, { box, tags })`, newest first, with the box in view and the tags that are on from `pageView`. Each row: the dot of a note not looked at (`notebook-unseen`); its name or how it begins (`rowOf`), else `notebook-empty-note`; under it the day, and its source in a line (`sourceLabel` of the first of `chipsOf`, where it holds anything taken in: *No source*, where that has none); under that its tags, in one line that is cut; at the right its first picture, small (`Thumb`). A row pressed goes to the note. Only the rows in view are drawn, as `NoteList` does it, and their one height is measured from a row that is drawn, not written as a number. `rows.ts` holds what a row says beyond `rowOf`, with its test.
 - **Where there is nothing**: `notebook-empty` with its text, in an empty notebook; `notebook-nothing-found` where nothing is found; `notebook-unreadable` with what the reading said, where the notebook could not be read (a later form says `notebook-later`).
 - ***New note*** (`notebook-new-note`), a round button at the foot, at the right, over the list: a note in the box in view, or where all notes are shown in the box that receives (`notebook.receiving`), with the tags that are on; between two `checkpoint()`s; then `places.go({ at: 'note', note, fresh: true })`.
 
@@ -651,7 +653,7 @@ Then `PhonePage` is mounted, and after it, none of it waited for: the notebook i
 
 **Made to fit, in shared files** (the application as it was):
 
-- `ui/Button.svelte`, `ui/TextField.svelte`, `ui/Segmented.svelte`: the heights of their sizes are read from variables that are, where nothing sets them, what the heights are today (`--control-h-sm`, `--control-h-lg`, `--segmented-h`, `--segmented-h-sm` beside `--control-h`). `phone.css` sets them: 44 pixels, the small ones 40, each as a least height.
+- `ui/Button.svelte`, `ui/TextField.svelte`, `ui/Segmented.svelte`: the heights of their sizes are read from variables that are, where nothing sets them, what the heights are today (`--control-h-sm`, `--control-h-lg`, `--segmented-h`, `--segmented-h-sm` beside `--control-h`). `phone.css` sets them: 44 pixels, the small ones 40.
 - `ui/Dialog.svelte`: `over`, as said.
 - `figures/pictures.svelte.ts`: `again()`.
 
@@ -674,7 +676,7 @@ Read before building: `src/lib/notebook/NoteEditor.svelte` and `SourceDialog.sve
 
 **The sheet of the boxes** (`BoxSheet.svelte`, titled `notebook-move-to`): each box, the note's own marked; pressed, the note is moved there (`notebook.moveToBox`, between two `checkpoint()`s) and the sheet closes. At its foot a field (`notebook-box-name`) with *New box* (`notebook-box-new`): `notebook.addBox(name)`, and the note moved into it. Boxes are not renamed, put in order or deleted here.
 
-**`SourceSheet.svelte`**, props `{ notebook: Notebook; note: string; source: Source | null; onclose: () => void }`, as `SourceDialog` takes them. It does what the window of a source does on a computer, with these four things left out: *Make a reference*, *Read the text*, the way into the library, and what became of the note.
+**`SourceSheet.svelte`**, props `{ notebook: Notebook; note: string; source: Source | null; onclose: () => void }`, as `SourceDialog` takes them. It does what the window of a source does on a computer, with three things left out: *Make a reference*, *Read the text*, and the way into the library.
 
 - What it is (`Segmented`: `notebook-source-web`, `notebook-source-reference`, `notebook-source-other`), and its fields: a page's address and title; words; for a reference, a field that finds (`common-search`) over the references of the library, each a row of its authors and year over its title, sixty at the most (`search` and `sortEntries` of `state/library.svelte.ts`), pressed to be chosen, and its place (`LOCATOR_LABELS` and the field, as on a computer). A file says what it says of itself, and is not changed.
 - *Apply* (`common-apply`) saves by `saveSource`, in one step of undo, as on a computer, and closes.
@@ -685,6 +687,197 @@ Read before building: `src/lib/notebook/NoteEditor.svelte` and `SourceDialog.sve
 **The hook** `picture(name, content64)`: the picture is taken in through the holder (`pictureFromBlob`) and put where the cursor is, or at the end (`insertFigure`). Stage 3 puts *Photograph* and *Picture or file* on the same function.
 
 **What it is checked by**: `pnpm check`, `pnpm test`; `tools.test.ts`; `NoteView.svelte.test.ts` (the name written is the note's; a tag added and taken away; the box changed, and a new box; *Delete* and *Undo*; a note gone goes back; *Redo* after *Undo*); `SourceSheet.svelte.test.ts` (a page given to what had no source; a reference chosen with its place; *My own words* takes the chip away); `TagsField.svelte.test.ts`; `e2e/phone-note.mjs`, written and not run. Its paragraphs for the guide in `docs/plans/phone-guide/note.md`.
+
+### E. The settings of the phone, and *device* for *computer*
+
+Read before building: `src/lib/sync/SyncSettings.svelte`, `sync.svelte.ts` and `src/lib/api/sync.ts`; `src/lib/settings/SettingsView.svelte`, where it sets the language and the colours (the pattern); `locales/en/` and `locales/nb/`: `sync.ftl`, `core-sync.ftl`, `core-sharing.ftl` where it speaks of a home; the chapter *Your computers, the same* of `docs/guide.md`; `e2e/synchronization.mjs`.
+
+**`SettingsPlace.svelte`**: the row at the top (`TopBar`, titled `settings-title`, with Back), and under it, one under another, each under its heading:
+
+1. **Synchronization**: `<SyncSettings takes="notes" />`.
+2. **Language** (`settings-language`): the system's own choosing of one of a list (`<select>`): first *As the system*, with the name of the language that is (`settings-language-system`, of `languages.interfaceDefault`), then each language of `languages.interface` by its own name, in the order the application's settings have them. Chosen, it is kept (`settings.set('language', …)`, `system` for the first); the frame speaks it.
+3. **Colours** (`settings-theme`): three to choose among (`Segmented`): `settings-theme-system`, `settings-theme-light`, `settings-theme-dark`; kept by `settings.set('theme', …)`. Not *Mellow* and not *Your own*: where the file says one of those, none of the three is shown as chosen.
+4. **About** (`settings-about`): *Glaukopis* and the version (`systemInfo()`), and under it `settings-licence`. That a newer version is out is told from stage 4.
+
+**`SyncSettings.svelte`**, the one section for a computer and a phone:
+
+- A prop, `takes: 'everything' | 'notes' = 'everything'`, as the engine names what a device takes. The application's settings give none.
+- `syncDevice()` where it called `syncComputer()`, which goes out of `api/sync.ts`.
+- Where `takes` is `notes`: the sentence under the heading is `sync-about-notes`; and the question before *Stop synchronizing*, where this is the only device, is `sync-stop-message-alone-notes`. That is what the first test of stage 1 shows: a phone that leaves last takes off the server the projects and the files of the library, which it never held. It is said, not forbidden. Where the server could not be asked which devices there are, the question is the usual one, as on a computer.
+- **Made to fit**: the fields one under another where the section is narrower than 520 pixels; the name of a device over its buttons there; the code in letters that stand within 320; nothing with a width of its own in pixels. The field of the server asks the keyboard for an address (`inputmode="url"`), with no capital letter, no correction and nothing remembered; the code for capitals, with no correction; the name with nothing remembered.
+- Its own test, new (`SyncSettings.svelte.test.ts`, with `api/sync.ts` stood in for): the name the system gives is offered; with `takes="notes"` the sentence is the phone's, and the question of the last device the phone's; without it both are the computer's.
+
+**The words.** Every message of the table in *Words*, in English and Bokmål, as written there. The other languages are not touched: they say *computer* until the round of stage 4, which is true where they are read today. The names of the messages stay (`sync-computer-name`, `sync-computers`, `core-sharing-many-computers`, …), and so do the hooks of the page (`data-sync-computer`): a new name would have to be given in thirty languages for no word that is seen. `sync-about` goes on saying *computers*: it says what is the same on each, and that is true of computers alone; a phone has its own sentence. `locales/GLOSSARY.md` gets *device*, under *The interface*: one of a writer's computers or phones that are synchronized; never *computer* in the words of the synchronization, since a phone is one; Bokmål *enhet*. (Bokmål has no glossary of its own: it is written with the English.)
+
+**The guide.** In *Your computers, the same*, the words quoted from the interface are made what they now are (**Add a device…**, **Stop synchronizing on this device**, the devices listed in the settings, **“Name” was written in on two devices while they were apart.**), and one sentence is added where the chapter begins: a phone is one of the devices, and what it holds is told in its own chapter. The chapter is otherwise left as it is: it speaks to a writer at a computer, and the phone's chapter is stage 4's. E's paragraphs for that chapter, of the settings and of setting up the synchronization on a phone, in `docs/plans/phone-guide/settings.md`.
+
+**The script of two computers** (`e2e/synchronization.mjs`) reads four of the changed sentences: they are made what they now are, and nothing else of it is changed.
+
+**The addendum to record 0120**, written by the main thread when the stage ends, says:
+
+- The words of the synchronization say *device* (Bokmål *enhet*), on the computers as on a phone (the owner's word, 2026-11-22): a phone is one of the writer's devices (0122). The one sentence that says what is the same on each goes on saying *computers*. The names of the messages and the hooks of the page are as they were. `sync_computer` is `sync_device`, and on Android gives the phone's model.
+- A device whose notebook was refused at its last exchange sweeps out no file until a run that begins after it was taken again. A phone sweeps none at all.
+- What the notes of a device hold is never taken from it by what another device said, whatever the mark of its record says, and is told again.
+- What the notes hold is said when it changes, and the page listens for what a round writes before it reads the notebook.
+- A file of the library that was not on the disk when it was read, where the device and its home had agreed on something of it, is taken as lost and not as emptied.
+- The status says whether what was written here waits for a server that is not reached; a device that is not in front asks nothing at regular times.
+
+**What it is checked by**: `pnpm check`, `pnpm test`, `node scripts/check-locales.mjs nb`; `SettingsPlace.svelte.test.ts` (a language chosen is kept, and *As the system* is `system`; dark chosen is kept; the version is shown); `e2e/phone-sync.mjs`, written and not run. No Rust is built by E: the words of the core are held by the core's own tests, which the main thread runs when E is merged.
+
+### Words
+
+**The phone's own**, new, in `locales/en/phone.ftl` and `locales/nb/phone.ftl`, made with the meeting points. Each with a comment over it in the file, as here.
+
+| Name | English | Bokmål |
+| --- | --- | --- |
+| `phone-back` (the arrow at the head of a note and of the settings) | Back | Tilbake |
+| `phone-more` (the button at the head of a note that opens what more can be done with it) | More | Mer |
+| `phone-waiting` (the line over the notes: what was written here has not reached the server, which cannot be reached now) | Kept here, and sent when the server is reached | Tatt vare på her, og sendes når serveren kan nås |
+| `phone-problem` (the line over the notes: the synchronization says something is wrong; pressed, it opens the settings, which say what) | Something is wrong with the synchronization | Noe er galt med synkroniseringen |
+
+**New in `sync.ftl`** (E):
+
+| Name | English | Bokmål |
+| --- | --- | --- |
+| `sync-about-notes` (under the heading, on a device that takes the notes: a phone) | Your notebook, the same on this device as on your others, through a server. The references of your library come with it, without their files. | Notatblokken din, den samme på denne enheten som på de andre enhetene dine, gjennom en server. Referansene i biblioteket følger med, uten filene sine. |
+| `sync-stop-message-alone-notes` (the question before the last device stops, where it is one that takes the notes) | What is on this device stays here as it is. It is the only device that is synchronized, so nothing is left on the server. Your projects and the files of your library are not on this device: what the server keeps of them is deleted. | Det som er på denne enheten, blir her som det er. Den er den eneste enheten som synkroniseres, så ingenting blir igjen på serveren. Prosjektene dine og filene i biblioteket er ikke på denne enheten: det serveren har av dem, blir slettet. |
+
+***Device* for *computer*, in `sync.ftl`** (E). The comments of the two files are brought along (*devices* for *computers*, *enheter* for *datamaskiner*). `sync-about`, `sync-remove-message` and `sync-offline` stay as they are.
+
+| Name | English | Bokmål |
+| --- | --- | --- |
+| `sync-computer-name` | Name of this device | Navn på denne enheten |
+| `sync-how` | How this device begins | Hvordan denne enheten begynner |
+| `sync-refused` | Synchronization has stopped on this device | Synkroniseringen har stoppet på denne enheten |
+| `sync-computers` | Devices | Enheter |
+| `sync-this-computer` | { $name } (this device) | { $name } (denne enheten) |
+| `sync-computers-unread` | The server could not be asked which devices there are. | Serveren kunne ikke spørres om hvilke enheter som er med. |
+| `sync-add` | Add a device… | Legg til en enhet … |
+| `sync-code-hint` | Enter the code on the other device, with { $join } under Synchronization in its settings. It can be used once, until { $until }. | Skriv inn koden på den andre enheten, med { $join } under Synkronisering i innstillingene der. Den kan brukes én gang, til klokken { $until }. |
+| `sync-rename-title` | Rename the device | Gi enheten nytt navn |
+| `sync-stop` | Stop synchronizing on this device | Slutt å synkronisere på denne enheten |
+| `sync-stop-title` | Stop synchronizing on this device? | Slutte å synkronisere på denne enheten? |
+| `sync-stop-message` | What is on this device stays here as it is. What is written on your other devices no longer comes here, and what is written here no longer goes to them. | Det som er på denne enheten, blir her som det er. Det som skrives på de andre enhetene dine, kommer ikke lenger hit, og det som skrives her, går ikke lenger til dem. |
+| `sync-stop-message-alone` | What is on this device stays here as it is. It is the only device that is synchronized, so nothing is left on the server. | Det som er på denne enheten, blir her som det er. Den er den eneste enheten som synkroniseres, så ingenting blir igjen på serveren. |
+| `sync-apart` | “{ $name }” was written in on two devices while they were apart. | «{ $name }» ble skrevet i på to enheter mens de var uten forbindelse med hverandre. |
+| `sync-apart-moment` | the devices met | enhetene møttes |
+
+**In `core-sync.ftl`** (E), with its comments:
+
+| Name | English | Bokmål |
+| --- | --- | --- |
+| `core-sync-refused` | The server no longer lets this device in. It was removed from those that are synchronized, or nothing of them is kept on the server any more. | Tjeneren slipper ikke lenger inn denne enheten. Den ble tatt ut av dem som synkroniseres, eller ingenting av dem er lenger lagret på tjeneren. |
+| `core-sync-later-home` | Another of your devices has a later version of Glaukopis, which keeps what is synchronized in a form this version does not know. Update Glaukopis here. | En annen av enhetene dine har en nyere versjon av Glaukopis, som lagrer det som synkroniseres, i en form denne versjonen ikke kjenner. Oppdater Glaukopis her. |
+| `core-sync-later-library` | Another of your devices has a later version of Glaukopis, which keeps the library in a form this version does not know. Update Glaukopis here. | En annen av enhetene dine har en nyere versjon av Glaukopis, som lagrer biblioteket i en form denne versjonen ikke kjenner. Oppdater Glaukopis her. |
+| `core-sync-not-on` | This device is not synchronized. | Denne enheten synkroniseres ikke. |
+| `core-sync-already` | This device is synchronized already. | Denne enheten synkroniseres allerede. |
+| `core-sync-needs-name` | Give this device a name. | Gi denne enheten et navn. |
+| `core-sync-remove-self` | This device is taken out by stopping the synchronization here. | Denne enheten tas ut ved å stoppe synkroniseringen her. |
+| `core-sync-file-too-large` | “{ $name }” is larger than the server takes ({ $most } MB at the most), and is not on your other devices. | «{ $name }» er større enn tjeneren tar imot (høyst { $most } MB), og finnes ikke på de andre enhetene dine. |
+
+**In `core-sharing.ftl`**, what the server refuses of a home (E), with the comment over them. `core-sharing-own-code` is of sharing a project and stays.
+
+| Name | English | Bokmål |
+| --- | --- | --- |
+| `core-sharing-no-home` | The server no longer keeps what these devices synchronize. | Serveren har ikke lenger det disse enhetene synkroniserer. |
+| `core-sharing-later` | Something was written on another device by a later version of Glaukopis. Bring this one up to date to synchronize it. | Noe ble skrevet på en annen enhet med en nyere versjon av Glaukopis. Oppdater denne for å synkronisere det. |
+| `core-sharing-home-not-admitted` | The server no longer lets this device in: it may have been removed from those that are synchronized. | Serveren slipper ikke lenger inn denne enheten: den kan være fjernet fra dem som synkroniseres. |
+| `core-sharing-home-full` | The server synchronizes the devices of as many writers as it is set to. | Serveren synkroniserer enhetene til så mange skribenter som den er satt opp til. |
+| `core-sharing-many-computers` | Sixteen devices are synchronized already, which is the most; remove one first. | Seksten enheter synkroniseres allerede, og det er det meste; fjern én først. |
+| `core-sharing-no-computer` | There is no such device among those that are synchronized. | Det finnes ingen slik enhet blant dem som synkroniseres. |
+| `core-sharing-no-computer-name` | The device has no name. | Enheten har ikke noe navn. |
+| `core-sharing-many-documents` | The server keeps as many documents for these devices as it may. | Serveren har så mange dokumenter for disse enhetene som den kan ha. |
+
+**Elsewhere**, the four that a phone's page can show (E). Every other message that says *computer* is of the projects, the typesetting, the fonts or Zotero, which a phone does not have, and stays.
+
+| File and name | English | Bokmål |
+| --- | --- | --- |
+| `notebook.ftl`: `notebook-file-not-here` | The file is not on this device | Filen er ikke på denne enheten |
+| `figures.ftl`: `figures-picture-absent` | The image is not on this device | Bildet finnes ikke på denne enheten |
+| `core.ftl`: `network-tls` | a secure connection to { $host } could not be made: its certificate may not be trusted on this device, or something between them, such as a proxy or a firewall, is in the way | fikk ikke en sikker forbindelse til { $host }: enheten stoler kanskje ikke på sertifikatet, eller noe imellom, som en proxy eller en brannmur, står i veien |
+| `settings.ftl`: `settings-set-aside-person` | The settings could not be read, and are set aside as { $path }; the defaults are used, and this device is a new person in the history of projects | Innstillingene kunne ikke leses, og er lagt til side som { $path }; standardinnstillingene brukes, og denne enheten er en ny person i historikken til prosjektene |
+
+**No string of Android's** is added or changed. What the engine logs, and what `glaukopis --phone` says on the standard error, is in English as the log is.
+
+### The scripts
+
+**Through `glaukopis --phone`, with the harness that is there** (`App.launch({ args: ['--phone'], width: 412, height: 915 })`). Each is written by its part and run by the main thread; its first comment says what it covers, and its screenshots are `e2e/output/phone-<script>-<n>-<what>.png`. The three of the page end by being started once more at 320 by 568, where each place is shown and nothing lies outside the window (`document.documentElement.scrollWidth` no more than the window's width, and every button of the rows within it).
+
+1. **`e2e/phone-role.mjs`** (B, in place of the one of stage 1). Before the role is started, a thing is put into `notebook/inbox/` of its folder as the page of a note left one (the kind `note`, with its words and no document, so that the words are the note's lines; named and laid out as `crates/core/src/notebook/inbox.rs` says). The role starts: one window, labelled `phone`, no wider than 420, showing the notes; the thing from the inbox is a note in the list, not looked at, and the inbox is empty. `project_list`, `fonts_list`, `note_window_send`, `notebook_sweep` and `notebook_readable_write` are refused; `sync_status` says off; `sync_device` gives a name. No errors in the page.
+2. **`e2e/phone-notes.mjs`** (C). The empty notebook says so. *New note*: the note is shown, with the cursor in its text; words written; Back (the button): the row says how it begins and the day. By the hook: a box, and three notes more, one with a name, one in the box, one with a tag. The rows say each: the name, how it begins, the day, the tag. Found by a word, and the × shows all again. The filter: its button opens the sheet from the bottom; the box chosen shows its note alone and the button says it is on; a tag on; *All notes* again. The history: with the sheet open, `history.back()` closes the sheet and the notes stay; from a note it goes to the notes; a sheet closed by *Done* and a note opened at once ends in the note, and one step back is the notes. The settings' button goes to the settings, and Back comes back. The line: nothing while the device is in no home. The words of the page in Bokmål, with the language set in the phone's `settings.json` before a second start. Light and dark the same way: `data-theme` on the root.
+3. **`e2e/phone-note.mjs`** (D). A note opened from the list. Its name written, and the row of the list has it. Words written; *Bold* pressed, words, *Bold* again: the middle words are bold and the cursor stayed in the text; *List*, two points; *To do*, and the point ticked by a press on its box; *Undo* takes the last away. A tag added by Enter and by a comma, and taken away by its ×. The box: the sheet, *New box*, and the note is in it. A picture, by the hook: it stands in the note, and the row of the list shows it small. Words pasted from outside Glaukopis: the chip *No source*; the sheet of the source; a page given, the chip says its title; *My own words* takes the chip away. *More*, *Delete*: the notes, without it, and the line with *Undo*, which brings it back; *More*, *Redo* after an undo. A note deleted while it is shown (by the hook): the view goes back.
+4. **`e2e/phone-sync.mjs`** (E). With the real server, and the application as a computer beside the phone, each in a folder of the run, as `e2e/synchronization.mjs` makes its two. The computer holds a project, a reference with a file, a file of the library alone, and a note; it starts a home and makes a code. On the phone: the settings, *Join with a code*, the server, the name the system offers changed to *Phone*, the code, *Join*; the devices are listed, the phone as this device. **A note written on the phone is on the computer**: its words in the computer's notebook, and a picture put into it by the hook in the computer's store, byte for byte. **A note written on the computer is on the phone**: in the list without a new start. The phone's folder holds the reference (`library/library.bib`), no project, no file of the library, and not the computer's setting, as the script of stage 1 looked. *Add a device…* on the phone shows a code. A device renamed. The line: the server ended, a note written on the phone: `phone-waiting`; the server started again on the same folder and port, and a round made (*Synchronize now*, in the settings): the line is gone and the note is on the computer. Not in front (the page's `visibilityState` made `hidden` by the script, and the event sent): the log of the phone's run says that it asks nothing at regular times; in front again (the same, with `visible`): it says so, and a round is made. The computer stops synchronizing; then on the phone *Stop synchronizing on this device*: the question says the phone's words for the last device; confirmed, the section says that the device is not synchronized, and the server keeps nothing of the home.
+
+**The application's own scripts**, run once what they cover is merged: `e2e/synchronization.mjs` (two computers as before, in the new words), `e2e/note-window.mjs` (the page's entry, the shared buttons, a computer has a pointer), `e2e/notebook.mjs` (the notebook read and written as before, in two windows, with its tags and its files), `e2e/settings.mjs` (the buttons and fields whose heights are read from variables now), `e2e/languages.mjs` (no English left in Bokmål).
+
+**On the emulator** (`e2e/android/`, all B's, the new device unless said; one emulator at a time, and never beside another capped unit):
+
+1. **`typing.mjs` and `marks.mjs`**, brought to the phone's page: they begin with *New note* and write in the note; the marks through the row of tools.
+2. **`page.mjs`**, new. The app started: the notes. *New note*, words typed on Google's keyboard; whether the keyboard comes up by itself in a new note is looked at and written down (where it does not, a tap brings it, and it is left so). Back (`input keyevent 4`): once puts the keyboard away, once more is the notes, with the note's row; a sheet open, Back closes it and nothing else; at the notes, Back leaves the app. Home, and the app again: the page said it was not in front and that it was again; the engine rested between (its log). The app ended from outside and started: the note is there. Dark chosen in the settings: the top row of pixels of a screenshot is the page's ground, and so is the row at the foot. The system's letters at 1.3: a screenshot of the notes and of a note, looked at: nothing cut. The emulator set to Norwegian: the page is in Bokmål.
+3. **`sync.mjs`**, new. The server on this machine, reached from the emulator as `10.0.2.2`, and the application as a computer under the harness. The computer starts a home and makes a code; on the emulator, in the settings, the server, the name and the code are written and *Join* pressed. A note typed on the emulator is in the computer's notebook; a note written on the computer is in the emulator's list. The name offered was the model the emulator says.
+4. **`web-view.mjs`** once more: the app starts as it did.
+
+**By the owner's hand**, on the owner's phone, with the app built for it as in the trial: joining the home of the owner's computer with a code; a note written under Samsung's keyboard, with its suggestions, bold and a list from the row; that it is on the computer, and one from the computer on the phone; the list found in and filtered; Back, by the gesture; dark, and the bars; the line, with the network off; the size of the letters, where the phone has them large.
+
+### The order of the work, and what each step is checked by
+
+Edits first, then `cargo fmt --all` and `pnpm format`. Every step is committed when its checks pass.
+
+1. **B: the three trials on the emulator**, with the app as it is. What was found is told, and this section corrected where it is otherwise, before any agent begins.
+2. **B: the meeting points**, one commit on main: the files of the table with their shapes, `phone.ftl` in English and Bokmål, `over.ts`, the test of `:hover` with the shared files brought to pass it, and `docs/plans/phone-guide/` with its three empty files. Checked by `pnpm check` and `pnpm test`; `e2e/note-window.mjs` is run at step 7.
+3. **A, C, D and E begin**, each in a worktree of its own from that commit. A alone builds Rust meanwhile, in the main thread's `target/`: `cargo test -p glaukopis-core -p glaukopis-server -p glaukopis`, `cargo clippy --workspace --all-targets -- -D warnings`, `pnpm check` (the contract, with `waiting`), `pnpm test`. C, D and E run `pnpm check` and `pnpm test`, and E `node scripts/check-locales.mjs nb`; none of them builds Rust, the application or anything for Android.
+4. **A is read once more**, by the second agent, which builds nothing. **A is merged** when the reading found nothing, or what it found is mended and read. The main thread runs the three packages' tests on what was merged.
+5. **B: the phone's role**, on what was merged: the commands, `sync_device`, `sync_front`, `languages` with what the page says, the window of a note's commands behind the desktop, `src/main.ts`. Checked by `cargo test -p glaukopis-core -p glaukopis`, both clippies (for computers, and `. packaging/android/env.sh && cargo clippy -p glaukopis-phone -p glaukopis-core --no-default-features --target aarch64-linux-android -- -D warnings`), `pnpm check`, `pnpm test`.
+6. **C, then D and E, are merged**, each when the main thread has read its diff; after each, `pnpm check` and `pnpm test`, and after E `cargo test -p glaukopis-core` for the words of the core.
+7. **The running page**: `pnpm e2e:build`, the server built (`cargo build -p glaukopis-server`), then the four scripts of the phone, and the five of the application. What a script finds is mended by the main thread where it is building to this section, and given back to the part's model where it is not.
+8. **B: Android's own**: the ground behind the bars, and the letters where the trial asked for it; the app built for trying in a capped unit; the scripts of `e2e/android/`; clippy for Android once more.
+9. **The end of the stage**, by the main thread: the record of it (`docs/adr/0123`, with its line in `docs/adr/README.md`): the page of the phone, its history and its places, what was made anew and why, what a phone does not sweep, and what was tried; the addendum to 0120 and its line in the index; the map in `CLAUDE.md` (`src/lib/phone/`, the phone's commands, `e2e/phone-*.mjs`); this plan: the stage marked done, and corrected by what was found. The app is built for the owner's phone as in the trial, with the list of what to try. The owner is told what was chosen here.
+
+Nine scripts of the computer's harness, two to three minutes each, three of them run twice (at 412 and at 320, within the script); five runs on the emulator.
+
+### Left out of stage 2
+
+So that no builder adds it.
+
+- **Collecting**: Share, the selection's menu, *Photograph*, *Picture or file*, *New note* on the icon, the kind `shared`, `notebook_take_files`, a round with the app closed, and how the page is told of what comes into the inbox while it runs: stage 3. A picture comes into a note in this stage by a paste, and by the hook of the scripts.
+- **A sweep on a phone**, and the core reading from the notebook's bytes which files the notes hold. The files of deleted notes stay on a phone.
+- **A newer version told**, the signed file, the chapter of the guide, the seven other languages (which say *computer* until then): stage 4.
+- **The names** of the messages and of the page's hooks that say *computer*. The comments of the code: one that this stage makes untrue is mended where the stage touches the file, and no other.
+- **In a note**: Join and Divide, links, the ways into a text, starting texts, citing, a box of rich text made (one that came from a computer is shown and written in), the highlight, a numbered list, the kinds of paragraph beyond a list and *To do*; a file a note holds opened; *Make a reference*; *Read the text*; what became of a note.
+- **Of the notebook**: the surface; boxes renamed, put in order or deleted; tags renamed or taken off every note; the other filters; several notes chosen at once; import; the readable copy.
+- **By finger**: anything opened by a long press, a swipe, or a pull.
+- **The place kept** from one start to the next. **A wider page** for tablets.
+- **What the page of a note kept unsent** on a phone in the trial (`notebook/unsent-notes/`) is not read by the phone's page, and stays on the disk; what was sent from it lies in the inbox and is taken in. Earlier versions are no worry yet (the owner's word, 2026-11-19).
+- **The fourth finding** of *For stage 2*: a file that stops being the notes' stays on a phone; a phone that leaves and joins again offers again the records of files it never held. Nothing is lost by either, and neither is mended.
+- **The tree of projects** read from the home document. **A setting that follows the writer** to a phone: none does.
+- **The thread that looks at the inbox**, on a phone. **Tests of the Kotlin** run by Gradle. **A name for the phone** as its owner gave it in Android's settings: the model is offered.
+
+### Chosen here, to be told
+
+With the other choices that await the owner.
+
+1. A phone sweeps out no file, and so keeps the pictures of notes that were deleted.
+2. On every device, a computer too: one whose notebook was refused sweeps nothing until it is taken again; what the notes of a device hold is never taken from it by what another device said; what the notes hold is said when it changes; a file of the library that is not on the disk is taken as lost and not as emptied.
+3. A phone that is not in front asks the server nothing; it makes a round when it leaves the front and when it comes back. In front it asks every half minute, as a computer does.
+4. The line over the notes is there where what was written waits for a server that is not reached, or the synchronization says a problem, and nowhere else: not where the device is in no home, and not where the server is not reached and nothing waits. It is over the notes only, not in a note.
+5. The system's Back closes what lies over a place (a sheet, a question) before it leaves the place.
+6. A new note lies in the box in view, and in the box that receives where all notes are shown.
+7. `sync-about` goes on saying *computers*, and the names of the messages stay.
+8. The name offered for a phone is its model, as the system says it (`SM-S908B`).
+9. On a phone the system's language is the one the web view says.
+10. A box can be made on a phone, where a note is moved; nothing else of the boxes.
+11. *Redo* is under *More*, not in the row over the keyboard, which has room for seven at 320.
+12. The app starts at the notes each time.
+13. The settings of a phone offer the colours of the system, light and dark, and not *Mellow* or one's own.
+
+### For the owner
+
+Nothing here stops the building. These are the owner's to say:
+
+1. **An outdated phone, and a home document in a later form** (the third finding). Today such a phone ends its whole round and says that Glaukopis must be updated, as a computer does, though it writes nothing into that document: notes written on it stay there until the app is updated. Should it go on with its notebook, it is one rule changed in `home_read`, with a test. It is built as it is today until said otherwise.
+2. **A phone that never sweeps.** It is the careful one. Should the room matter, the next step is the core reading from the notebook itself which files the notes hold, so that no device answers a sweep by what its page last said; that is a piece of work of its own.
+3. **The new words**, in the tables above, in English and Bokmål: the two lines over the notes, the sentence under *Synchronization* on a phone, and the question before the last device stops. They are built as written until said otherwise.
+4. **Light and dark chosen on the phone** is offered only if the system's bars can be made to follow; where they cannot on the emulator, the phone follows the system alone, and the owner is told.
 
 ## Who builds what
 
@@ -697,6 +890,8 @@ The way that held on 2026-11-13 and 2026-11-16: the main thread reads the code, 
 | 1: the web view looked at by the Android part | the main thread | Kotlin that no agent can try: it runs only in the app. |
 | The detailed part of each stage, written before it is built | the most capable model | It is the design: a builder is as good as what it is given. |
 | 1: what a device takes, in the engine, and its tests | the most capable model, which also reads it once more before it is merged | Small, and a wrong rule here loses what the server keeps. |
+| 2: what the notes hold, kept: when a device sweeps, what is never taken from the notes, a lost file of the library, in the core and the shell, with their tests | the most capable model, which also reads it once more before it is merged | A wrong rule here deletes the writer's files, on every device. |
+| 2: the phone's commands, the meeting points, the ground behind the system's bars in Kotlin, the scripts run | the main thread | It goes on from stage 1's shell, and the Kotlin runs only in the app. |
 | 2: the frame of the page, the notes, finding, the filter | Opus | Wide; what of `NoteList`, `NoteCard` and `page.svelte.ts` is used as it is and what is made anew is a judgement. |
 | 2: a note: the editor, the row over the keyboard, name, tags, box, source | Opus | Wide, and in the editor. |
 | 2: the settings of the phone, and *device* for *computer* | Sonnet | Small and said to the last word: a section that is there, made to fit, and its words changed. |
