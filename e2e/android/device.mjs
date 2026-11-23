@@ -87,6 +87,89 @@ export async function screenText() {
     .filter(Boolean);
 }
 
+/**
+ * What the screen holds that can be pressed or read, with the middle of
+ * each: its words (`text`, or what it says to a reader of the screen,
+ * `content-desc`), read from a dump of the window.
+ */
+export async function onScreen() {
+  await shell('uiautomator dump /data/local/tmp/glaukopis-window.xml >/dev/null');
+  const xml = await shell('cat /data/local/tmp/glaukopis-window.xml');
+  const unescape = (s) => s.replace(/&#10;/g, '\n').replace(/&quot;/g, '"').replace(/&amp;/g, '&');
+  return [...xml.matchAll(/<node [^>]*>/g)]
+    .map(([node]) => {
+      const text = unescape(/ text="([^"]*)"/.exec(node)?.[1] ?? '');
+      const said = unescape(/ content-desc="([^"]*)"/.exec(node)?.[1] ?? '');
+      const b = / bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"/.exec(node);
+      return b ? { text, said, x: (+b[1] + +b[3]) / 2, y: (+b[2] + +b[4]) / 2 } : null;
+    })
+    .filter((n) => n && (n.text || n.said));
+}
+
+/**
+ * Taps what shows these words, by its text or what it says, as found on
+ * the screen and not by a place written into the script; `exact` asks for
+ * the whole text. Waits until it is there.
+ */
+export async function tapWords(words, { exact = false, said = false, most = 10000 } = {}) {
+  const fits = (s) => (exact ? s === words : s.includes(words));
+  const found = await until(async () => (await onScreen()).find((n) => (said ? fits(n.said) : fits(n.text))), `"${words}" on the screen`, most);
+  await tap(found.x, found.y);
+  return found;
+}
+
+/** A thing shared to the app from the shell: words, with a subject where given. */
+export function share({ text, subject }) {
+  const quote = (s) => `'${s.replace(/'/g, `'\\''`)}'`;
+  const extras = [`--es android.intent.extra.TEXT ${quote(text)}`];
+  if (subject !== undefined) extras.push(`--es android.intent.extra.SUBJECT ${quote(subject)}`);
+  return shell(`am start -a android.intent.action.SEND -t text/plain ${extras.join(' ')} -n ${PACKAGE}/.StartActivity`);
+}
+
+/** Words selected in another app, handed over as its menu over them does. */
+export function processText(text) {
+  const quote = `'${text.replace(/'/g, `'\\''`)}'`;
+  return shell(`am start -a android.intent.action.PROCESS_TEXT -t text/plain --es android.intent.extra.PROCESS_TEXT ${quote} -n ${PACKAGE}/.StartActivity`);
+}
+
+/**
+ * A file of the shared storage, under `Download`, shared to the app by taps
+ * in the app of files, as a person shares one: the shell cannot give the
+ * app leave to read another app's file (the fifth trial of stage 3). The
+ * file is held down, then *Share*, then *Glaukopis*.
+ */
+export async function shareFile(name) {
+  await shell('am force-stop com.google.android.documentsui');
+  await shell('am start -a android.intent.action.VIEW -d content://com.android.externalstorage.documents/root/primary -n com.google.android.documentsui/com.android.documentsui.files.FilesActivity');
+  await tapWords('Download', { exact: true });
+  const file = await until(async () => (await onScreen()).find((n) => n.text === name), `${name} in the app of files`, 10000);
+  await shell(`input swipe ${file.x} ${file.y} ${file.x} ${file.y} 1200`);
+  await tapWords('Share', { exact: true, said: true }).catch(() => tapWords('Share', { exact: true }));
+  await tapWords('Glaukopis', { exact: true });
+}
+
+/** The task of the app, by its number, where it has one. */
+export async function task() {
+  const said = await shell('dumpsys activity activities');
+  return new RegExp(`Task\\{[0-9a-f]+ #(\\d+) type=standard A=\\d+:${PACKAGE.replace(/\./g, '\\.')}`).exec(said)?.[1] ?? null;
+}
+
+/**
+ * The page ended as an app swiped out of the recent ones ends: its task
+ * removed, the page's activity destroyed and the process with it.
+ * `always_finish_activities` does nothing on Android 16 (the third trial).
+ */
+export async function endPage() {
+  const number = await task();
+  if (number) await shell(`am stack remove ${number}`);
+  await until(async () => !(await shell(`pidof ${PACKAGE} || true`)).trim(), 'the app to end', 10000);
+}
+
+/** Which app is in front. */
+export async function inFront() {
+  return /topResumedActivity=ActivityRecord\{\S+ \S+ ([^/ ]+)/.exec(await shell('dumpsys activity activities | grep -m1 topResumedActivity'))?.[1] ?? '';
+}
+
 /** A file of the app's own folder, as text: the log of a run, a note kept. */
 export const ownFile = (path) => adb('exec-out', 'run-as', PACKAGE, 'cat', path);
 
