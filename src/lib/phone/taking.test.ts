@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NotebookFile } from '$lib/api/notebook';
+import { fromBase64 } from '$lib/util/base64';
 
 const api = vi.hoisted(() => ({
   notebookTakePiece: vi.fn(),
@@ -40,6 +41,13 @@ function fileOf(size: number, name = 'plate.png'): File {
   return new File([bytes], name, { type: 'image/png' });
 }
 
+/** Whether two lists of bytes are the same: looked at one by one, since a large list compared whole is slow. */
+function same(a: Uint8Array, b: Uint8Array): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+  return true;
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
   api.notebookTakePiece.mockResolvedValue(undefined);
@@ -59,7 +67,7 @@ describe('a file taken in, in pieces', () => {
     const [ticket] = [...tickets];
     expect(ticket).toMatch(/^[A-Za-z0-9]{1,64}$/);
     expect(calls.every((c) => c[1] === 'plate.png')).toBe(true);
-    const sent = calls.map((c) => Buffer.from(c[2], 'base64'));
+    const sent = calls.map((c) => fromBase64(c[2]));
     expect(sent.map((p) => p.length)).toEqual([PIECE, PIECE, PIECE / 2]);
     // Put together in the order they were sent, they are the file.
     const whole = new Uint8Array(file.size);
@@ -68,7 +76,7 @@ describe('a file taken in, in pieces', () => {
       whole.set(piece, at);
       at += piece.length;
     }
-    expect(Buffer.from(whole).equals(Buffer.from(await file.arrayBuffer()))).toBe(true);
+    expect(same(whole, new Uint8Array(await file.arrayBuffer()))).toBe(true);
     expect(api.notebookTakeWhole).toHaveBeenCalledTimes(1);
     expect(api.notebookTakeWhole).toHaveBeenCalledWith(ticket, 'plate.png');
     expect(api.notebookTakeDropped).not.toHaveBeenCalled();

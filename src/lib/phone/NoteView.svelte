@@ -180,12 +180,12 @@
     const problems: string[] = [];
     let put = 0;
     try {
-      for (const file of files) {
+      for (const chosen of files) {
         try {
-          const taken = await takeFile(file);
+          const taken = await takeFile(chosen);
           if (putTaken(notebook, id, taken, text?.getView(), cursor)) put++;
         } catch (error) {
-          problems.push(describeError(error) ?? file.name);
+          problems.push(describeError(error) ?? chosen.name);
         }
       }
     } finally {
