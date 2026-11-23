@@ -3,12 +3,16 @@
  * (`window.__glaukopisPhone`), set only where the harness asked for hooks
  * (`shell/testing.ts`). Each acts through the model, as the page does, and
  * each is one step of undo. `back` is what Android's Back does, which a
- * computer has no key for. Part D adds `picture` to the same object.
+ * computer has no key for; `asked` answers as if the Android part had said
+ * what was asked of the page. A note adds `picture` and `file` to the same
+ * object, which put a picture and a file into the note in view
+ * (`NoteView.svelte`).
  */
 
 import type { Notebook } from '$lib/notebook/model/notebook.svelte';
 import { theNotebook } from '$lib/notebook/open.svelte';
 import { testHook } from '$lib/shell/testing';
+import { answer, type Asked } from './asked';
 import { places } from './places.svelte';
 
 /** What a note is made with by the hook. */
@@ -58,6 +62,10 @@ export const phoneHooks = {
   /** Android's Back. */
   back(): void {
     places.back();
+  },
+  /** Answers what the Android part would say was asked: the things arrived, and whether a new note is asked for. */
+  asked(asked: Partial<Asked>): Promise<void> {
+    return answer({ arrived: asked.arrived ?? [], note: asked.note ?? false });
   },
 };
 

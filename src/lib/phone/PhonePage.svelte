@@ -21,9 +21,9 @@
   import Spinner from '$lib/ui/Spinner.svelte';
   import Toaster from '$lib/ui/Toaster.svelte';
   import { notifyError } from '$lib/ui/toast.svelte';
+  import { followAsked, takeAsked } from './asked';
   import { followChanges } from './following';
   import { groundOf } from './ground';
-  import { takeInbox } from './inbox';
   import NotesPlace from './NotesPlace.svelte';
   import NoteView from './NoteView.svelte';
   import { places } from './places.svelte';
@@ -117,7 +117,11 @@
     });
   }
 
-  /** The app comes back to the front: the engine told, the inbox taken in, the pictures not here tried again. */
+  /**
+   * The app comes back to the front: the engine told, what was asked of the
+   * page answered (the inbox is taken in with it), the pictures not here
+   * tried again.
+   */
   function come() {
     if (!away) return;
     away = false;
@@ -125,7 +129,7 @@
       await syncFront(true).catch((error) =>
         console.warn('The synchronization was not told the app is in front', error),
       );
-      void takeInbox();
+      void takeAsked();
       void pictures.again();
     });
   }
@@ -145,6 +149,15 @@
 
   // What changes on disk: the references read again, the pictures tried again.
   onMount(() => followChanges());
+
+  // What the Android part asks of the page, which is also how the page is
+  // told that something came into the inbox: what was asked before the page
+  // ran is answered now, and what is asked while it runs, as it is.
+  onMount(() => {
+    const ends = followAsked();
+    void takeAsked();
+    return ends;
+  });
 
   // On a computer the window, made hidden, is shown once the page is drawn;
   // on Android there is nothing to show.

@@ -21,7 +21,7 @@ vi.mock('$lib/ui/toast.svelte', () => ({
   notifyError: shown.notifyError,
 }));
 
-const { takeInbox } = await import('./inbox');
+const { noteOfThing, takeInbox } = await import('./inbox');
 const { Notebook } = await import('$lib/notebook/model/notebook.svelte');
 
 /** What the page of a note left in the inbox: its words, as lines, and no document. */
@@ -97,5 +97,36 @@ describe('the inbox, on the phone', () => {
     expect(api.notebookInboxTake).not.toHaveBeenCalled();
     expect(warn).toHaveBeenCalled();
     warn.mockRestore();
+  });
+});
+
+describe('the note of a thing, on the phone', () => {
+  it('is known for each thing, after the taking, as the page goes to it', async () => {
+    api.notebookInboxTake.mockResolvedValueOnce([
+      { ...note('First thing'), id: 'thing-a' },
+      { ...note('Second thing', '2026-11-23T09:00:00.000Z'), id: 'thing-b' },
+    ]);
+    expect(noteOfThing('thing-a')).toBeUndefined();
+    await takeInbox();
+    const first = noteOfThing('thing-a');
+    const second = noteOfThing('thing-b');
+    expect(first).toBeTruthy();
+    expect(second).toBeTruthy();
+    expect(first).not.toBe(second);
+    expect(notebook.note(first!)!.begins).toBe('First thing');
+    expect(notebook.note(second!)!.begins).toBe('Second thing');
+  });
+
+  it('is not known of a thing that made no note, nor of one never taken', async () => {
+    // A picture that did not come leaves nothing to make a note of.
+    api.notebookInboxTake.mockResolvedValueOnce([
+      { ...note(''), id: 'thing-c', kind: 'image' as const },
+      { ...note('Words'), id: 'thing-d' },
+    ]);
+    await takeInbox();
+    expect(noteOfThing('thing-c')).toBeUndefined();
+    expect(noteOfThing('thing-d')).toBeTruthy();
+    expect(noteOfThing('thing-never')).toBeUndefined();
+    expect(notebook.list).toHaveLength(1);
   });
 });
