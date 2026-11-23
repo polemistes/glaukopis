@@ -146,6 +146,13 @@ export const notebookToLibrary = (hash: string, origin: string | null) =>
  */
 export const notebookSweep = (held: string[]) => call<number>('notebook_sweep', { held });
 
+/**
+ * Says which files the notes hold now, by their hashes, where that has
+ * changed and the whole notebook is not saved: what the sweep of the next
+ * run and the synchronization judge by is true while the notebook is open.
+ */
+export const notebookSayHeld = (files: string[]) => call<void>('notebook_say_held', { files });
+
 // ---- what the plugin for Firefox hands over (record 0102) ----
 
 /**

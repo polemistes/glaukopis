@@ -39,12 +39,14 @@ pub struct Collections {
 impl Collections {
     /// Reads the collections; a file that is not there has none, and one
     /// that cannot be read is set aside (see `sidefile`), which `aside` says.
-    pub fn load(path: &Path) -> Result<(Self, Option<SetAside>)> {
+    /// The last says whether there was no file.
+    pub fn load(path: &Path) -> Result<(Self, Option<SetAside>, bool)> {
         let read = sidefile::read_json::<CollectionsFile>(path)?;
         let aside = read.set_aside().cloned();
+        let missing = read.missing();
         let mut c = Collections { list: read.or_default().collections };
         c.repair();
-        Ok((c, aside))
+        Ok((c, aside, missing))
     }
 
     pub fn save(&self, path: &Path) -> Result<()> {
@@ -295,8 +297,8 @@ mod tests {
                 {"id":"c","name":"C","parent":"gone"}]}"#,
         )
         .unwrap();
-        let (c, aside) = Collections::load(&path).unwrap();
-        assert!(aside.is_none());
+        let (c, aside, missing) = Collections::load(&path).unwrap();
+        assert!(aside.is_none() && !missing);
         assert_eq!(c.get("c").unwrap().parent, None);
         assert!(!c.is_within("a", "a"));
         assert!(!c.is_within("b", "b"));

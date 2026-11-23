@@ -42,8 +42,23 @@
 //! document or a file off the server, or says that a project is gone, is
 //! done only where both say everything.
 //!
+//! What the notes hold is kept through all of it (stage 2 of that plan):
+//!
+//! - whether the notebook was refused at its last exchange is kept from one
+//!   run to the next (`sync::notebook_refused`), since a device that lacks
+//!   the notes of others must sweep no file out of the store;
+//! - what the notes here hold is not taken from this device by what another
+//!   said (`library::Records`);
+//! - a file of the library that was not on the disk when the library was
+//!   read, where this device and its home had agreed on something of it,
+//!   was lost and not emptied: its store meets its map as for the first
+//!   time (`library_round`).
+//!
 //! The thread is woken when something was written here (`touched`), and
-//! otherwise asks the server every half minute.
+//! otherwise asks the server every half minute. A phone's app that is not
+//! in front asks nothing at regular times (`front`). What is told of it all
+//! (`Status`) says whether what was written here waits for a server that is
+//! not reached.
 
 use std::cell::Cell;
 use std::collections::{BTreeMap, BTreeSet};
@@ -117,6 +132,11 @@ pub struct Status {
     pub last: Option<String>,
     /// What is wrong, in words.
     pub problem: Option<String>,
+    /// Whether the notebook or the library here holds what the server was
+    /// not sent, as far as the disk says without asking it: worked out
+    /// where a round could not reach the server, and false where it ended
+    /// in any other way. Of the projects it says nothing.
+    pub waiting: bool,
 }
 
 /// What is done when the status is another.
@@ -203,6 +223,13 @@ impl Meeting for OfLibrary<'_> {
     }
 }
 
+/// The notebook's document, as the home keeps it.
+const NOTEBOOK: &str = "notebook/the";
+
+/// Under what name the round keeps whether the notebook was refused at its
+/// last exchange (`sync::notebook_refused`).
+pub(super) const NOTEBOOK_REFUSED: &str = "notebook-refused";
+
 /// Under what name the round keeps how the library's files lay (`LibraryLies`).
 const LIBRARY_LIES: &str = "library-lies";
 
@@ -224,6 +251,15 @@ impl LibraryLies {
             files: whole::lying(&dir.join(crate::library::files::FILE)),
         }
     }
+}
+
+/// Whether a library holds nothing at all: no reference, no collection, no
+/// record of a file and no folder for one.
+fn holds_nothing(library: &Library) -> bool {
+    library.is_empty()
+        && library.collections.list.is_empty()
+        && library.files.files().is_empty()
+        && library.files.folders().is_empty()
 }
 
 /// What the application does when the engine has something to tell.
@@ -267,9 +303,12 @@ struct Round {
     /// the home, with nothing left to try again: until the library's
     /// document changes, they are not looked at. Not at the first round of a run.
     files_settled: bool,
+    /// Whether the notebook was refused at its last exchange, as it is
+    /// kept (`NOTEBOOK_REFUSED`): written only where it is another than it
+    /// was. Nothing before it was read or written in this run.
+    notebook_refused: Option<bool>,
 }
 
-#[derive(Default)]
 struct Wake {
     /// Something was written here.
     touched: bool,
@@ -277,12 +316,30 @@ struct Wake {
     now: bool,
     /// The thread is to end.
     end: bool,
+    /// Whether the app is in front (`Sync::front`): a computer's always is.
+    front: bool,
+}
+
+impl Default for Wake {
+    fn default() -> Self {
+        Wake { touched: false, now: false, end: false, front: true }
+    }
+}
+
+impl Wake {
+    /// How long the thread waits at the most before it asks the server
+    /// whether anything changed: the half minute while the app is in front,
+    /// and without end while it is not, until something wakes it.
+    fn at_most(&self) -> Option<Duration> {
+        self.front.then_some(EVERY)
+    }
 }
 
 struct Said {
     state: State,
     last: Option<String>,
     problem: Option<String>,
+    waiting: bool,
 }
 
 pub struct Sync {
@@ -398,7 +455,12 @@ impl Sync {
             client: Client::new(),
             hears,
             round: Mutex::new(Round::default()),
-            said: Mutex::new(Said { state: if on { State::Idle } else { State::Off }, last: None, problem: None }),
+            said: Mutex::new(Said {
+                state: if on { State::Idle } else { State::Off },
+                last: None,
+                problem: None,
+                waiting: false,
+            }),
             wake: Mutex::new(Wake::default()),
             woken: Condvar::new(),
         }
@@ -416,10 +478,15 @@ impl Sync {
             state: if joined.is_some() { said.state } else { State::Off },
             last: said.last.clone(),
             problem: said.problem.clone(),
+            waiting: joined.is_some() && said.waiting,
         }
     }
 
-    fn say(&self, state: State, problem: Option<String>, done: bool) {
+    /// Says what the engine is doing. `waiting` is whether what was written
+    /// here waits to be sent, where that was worked out; with none it is
+    /// left as it was said, as while a round is under way, so that it does
+    /// not go and come with every try.
+    fn say(&self, state: State, problem: Option<String>, done: bool, waiting: Option<bool>) {
         let before = self.status();
         {
             let mut said = held(&self.said);
@@ -427,6 +494,9 @@ impl Sync {
             said.problem = problem;
             if done {
                 said.last = Some(now());
+            }
+            if let Some(waiting) = waiting {
+                said.waiting = waiting;
             }
         }
         let after = self.status();
@@ -450,7 +520,7 @@ impl Sync {
             let mut said = held(&self.said);
             said.last = None;
         }
-        self.say(State::Idle, None, false);
+        self.say(State::Idle, None, false, Some(false));
         self.now();
         Ok(self.status())
     }
@@ -510,7 +580,7 @@ impl Sync {
                 let said = held(&self.said);
                 (said.state, said.problem.clone())
             };
-            self.say(state, problem, false);
+            self.say(state, problem, false, None);
         }
         Ok(told)
     }
@@ -544,7 +614,7 @@ impl Sync {
             let mut said = held(&self.said);
             said.last = None;
         }
-        self.say(State::Off, None, false);
+        self.say(State::Off, None, false, Some(false));
         Ok(self.status())
     }
 
@@ -568,6 +638,28 @@ impl Sync {
         self.woken.notify_all();
     }
 
+    /// Says whether the app is in front. Either way a round is made at
+    /// once: what was written before the app left the front is sent, and
+    /// what was written elsewhere is fetched when it comes back. While it
+    /// is not in front the thread asks nothing at regular times
+    /// (`Wake::at_most`); it is woken as ever by what is written here, by
+    /// `now` and by `end`. A computer never says it, and is always in front.
+    pub fn front(&self, front: bool) {
+        {
+            let mut wake = held(&self.wake);
+            if wake.front != front {
+                if front {
+                    tracing::info!("the app is in front again");
+                } else {
+                    tracing::info!("the app is not in front, and nothing is asked at regular times");
+                }
+            }
+            wake.front = front;
+            wake.now = true;
+        }
+        self.woken.notify_all();
+    }
+
     /// Starts the thread that makes the rounds.
     pub fn run(self: &Arc<Self>) -> std::io::Result<std::thread::JoinHandle<()>> {
         let this = self.clone();
@@ -580,10 +672,14 @@ impl Sync {
         loop {
             if !hurried {
                 let wake = held(&self.wake);
-                let (mut wake, _) = self
-                    .woken
-                    .wait_timeout_while(wake, EVERY, |w| !w.touched && !w.now && !w.end)
-                    .unwrap_or_else(PoisonError::into_inner);
+                let asleep = |w: &mut Wake| !w.touched && !w.now && !w.end;
+                let mut wake = match wake.at_most() {
+                    Some(most) => {
+                        self.woken.wait_timeout_while(wake, most, asleep).unwrap_or_else(PoisonError::into_inner).0
+                    }
+                    // Not in front: until something wakes it.
+                    None => self.woken.wait_while(wake, asleep).unwrap_or_else(PoisonError::into_inner),
+                };
                 if wake.end {
                     return;
                 }
@@ -615,21 +711,76 @@ impl Sync {
         }
         if hurried || state != State::Idle {
             let problem = held(&self.said).problem.clone();
-            self.say(State::Working, problem, false);
+            self.say(State::Working, problem, false, None);
         }
         match self.round() {
-            Ok(problems) if problems.is_empty() => self.say(State::Idle, None, true),
-            Ok(problems) => self.say(State::Idle, Some(problems.join("\n")), false),
+            Ok(problems) if problems.is_empty() => self.say(State::Idle, None, true, Some(false)),
+            Ok(problems) => self.say(State::Idle, Some(problems.join("\n")), false, Some(false)),
             Err(error) if refused_entry(&error) => {
                 tracing::warn!(%error, "the server lets this computer into its home no more");
-                self.say(State::Refused, Some(tr!("core-sync-refused")), false);
+                self.say(State::Refused, Some(tr!("core-sync-refused")), false, Some(false));
             }
-            Err(Error::Network(why)) => self.say(State::Offline, Some(sentence(&why)), false),
+            // The server was not reached: whether what was written here waits for it is looked at on the disk.
+            Err(Error::Network(why)) => {
+                let waiting = self.waits();
+                self.say(State::Offline, Some(sentence(&why)), false, Some(waiting));
+            }
             Err(error) => {
                 tracing::warn!(%error, "a round of the synchronization failed");
-                self.say(State::Idle, Some(error.to_string()), false);
+                self.say(State::Idle, Some(error.to_string()), false, Some(false));
             }
         }
+    }
+
+    // ---- what waits to be sent ----
+
+    /// Whether the notebook or the library here holds what the server was
+    /// not sent, as far as the disk says without asking it. Of the projects
+    /// it says nothing: it is the phone's page that shows it, and a phone
+    /// has none.
+    fn waits(&self) -> bool {
+        let Ok(Some((joined, _))) = self.kept.joined() else { return false };
+        self.notebook_waits(&joined) || self.library_waits(&joined)
+    }
+
+    /// Whether the notebook's files lie otherwise than at its last
+    /// exchange, and the document here holds something beyond what the
+    /// server was last seen to have. The document is read only where the
+    /// files lie otherwise. What was deleted in a document is in what it
+    /// holds beyond another always (`whole::beyond`): a notebook in which
+    /// something was deleted once, and whose files were written since the
+    /// last exchange, is said to hold something the server lacks.
+    fn notebook_waits(&self, joined: &Joined) -> bool {
+        let dir = self.notebook.dir();
+        let cursor = kept::cursor(dir, &joined.home, NOTEBOOK);
+        // As they lay then, or never written to and never exchanged: nothing was written since.
+        if whole::lies(dir) == cursor.as_ref().map(|c| c.lies).unwrap_or_default() {
+            return false;
+        }
+        let since = cursor.and_then(|c| c.since).as_deref().and_then(unhex);
+        match (whole::read(dir), since) {
+            (Ok(Some(here)), Some(since)) => whole::beyond(&here, &since).map_or(true, |more| !whole::nothing(&more)),
+            (Ok(Some(here)), None) => !whole::nothing(&here),
+            (Ok(None), _) => false,
+            // Written to since, and not readable: what it holds cannot be said to have been sent.
+            (Err(_), _) => true,
+        }
+    }
+
+    /// Whether the library's files lie otherwise than when it was last
+    /// brought to be the same as the home. A library that holds nothing and
+    /// was never exchanged is nobody's to send (`library_round`).
+    fn library_waits(&self, joined: &Joined) -> bool {
+        let (dir, empty) = {
+            let library = held(&self.library);
+            (library.dir().to_owned(), holds_nothing(&library))
+        };
+        let exchanged =
+            self.kept.of_doc(LIBRARY.kind).is_ok_and(|of| kept::cursor(&of, &joined.home, &LIBRARY.name()).is_some());
+        if empty && !exchanged {
+            return false;
+        }
+        self.kept.noted::<LibraryLies>(LIBRARY_LIES) != Some(LibraryLies::of(&dir))
     }
 
     // ---- a round ----
@@ -658,7 +809,15 @@ impl Sync {
         if round.library.as_ref().map(|(id, _)| id.as_str()) != Some(joined.home.as_str()) {
             round.library = Some((joined.home.clone(), HomeDoc::load(self.kept.doc(LIBRARY.kind)?.as_deref())?));
         }
-        let Round { home: Some((_, doc)), library: Some((_, library)), docs, told, files_settled, .. } = &mut *round
+        let Round {
+            home: Some((_, doc)),
+            library: Some((_, library)),
+            docs,
+            told,
+            files_settled,
+            notebook_refused,
+            ..
+        } = &mut *round
         else {
             unreachable!("the documents of maps were read above")
         };
@@ -672,12 +831,22 @@ impl Sync {
             // A phone reads the home document and writes nothing into it, and touches no project.
             Takes::Notes => self.home_read(&home, &joined, doc, docs)?,
         }
-        if let Err(error) = self.notebook_round(&home, &joined, docs) {
-            if of_the_server(&error) {
-                return Err(error);
+        // Where the round ends here for the server's sake, or ended before,
+        // whether the notebook was refused is left as it is kept.
+        let refused = match self.notebook_round(&home, &joined, docs) {
+            Ok(()) => false,
+            Err(error) if of_the_server(&error) => return Err(error),
+            // A later form, too large, not readable here: the notes of others are not on this device.
+            Err(error) => {
+                problems.push(tr!("core-sync-problem-notebook", why = error.to_string()));
+                true
             }
-            problems.push(tr!("core-sync-problem-notebook", why = error.to_string()));
+        };
+        let was = notebook_refused.unwrap_or_else(|| self.kept.noted::<bool>(NOTEBOOK_REFUSED).unwrap_or(false));
+        if refused != was {
+            self.kept.note(NOTEBOOK_REFUSED, &refused)?;
         }
+        *notebook_refused = Some(refused);
         // After the notebook, whose notes hold files of the store.
         if let Err(error) = self.library_round(&home, &joined, library, docs, told, files_settled, takes, &mut problems)
         {
@@ -963,20 +1132,27 @@ impl Sync {
         let name = LIBRARY.name();
         let cursor = kept::cursor(&self.kept.of_doc(LIBRARY.kind)?, &joined.home, &name);
         // How its files lie, with how often the library wrote them, under one hold of it.
-        let (dir, empty, lies, writes, damaged) = {
+        let (dir, empty, lies, writes, mut damaged, missing) = {
             let mut library = held(&self.library);
-            let empty = library.is_empty()
-                && library.collections.list.is_empty()
-                && library.files.files().is_empty()
-                && library.files.folders().is_empty();
+            let empty = holds_nothing(&library);
             let dir = library.dir().to_owned();
             let lies = LibraryLies::of(&dir);
-            (dir, empty, lies, library.writes(), library.take_damaged())
+            (dir, empty, lies, library.writes(), library.take_damaged(), library.take_missing())
         };
         // A library that holds nothing, of a home that has none, is nobody's to send.
         if empty && cursor.is_none() && !docs.contains_key(&name) {
             return Ok(());
         }
+        // A file that was not on the disk when the library was read reads as
+        // one emptied. Where this device and its home had agreed on
+        // something of it, it was lost: the writer who empties a library
+        // leaves its files written, with nothing in them. What was read
+        // from a lost file is damage, and no change made here.
+        let agreed_on =
+            |store: &str| -> Result<bool> { Ok(self.kept.base(store)?.is_some_and(|names| !names.is_empty())) };
+        damaged.references |= missing.references && agreed_on("references")?;
+        damaged.collections |= missing.collections && agreed_on("collections")?;
+        damaged.files |= missing.files && (agreed_on("files")? || agreed_on("file-folders")?);
         // How often the round wrote the library's files itself.
         let own = Cell::new(0);
         let quiet = !damaged.any()
@@ -1007,6 +1183,7 @@ impl Sync {
                 doc,
                 held: &held_by_notes,
                 kept_for_notes: Default::default(),
+                marks_kept_for_notes: Default::default(),
                 written: Cell::new(0),
             };
             let references = References { library: &self.library, doc, written: Cell::new(0) };
@@ -1021,10 +1198,8 @@ impl Sync {
             // What the library's rules made otherwise than the map said is told at the next round.
             let keys = keys_made_here(&self.library, doc);
             forget_agreed(&self.kept, references.name(), |name| keys.contains(name))?;
-            let kept = records.kept_for_notes.take();
-            forget_agreed(&self.kept, records.name(), |name| {
-                name.split_once('/').is_some_and(|(hash, _)| kept.contains(hash))
-            })?;
+            // What stays here for the notes, though another device took it out, is told again at the next round.
+            records.tell_again(&self.kept)?;
             own.set(
                 folders.written.get() + records.written.get() + references.written.get() + collections.written.get(),
             );
@@ -1391,7 +1566,7 @@ impl Sync {
     // ---- the notebook ----
 
     fn notebook_round(&self, home: &Home, joined: &Joined, docs: &mut BTreeMap<String, String>) -> Result<()> {
-        const NAME: &str = "notebook/the";
+        const NAME: &str = NOTEBOOK;
         let dir = self.notebook.dir().to_owned();
         // A notebook that nothing was written in, on a server that has none, is nobody's to send.
         if !docs.contains_key(NAME) && whole::lies(&dir) == Lies::default() {
@@ -1440,4 +1615,62 @@ struct Project<'a> {
     trash: Option<&'a String>,
     /// What the home document says of its being gone.
     gone: Option<&'a Gone>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// An engine of a device that is in no home, in a folder of its own.
+    fn engine() -> (tempfile::TempDir, Sync) {
+        let tmp = tempfile::tempdir().unwrap();
+        let data = DataDir::open(tmp.path().join("data")).unwrap();
+        let sync = Sync::new(
+            &data,
+            Projects::new(&data),
+            Arc::new(Notebook::new(&data)),
+            Arc::new(Mutex::new(Library::open(&data).unwrap())),
+            Takes::Notes,
+            Hears::default(),
+        );
+        (tmp, sync)
+    }
+
+    #[test]
+    fn in_front_the_thread_waits_half_a_minute_at_the_most_and_not_in_front_until_it_is_woken() {
+        let wake = Wake::default();
+        assert!(wake.front, "a device is in front until it says otherwise, and a computer never says it");
+        assert_eq!(wake.at_most(), Some(EVERY));
+        let behind = Wake { front: false, ..Wake::default() };
+        assert_eq!(behind.at_most(), None, "nothing is asked at regular times");
+    }
+
+    #[test]
+    fn leaving_the_front_and_coming_back_each_ask_for_a_round_at_once() {
+        let (_tmp, sync) = engine();
+        assert_eq!(held(&sync.wake).at_most(), Some(EVERY));
+        sync.front(false);
+        {
+            let mut wake = held(&sync.wake);
+            assert!(wake.now, "a round is made at once, with what was written before the app left");
+            assert_eq!(wake.at_most(), None);
+            wake.now = false;
+        }
+        // What is written here wakes it as ever.
+        sync.touched();
+        assert!(held(&sync.wake).touched);
+        sync.front(true);
+        let wake = held(&sync.wake);
+        assert!(wake.now, "and one when it comes back");
+        assert_eq!(wake.at_most(), Some(EVERY));
+    }
+
+    #[test]
+    fn a_device_in_no_home_says_that_nothing_waits() {
+        let (_tmp, sync) = engine();
+        sync.notebook.append(b"written here", 1).unwrap();
+        assert!(!sync.waits());
+        let status = sync.status();
+        assert_eq!((status.state, status.waiting), (State::Off, false));
+    }
 }

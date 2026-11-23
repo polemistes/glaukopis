@@ -6923,7 +6923,8 @@ export const syncStatus: sync.SyncStatus = {
   "on": true,
   "problem": "A remark.",
   "server": "https://example.org",
-  "state": "idle"
+  "state": "idle",
+  "waiting": false
 };
 
 export const syncHome: sync.SyncHome = {

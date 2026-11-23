@@ -75,6 +75,11 @@ impl<T> Read<T> {
             _ => None,
         }
     }
+
+    /// Whether there was no file.
+    pub fn missing(&self) -> bool {
+        matches!(self, Read::Missing)
+    }
 }
 
 /// Reads a side file with `parse`, which says in words what it could not
@@ -173,7 +178,9 @@ mod tests {
         let tmp = tempfile::tempdir().unwrap();
         let path = tmp.path().join("a.json");
         assert!(matches!(read_json::<Vec<u32>>(&path).unwrap(), Read::Missing));
+        assert!(read_json::<Vec<u32>>(&path).unwrap().missing());
         fs::write(&path, "[1, 2]").unwrap();
+        assert!(!read_json::<Vec<u32>>(&path).unwrap().missing());
         assert_eq!(read_json::<Vec<u32>>(&path).unwrap().value(), Some(vec![1, 2]));
     }
 

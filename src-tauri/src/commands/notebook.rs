@@ -206,7 +206,24 @@ pub fn notebook_to_library(
 /// does nothing. Gives how many files left the store.
 #[tauri::command(async)]
 pub fn notebook_sweep(state: State<'_, AppState>, held: Vec<String>) -> CommandResult<usize> {
+    Ok(sweep(&state, &held)?)
+}
+
+/// What `notebook_sweep` does. Nothing is swept in a run where the notebook
+/// was refused at its last exchange with the writer's other devices (a
+/// later form, too large, not readable here), whether that was so when the
+/// run began or is so now: such a device lacks notes that others wrote, and
+/// would take out the files they hold. Both are asked: a refusal that has
+/// just ended has brought those notes to the disk, and the page that asks
+/// may have read the notebook before they came.
+pub(crate) fn sweep(state: &AppState, held: &[String]) -> glaukopis_core::Result<usize> {
     if state.notebook_swept.swap(true, Ordering::SeqCst) {
+        return Ok(0);
+    }
+    if state.notebook_refused || glaukopis_core::sync::notebook_refused(&state.data) {
+        tracing::info!(
+            "the notebook was refused when it was last exchanged: no file is swept out of the store in this run"
+        );
         return Ok(0);
     }
     let saved = state.notebook.held();
@@ -216,7 +233,16 @@ pub fn notebook_sweep(state: State<'_, AppState>, held: Vec<String>) -> CommandR
         // What failed may be asked again.
         state.notebook_swept.store(false, Ordering::SeqCst);
     }
-    Ok(swept?)
+    swept
+}
+
+/// Says which files the notes hold now, where that has changed and the
+/// whole notebook is not saved (`Notebook::say_held`): what the sweep of
+/// the next run and the synchronization judge by is true while a page has
+/// the notebook open.
+#[tauri::command(async)]
+pub fn notebook_say_held(state: State<'_, AppState>, files: Vec<String>) -> CommandResult<()> {
+    Ok(state.notebook.say_held(&files)?)
 }
 
 // ---- what the plugin for Firefox hands over (record 0102) ----
@@ -523,6 +549,69 @@ mod tests {
         assert!(note.files[1].shown.is_none());
         assert!(state.library().file_view(&file.hash).is_some());
         assert!(state.inbox.ids().is_empty(), "taken, and gone from the inbox");
+    }
+
+    #[test]
+    fn nothing_is_swept_in_a_run_where_the_notebook_was_refused() {
+        let tmp = tempfile::tempdir().unwrap();
+        let root = tmp.path().join("data");
+        // The folder opened as when the application starts: a run. The claim
+        // of the run before is let go when its state is dropped, but may be
+        // held for an instant more by a program that another test is
+        // starting just then, which is born with what this process has
+        // open: so a folder found in use is asked for again.
+        let open = || {
+            let began = std::time::Instant::now();
+            loop {
+                match crate::starting::opening(root.clone(), false, None, |_| {}) {
+                    crate::starting::Opening::Ready(state) => break state,
+                    crate::starting::Opening::InUse(_) if began.elapsed() < Duration::from_secs(10) => {
+                        std::thread::sleep(Duration::from_millis(5))
+                    }
+                    crate::starting::Opening::InUse(_) => panic!("the data folder stays in use"),
+                    crate::starting::Opening::Failed(error) => panic!("the data folder was not opened: {error}"),
+                }
+            }
+        };
+        // Where the engine of the synchronization keeps whether the notebook was refused at its last exchange.
+        let refused = root.join("sync").join("notebook-refused.json");
+        let keep = |said: &str| {
+            std::fs::create_dir_all(refused.parent().unwrap()).unwrap();
+            std::fs::write(&refused, said).unwrap();
+        };
+        // A picture the notebook holds alone, which no note holds.
+        let state = open();
+        let picture = include_bytes!("../../icons/32x32.png");
+        let hash = state.library().notebook_take_image("owl.png", picture).unwrap().hash;
+        let stored = |state: &AppState| state.library().stored_path(&hash).is_some();
+        drop(state);
+
+        // Refused when the run began: nothing is swept, also where it is taken again meanwhile.
+        keep("true");
+        let state = open();
+        assert!(state.notebook_refused);
+        assert_eq!(sweep(&state, &[]).unwrap(), 0);
+        assert!(stored(&state), "the file is still in the store");
+        keep("false");
+        assert_eq!(sweep(&state, &[]).unwrap(), 0);
+        assert!(stored(&state));
+        drop(state);
+
+        // Refused in the run, after it began.
+        let state = open();
+        assert!(!state.notebook_refused);
+        keep("true");
+        assert_eq!(sweep(&state, &[]).unwrap(), 0);
+        assert!(stored(&state), "nor where it is refused when the sweep is asked for");
+        drop(state);
+
+        // The same folder without that: the file no note holds leaves the store.
+        std::fs::remove_file(&refused).unwrap();
+        let state = open();
+        assert!(!state.notebook_refused);
+        assert_eq!(sweep(&state, &[]).unwrap(), 1);
+        assert!(!stored(&state) && state.library().file_view(&hash).is_none(), "the file is gone");
+        assert_eq!(sweep(&state, &[]).unwrap(), 0, "once in a run");
     }
 
     #[test]

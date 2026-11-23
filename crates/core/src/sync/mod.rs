@@ -29,6 +29,19 @@ pub mod wrote;
 pub use engine::{Hears, State, Status, Sync};
 pub use kept::Takes;
 
+use crate::paths::DataDir;
+
+/// Whether the notebook was refused when the device whose data is in
+/// `data` last exchanged it: of a later form than this version knows, too
+/// large, or not readable here. The engine keeps it from one run to the
+/// next (`sync/notebook-refused.json`). Such a device lacks notes that
+/// others wrote, and must sweep no file out of the store by what its own
+/// notes hold. False where nothing is kept, as on a device in no home,
+/// whose `sync/` went when it left.
+pub fn notebook_refused(data: &DataDir) -> bool {
+    kept::Kept::new(data).noted::<bool>(engine::NOTEBOOK_REFUSED).unwrap_or(false)
+}
+
 /// The form of the texts this version of the application writes and reads
 /// (record 0111), as the interface says it in `src/lib/editor/form.ts`; a
 /// test holds the two to be the same. The server is told it with every
