@@ -1036,6 +1036,56 @@ In the page (`inbox.test.ts`): words become a note with one passage and no sourc
 
 **What it is checked by**: `cargo test -p glaukopis-core -p glaukopis`, `cargo clippy --workspace --all-targets -- -D warnings`, `pnpm check` (the contract), `pnpm test`, `node scripts/check-locales.mjs nb`. Nothing for Android is built by A, and no script is run.
 
+### B. The page: arriving, a new note asked for, *Photograph*, *Picture or file*
+
+Read before building: all of `src/lib/phone/`, and of it with care `places.svelte.ts` and its test, `inbox.ts`, `PhonePage.svelte` (`leave`, `come`), `NoteView.svelte` (the function `picture`, and `leave`), `ToolRow.svelte`, `tools.ts`, `hooks.ts`; `src/lib/notebook/taking.ts` (`holdTaken`, `fileSourceOf`, `figureOf`) and `holder.ts` (`pictureFromFile`, which is what a file dropped into a note does on a computer); `src/lib/editor/commands.ts` (`insertFigure`); `e2e/phone-note.mjs` and `e2e/phone-role.mjs` (how a thing is laid into the inbox by hand).
+
+**The places** (`places.svelte.ts`). A place can be come to from outside the page, and the system's Back from it leaves the app.
+
+- A step that is a place may be marked as one that leaves: `{ place, leaves?: boolean }`.
+- `arrive(place, leaves = true)`: what lies over the place shown is closed first, as Back closes it (each step at the top that is no place is taken out and its `close` called). Where the top step is then a place that leaves, it is taken away: one place arrived at does not lie on another. Then the place is a step, marked where `leaves`, and shown.
+- `back()`, the system's Back: as today; and where the last step is a place that leaves, it is taken away, the place under it is shown, and the app is put behind the others (`window.glaukopisAndroid?.leave()`). So the app one shared from is in front again, and Glaukopis is where it was when it is next opened.
+- `up()`, the arrow at the head of a place: where something lies over the place, as `back()`; else, where there is more than one place, the last is taken away and the one under it shown, whether it leaves or not; at the notes, nothing. It never leaves the app.
+- `TopBar.svelte` calls `places.up()` where it called `places.back()`. `NoteView.svelte` goes `up()` where its note is gone: deleting a note arrived at shows the notes, with the line that says it was deleted.
+- `places.test.ts`, beside what it holds: a place arrived at is shown; Back from it shows the place under it and asks to leave, once; the arrow from it shows the place under it and does not ask to leave; arriving with a sheet open closes the sheet; arriving twice leaves one step, and Back then shows the place from before the first; a place arrived at with `leaves` false is left by Back as any place; a sheet opened over a place arrived at is closed by Back, and the place stays.
+
+**What was asked** (`asked.ts`, new).
+
+- `readAsked(said)`: what the Android part says, read with care: a string of JSON, or the thing itself; `arrived` the strings of its list, `note` whether it says `true`. Anything else is nothing asked.
+- `answer(asked)`, one at a time (one asked while another is answered is answered after it):
+  1. The inbox is taken in (`takeInbox()`), whatever was asked.
+  2. Where `note`: once the notebook is read (`theNotebook.open()`; where it cannot be, nothing), a note in the box that receives, with no tag, between two `checkpoint()`s; then `places.arrive({ at: 'note', note, fresh: true }, false)`. The app was opened by its icon: Back from the note is the notes.
+  3. Where `arrived` names things: the last of them of which a note was made in this run (`noteOfThing`, below), where that note is there: `places.arrive({ at: 'note', note })`. Not `fresh`: the keyboard does not come up over what was shared until the writer presses where they want to write. Where no note was made of it (the notebook could not be read, and the thing waits; or the thing held nothing), nothing: the app is where it was.
+- `takeAsked()`: asks `window.glaukopisAndroid?.asked?.()`, and answers what it says; where there is no such function (a computer), it answers nothing asked, and so takes the inbox in.
+- `followAsked()`: listens to `glaukopis-asked` on `window` and calls `takeAsked()`; gives what ends the listening.
+- `PhonePage.svelte`: once mounted, `followAsked()` and `takeAsked()`; and in `come()`, `takeAsked()` where it called `takeInbox()`.
+- **That is how the page is told of what comes into the inbox while it runs**, which stage 2 left to this one. On a phone only the Android part writes there (`StartActivity`, through the door), and it tells the page each time. No thread looks at the inbox on a phone, and nothing is asked at regular times.
+
+**The phone's taking in** (`inbox.ts`): `takeOnce` makes the notes by `madeOfInbox`, and keeps, for the run, which note was made of which thing; `noteOfThing(thing: string): string | undefined` gives it. `takeInbox()` is as it was.
+
+**A file taken in** (`taking.ts`, new).
+
+- `PIECE = 512 * 1024`, how much of a file goes in one call; `MOST = 50 * 1024 * 1024`, what the core takes (`inbox::MAX_FILE`), said here so that a file too large is refused before any of it is sent. The core refuses it too.
+- `takeFile(file: File): Promise<NotebookFile>`. Its name is `file.name`, or `file` where it has none. An empty file, and one larger than `MOST`, are refused with words (`phone-file-too-large`; an empty one by its name alone). Else a ticket (`newId()` of `util/id.ts`), and the file piece by piece, in order, each read when it is its turn (`file.slice(at, at + PIECE).arrayBuffer()`) and sent in base64 (`notebookTakePiece`), so that the page never holds more of the file than one piece; then `notebookTakeWhole`. Where anything fails, `notebookTakeDropped`, and the failure is passed on.
+- Why in pieces, and not as a paste goes: on Android every call of the page reaches Rust as one string of JSON, through Java. A photograph of 30 MB in one call is a string of 40 MB three times over, and a file of 50 MB ends the app on a phone with little memory.
+- `putTaken(notebook, note, taken, view, atCursor)`: the file is held with itself as its source (`holdTaken(notebook, taken, notebook.addSource(fileSourceOf(taken)))`), as a file dropped into a note on a computer is. A picture (`taken.shown`) is put into the text as a figure, where the cursor is where `atCursor`, else at the end (`insertFigure(figureOf(taken.shown), at)`); any other file at the end of the note (`notebook.addFile`). One step of undo for each file. Where the note is gone meanwhile, nothing is put.
+
+**The row of tools** (`ToolRow.svelte`, `tools.ts`). Two buttons more, after the gap and before *Undo*, so that the row is seven and stands within 320:
+
+- *Picture or file* (`phone-picture-or-file`, Lucide's `Paperclip`, `data-phone-tool="file"`), over a hidden field `<input type="file" multiple data-phone-input="file">`: the system's picker, of any kind of file, several at once.
+- *Photograph* (`phone-photograph`, Lucide's `Camera`, `data-phone-tool="photograph"`), over a hidden field `<input type="file" accept="image/*" capture="environment" data-phone-input="photograph">`: on Android the phone's camera app. On a computer it opens the system's dialog of files, since nothing there takes a photograph for a page; the role there is for trying.
+- A press keeps the cursor and the keyboard as the other tools do (`onmousedown`), and presses its field. The row remembers whether the text had the cursor at the press, and hands the files chosen on with that: `ontake(files: File[], from: 'file' | 'photograph', cursor: boolean)`. The field is emptied after, so that the same file can be chosen again.
+- Both are there to be pressed whether the text has the cursor or not, and not while a file is being taken in (`taking`, a prop).
+- `TOOLS` of `tools.ts` gets the two names, and `TextTool` leaves them out as it leaves out `undo`.
+
+**In a note** (`NoteView.svelte`): `takeIn(files, from, cursor)` takes each file in its order (`takeFile`, `putTaken`), the first where the cursor was and the next after it. What could not be taken is said once, when all are done (`notebook-files-not-taken`, with the reasons, a line each). After a photograph that was taken in, `window.glaukopisAndroid?.photographed?.()`; not after one that failed, whose file the Android part then finds at the next start. The function `picture`, and the hook of that name, stay as they are: that is how a picture pasted goes, with no source. The hook `file(name, content64)` makes a `File` of the bytes and calls `takeIn` with it, from `file`, with no cursor.
+
+**What the plan said that does not hold.** Stage 2 said that this stage puts *Photograph* and *Picture or file* on the function of the hook `picture`, which is a paste's (`pictureFromBlob`, and `notebook_take_image` under it). It cannot: that function takes pictures alone, and *Picture or file* takes any file; it reads nothing of what a file says of itself, and a photograph says when and where it was taken; and it sends the whole picture in one call. Stage 2 also expected `notebook_take_files` to become the phone's in this stage. It stays a computer's: it takes the paths of files, and a page on Android is given files, not paths. The test of the phone's commands goes on refusing it.
+
+**What holds it.** `places.test.ts`, as said. `asked.test.ts`: what is read of a string, of a thing, and of nonsense; a note asked for is made in the box that receives and arrived at so that Back stays in the app; a thing arrived becomes the place, after the inbox was taken in; a thing of which no note was made changes nothing; two asked at once are answered one after the other. `inbox.test.ts` of the phone: the note of a thing is known after the taking, and not of a thing that made none. `taking.test.ts` (with `api/notebook.ts` stood in for): a file of two pieces and a half is sent as three, in order, under one ticket, and then asked for whole; an empty file and one too large are refused before anything is sent; a piece that fails drops the ticket, and nothing more is sent. `NoteView.svelte.test.ts`, beside what it holds: a picture taken in stands in the text and has the file as its source; a file that is no picture stands at the note's end; a photograph taken in tells the Android part, and one that failed does not; what failed is said once. `tools.test.ts` and a test of the row: the two buttons are there, are not there to be pressed while a file is taken in, and are whether the text has the cursor or not.
+
+**What it is checked by**: `pnpm check`, `pnpm test`; `e2e/phone-collect.mjs`, written and not run (the section *The scripts*). Its paragraphs for the guide, in the guide's voice, in `docs/plans/phone-guide/collecting.md`: *New note* on the icon, *Photograph*, *Picture or file*, and what one sees after Share. No Rust is built by B.
+
 ## Who builds what
 
 The way that held on 2026-11-13 and 2026-11-16: the main thread reads the code, settles every choice and writes one part of the plan for each agent (the decisions, the files, the names and properties where two parts meet, what to verify); each agent builds in a worktree of its own; the main thread reads every diff, merges, builds once and runs the application.
