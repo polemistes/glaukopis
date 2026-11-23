@@ -6,7 +6,10 @@
    * small list under the field: the arrows mark one, Enter takes the one
    * marked; with none marked, Enter or a comma adds what was typed as a new
    * tag. Backspace in the empty field takes the last tag away; Escape
-   * closes the list.
+   * closes the list. A comma that comes in the field's words adds the tag
+   * too, as from a phone's keyboard, which composes and sends no comma as
+   * a key (stage 2 of the app for Android); and under a finger the × of a
+   * chip and each tag offered are as large as a finger takes.
    */
   import { tick } from 'svelte';
   import X from '@lucide/svelte/icons/x';
@@ -58,6 +61,23 @@
     if (tag.trim()) onadd(tag);
     typed = '';
     dismissed = false;
+  }
+
+  /**
+   * What is typed, looked at as it comes: a comma in it, which a phone's
+   * keyboard sends in the words and not as a key, adds each tag before it,
+   * and what follows the last stays in the field.
+   */
+  function oninput() {
+    dismissed = false;
+    const value = field?.value ?? typed;
+    if (!value.includes(',')) return;
+    const parts = value.split(',');
+    const rest = parts.pop() ?? '';
+    for (const part of parts) if (part.trim()) onadd(part);
+    // The field first: what binds it to `typed` may read it after this.
+    if (field) field.value = rest;
+    typed = rest;
   }
 
   function onkeydown(event: KeyboardEvent) {
@@ -137,7 +157,7 @@
     spellcheck="false"
     autocomplete="off"
     data-tag-field
-    oninput={() => (dismissed = false)}
+    {oninput}
     onfocus={() => (focused = true)}
     onblur={() => (focused = false)}
     {onkeydown}
@@ -254,5 +274,41 @@
   .option.marked {
     background: var(--accent-soft);
     color: var(--accent-strong);
+  }
+  /* Under a finger: the × of a chip, the field and each tag offered are
+     44 pixels to it, and the chips grow with their words. */
+  @media (pointer: coarse) {
+    .tags {
+      gap: 8px;
+      min-height: 44px;
+    }
+    .chip {
+      height: auto;
+      min-height: 36px;
+      padding: 0 0 0 12px;
+      border-radius: 18px;
+    }
+    .away {
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 44px;
+      margin-block: -4px;
+      padding: 0;
+    }
+    .away :global(svg) {
+      width: 16px;
+      height: 16px;
+    }
+    .field {
+      height: auto;
+      min-height: 44px;
+    }
+    .option {
+      display: flex;
+      align-items: center;
+      min-height: 44px;
+      padding: 4px 12px;
+    }
   }
 </style>
