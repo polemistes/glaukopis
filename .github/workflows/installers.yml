@@ -142,8 +142,8 @@ jobs:
 
       # Tesseract built from its sources for the oldest macOS the application
       # runs on, with what it reads pictures with built into it, and its data:
-      # English, the orientation of pages, its configurations and the font of
-      # its PDFs (packaging/macos/tesseract.sh). Homebrew's was built for the
+      # English, the orientation of pages and its configurations
+      # (packaging/macos/tesseract.sh). Homebrew's was built for the
       # macOS of GitHub's Mac, which older Macs refused to run.
       - name: Tesseract for macOS
         if: runner.os == 'macOS'

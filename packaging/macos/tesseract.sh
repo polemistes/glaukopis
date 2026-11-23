@@ -10,8 +10,8 @@
 # is made to read; and TIFF, with nothing but zlib, in which Leptonica keeps
 # a font of its own, and says so each time it starts where it cannot, and
 # JPEG, without which Leptonica reads no TIFF. Its data are those Homebrew gives it: English and the
-# orientation of pages, from tessdata_fast, with its configurations and the
-# font of its PDFs.
+# orientation of pages, from tessdata_fast, with its configurations; the font
+# of its PDFs is in the program itself.
 #
 #   packaging/macos/tesseract.sh <folder>
 #

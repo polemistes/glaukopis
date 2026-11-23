@@ -241,6 +241,8 @@
         <li>A picture from the Firefox plugin taken in at the start can no longer be lost.</li>
         <li>On a touch screen a button no longer looks pressed after it is let go.</li>
         <li>The owl is drawn again, more distinct.</li>
+        <li>On a Mac, the Tesseract that comes with Glaukopis runs on macOS 11 and newer, as Glaukopis does, so text in scans and images is read on older Macs too.</li>
+        <li>A Mac whose Safari is older than 16.4 is told at the start to update macOS, instead of Glaukopis failing on the way.</li>
       </ul>
       <p class="aside">
         <a href="releases.html">Previous release notes</a>
@@ -313,17 +315,14 @@
       <h2>macOS</h2>
       <p>
         For Macs with Apple silicon (M1 and later) and for Macs with Intel processors, macOS 11 or
-        newer. As on Windows, Pandoc, Tesseract and the fonts come with it. The Tesseract that comes
-        with it needs a newer macOS than Glaukopis does: macOS 26.6.2 or newer on Apple silicon,
-        macOS 14.8.5 or newer on Intel. On an older macOS, install Tesseract with Homebrew,
-        <code>brew install tesseract</code>, and give <code>/opt/homebrew/bin/tesseract</code>, or
-        <code>/usr/local/bin/tesseract</code> on an Intel Mac, as <em>Where Tesseract is</em> in the
-        settings.
+        newer. As on Windows, Pandoc, Tesseract and the fonts come with it. Glaukopis draws its
+        window with Safari's engine and needs Safari 16.4 or newer, which <em>Software Update</em>
+        brings to every macOS from 11.
       </p>
       <ul class="files">
         <li>
           <a class="name" href="Glaukopis_0.3.0_aarch64.dmg">Glaukopis_0.3.0_aarch64.dmg</a>
-          <span class="size">90 MB</span>
+          <span class="size">89 MB</span>
           <div class="what">
             <p>
               For Apple silicon. A disk image: open it and drag Glaukopis into
@@ -333,7 +332,7 @@
         </li>
         <li>
           <a class="name" href="Glaukopis_0.3.0_x64.dmg">Glaukopis_0.3.0_x64.dmg</a>
-          <span class="size">81 MB</span>
+          <span class="size">76 MB</span>
           <div class="what">
             <p>
               The same for Intel.
