@@ -206,9 +206,10 @@ pub fn bring(
         Takes::Everything => true,
         Takes::Notes => file.notes,
     };
-    for (hash, size) in stored.iter().filter(|(hash, _)| {
-        named.get(hash.as_str()).is_some_and(fetched) && !here.contains_key(hash.as_str())
-    }) {
+    for (hash, size) in stored
+        .iter()
+        .filter(|(hash, _)| named.get(hash.as_str()).is_some_and(fetched) && !here.contains_key(hash.as_str()))
+    {
         let name = &named[hash.as_str()].name;
         let limit = size.parse::<u64>().unwrap_or(u64::MAX);
         match fetch(home, library, &dir, hash, limit, written) {

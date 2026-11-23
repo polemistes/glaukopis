@@ -491,7 +491,8 @@ async fn a_phone_older_than_the_form_of_the_notebook_is_refused_and_the_rest_of_
         doc.get_or_insert_map("form").insert(&mut doc.transact_mut(), later.to_string(), true);
         doc.get_or_insert_map("notes").insert(&mut doc.transact_mut(), uuid(), "of a later form");
         let change = doc.transact().encode_state_as_update_v1(&before);
-        computer.asked(|home| home.exchange("notebook", "the", None, None, &[change.as_slice()], later, false).unwrap());
+        computer
+            .asked(|home| home.exchange("notebook", "the", None, None, &[change.as_slice()], later, false).unwrap());
         let digest = computer.listed()["notebook/the"].clone();
 
         phone.note("written while the app was old");

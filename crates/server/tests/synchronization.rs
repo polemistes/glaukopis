@@ -62,7 +62,8 @@ impl Computer {
             apart: Box::new(move |id, name| of_apart.lock().unwrap().apart.push((id.to_owned(), name.to_owned()))),
         };
         let library = Arc::new(Mutex::new(Library::open(&data).unwrap()));
-        let sync = Sync::new(&data, projects.clone(), notebook.clone(), library.clone(), sync::Takes::Everything, hears);
+        let sync =
+            Sync::new(&data, projects.clone(), notebook.clone(), library.clone(), sync::Takes::Everything, hears);
         Computer { _tmp: tmp, data, projects, notebook, library, sync, heard }
     }
 

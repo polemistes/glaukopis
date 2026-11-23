@@ -442,13 +442,8 @@ impl Sync {
     }
 
     fn enter(&self, server: String, entered: remote::Entered, name: &str) -> Result<Status> {
-        let joined = Joined {
-            server,
-            home: entered.home,
-            device: entered.device,
-            name: name.to_owned(),
-            takes: self.takes,
-        };
+        let joined =
+            Joined { server, home: entered.home, device: entered.device, name: name.to_owned(), takes: self.takes };
         self.kept.join(&joined, &entered.token)?;
         *held(&self.round) = Round::default();
         {

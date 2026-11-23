@@ -354,7 +354,8 @@ mod tests {
     fn what_a_device_takes_is_kept_and_read_again() {
         let tmp = tempfile::tempdir().unwrap();
         let kept = Kept::at(tmp.path().join("sync"));
-        for (takes, said) in [(Takes::Notes, "\"takes\": \"notes\""), (Takes::Everything, "\"takes\": \"everything\"")] {
+        for (takes, said) in [(Takes::Notes, "\"takes\": \"notes\""), (Takes::Everything, "\"takes\": \"everything\"")]
+        {
             let device = Joined { takes, ..joined() };
             kept.join(&device, "t").unwrap();
             let written = fs::read_to_string(tmp.path().join("sync").join(JOINED)).unwrap();
