@@ -3,7 +3,7 @@ resolver = "3"
 members = ["crates/core", "crates/pdf-text", "crates/server", "src-tauri", "src-phone"]
 
 [workspace.package]
-version = "0.2.14"
+version = "0.3.0"
 edition = "2024"
 license = "GPL-3.0-or-later"
 authors = ["The Glaukopis contributors"]

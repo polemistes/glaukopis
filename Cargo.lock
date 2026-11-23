@@ -2210,7 +2210,7 @@ dependencies = [
 
 [[package]]
 name = "glaukopis"
-version = "0.2.14"
+version = "0.3.0"
 dependencies = [
  "base64 0.22.1",
  "glaukopis-core",
@@ -2232,7 +2232,7 @@ dependencies = [
 
 [[package]]
 name = "glaukopis-core"
-version = "0.2.14"
+version = "0.3.0"
 dependencies = [
  "base64 0.22.1",
  "calamine",
@@ -2279,7 +2279,7 @@ dependencies = [
 
 [[package]]
 name = "glaukopis-phone"
-version = "0.2.14"
+version = "0.3.0"
 dependencies = [
  "base64 0.22.1",
  "glaukopis-core",
@@ -2298,7 +2298,7 @@ dependencies = [
 
 [[package]]
 name = "glaukopis-server"
-version = "0.2.14"
+version = "0.3.0"
 dependencies = [
  "axum",
  "clap",
