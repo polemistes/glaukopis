@@ -11,7 +11,7 @@
 // again. A web view is taken away on emulator-5586 and on no other device.
 //
 // On the new device (the default, emulator-5584): the app started, the page
-// of a note is there.
+// of the phone is there, at the notes.
 //
 // Screenshots in e2e/output/android-web-view-<n>-<what>.png.
 
@@ -65,7 +65,7 @@ if (serial === 'emulator-5586') {
   await start();
   const p = await page();
   await sleep(3000);
-  check('the page of a note is there', await p.evaluate(`!!document.querySelector('.ProseMirror')`));
+  check('the page of the phone is there, at the notes', await p.evaluate(`!!document.querySelector('[data-phone-notes]')`));
   await screenshot('web-view-1-new');
   p.close();
 } else {

@@ -9,12 +9,16 @@ import { page, screenshot, sleep, start, tap } from './device.mjs';
 import { key, type, SUGGESTION } from './gboard.mjs';
 
 const held = (p) =>
-  p.evaluate(`JSON.stringify([...document.querySelectorAll('.ProseMirror > *')].map((e) => e.tagName + ': ' + e.textContent))`);
+  p.evaluate(`JSON.stringify([...document.querySelectorAll('[data-phone-text] .ProseMirror > *')].map((e) => e.tagName + ': ' + e.textContent))`);
 
 await start();
 const p = await page();
 await sleep(4000);
-const line = await p.middle('.ProseMirror');
+// The phone's page: a new note, whose text has the cursor and the keyboard.
+const fresh = await p.middle('[data-phone-new]');
+await tap(fresh.x, fresh.y);
+await sleep(1500);
+const line = await p.middle('[data-phone-text] .ProseMirror');
 await tap(line.x, line.y);
 await sleep(2500);
 

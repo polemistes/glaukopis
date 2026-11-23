@@ -5,10 +5,10 @@
 import { page, screenshot, shell, sleep, start, tap } from './device.mjs';
 import { key, type } from './gboard.mjs';
 
-const html = (p) => p.evaluate(`document.querySelector('.ProseMirror').innerHTML.replace(/ class="[^"]*"/g, '')`);
+const html = (p) => p.evaluate(`document.querySelector('[data-phone-text] .ProseMirror').innerHTML.replace(/ class="[^"]*"/g, '')`);
 /** Taps the tool so named in the row over the note, and waits a moment. */
 const tool = async (p, name) => {
-  const at = await p.middle(`button[aria-label="${name}"]`);
+  const at = await p.middle(`[data-phone-tool="${name.toLowerCase()}"]`);
   await tap(at.x, at.y);
   await sleep(350);
 };
@@ -17,7 +17,11 @@ await start();
 const p = await page();
 await sleep(4000);
 console.log('buttons:', await p.evaluate(`JSON.stringify([...document.querySelectorAll('button')].map((b) => b.getAttribute('aria-label') || b.title || b.textContent.trim()))`));
-const line = await p.middle('.ProseMirror');
+// The phone's page: a new note, whose text has the cursor and the keyboard.
+const fresh = await p.middle('[data-phone-new]');
+await tap(fresh.x, fresh.y);
+await sleep(1500);
+const line = await p.middle('[data-phone-text] .ProseMirror');
 await tap(line.x, line.y);
 await sleep(2500);
 
@@ -45,5 +49,5 @@ console.log('Backspace at the start of the paragraph:', await html(p));
 await screenshot('marks-done');
 await sleep(2500);
 // What was written is kept on disk without being asked for, and the run's log says what went wrong.
-console.log(await shell('run-as org.glaukopis.app sh -c "ls -R files/data/notebook | head -20; cat files/data/logs/* | grep -v window.show | tail -12"'));
+console.log(await shell('run-as org.glaukopis.app sh -c "ls files/data/notebook"'));
 p.close();
