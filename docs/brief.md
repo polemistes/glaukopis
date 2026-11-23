@@ -2042,3 +2042,17 @@ Of the work after stage 1, with the session's model set to Opus:
 
 Stage 2 was built on 2026-11-23 so, the parts given to the models the plan
 names: record 0123.
+
+Of what stage 2 left to the owner (asked what the sentence under
+*Synchronization* is, and what an old phone is):
+
+> 3. It should sync the notes as between computers, so notes deleted one place is deleted everywhere. But there should be a trash can system for notes. 4. I will look at that later.
+
+- **A note deleted on one device is deleted on all**, as between computers.
+  (So it is already: the notebook is one document on every device. What
+  stage 2 left was the files of deleted notes, which a phone keeps on its
+  disk.)
+- **There is to be a trash for notes**: a note deleted goes there, on every
+  device, and can be brought back; what it holds goes when the trash is
+  emptied. Not built; a stage of the plan.
+- The phone's new words are the owner's to look at later.

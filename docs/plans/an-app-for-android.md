@@ -203,8 +203,9 @@ Each is committed when it is checked. Stages 0 to 4 are the app the owner asked 
 2. **The notes shown, found and written; the synchronization set up. Done on 2026-11-23: record 0123.** The page of the phone. *Device* for *computer* in the words of the synchronization, on the computers too, with an addendum to its record. From here the owner has an app to use: a note written on the phone is on the computer. Its detailed part is *Stage 2, in detail*, below.
 3. **Collecting.** Share, the selection's menu, the photograph, pictures and files, *New note* on the icon; sent when closed.
 4. **Given out.** The signed file, the job of the workflow, the newer version told, the website's folder, the chapter of the guide, the other languages in a round.
-5. *Later, should the owner want it:* **text read on the phone.** Photographs measured first; then Tesseract brought along, the languages, *Read the text*; PDFs after.
-6. *Later:* the rest of the notebook by finger: the surface of a box, Join and Divide, links.
+5. **A trash for notes** (the owner's word, 2026-11-23): a note deleted on any device goes to a trash on every device and can be brought back from it; its files go when the trash is emptied, which also answers the files of deleted notes that a phone keeps today. For computers and phones alike; a plan of its own, after stage 3 or before it, as the owner says.
+6. *Later, should the owner want it:* **text read on the phone.** Photographs measured first; then Tesseract brought along, the languages, *Read the text*; PDFs after.
+9. *Later:* the rest of the notebook by finger: the surface of a box, Join and Divide, links.
 7. *Later:* **maps shown.** The tree of projects from the home document; a project fetched when it is opened and kept from then on; read as text and as the diagram.
 8. *Later:* **maps edited.**
 
