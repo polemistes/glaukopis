@@ -16,6 +16,20 @@
   --phone-gutter: 16px;
 }
 
+/* The buttons of a message at the foot of the window (ui/Toaster.svelte), Undo
+   among them, as large as a finger needs; the message as wide as the window. */
+:root[data-phone] .toaster .toast {
+  max-width: calc(100vw - 2 * var(--phone-gutter));
+}
+:root[data-phone] .toaster .toast button {
+  min-width: 44px;
+  min-height: 44px;
+  justify-content: center;
+}
+:root[data-phone] .toaster .toast .close {
+  margin: -8px -8px -8px 0;
+}
+
 :root[data-phone] body {
   /* Nothing scrolls the page as a whole: each place scrolls what is its own. */
   overflow: hidden;
