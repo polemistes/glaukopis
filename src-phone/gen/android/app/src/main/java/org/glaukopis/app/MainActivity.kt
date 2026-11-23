@@ -1,9 +1,13 @@
 package org.glaukopis.app
 
+import android.graphics.Color
 import android.os.Bundle
 import android.view.View
+import android.webkit.JavascriptInterface
+import android.webkit.WebView
 import androidx.activity.enableEdgeToEdge
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 
 class MainActivity : TauriActivity() {
@@ -11,6 +15,40 @@ class MainActivity : TauriActivity() {
     enableEdgeToEdge()
     super.onCreate(savedInstanceState)
     keepClear()
+  }
+
+  /** What the page is given of the Android part: `window.glaukopisAndroid` (`src/lib/phone/android.d.ts`). */
+  override fun onWebViewCreate(webView: WebView) {
+    webView.addJavascriptInterface(ForThePage(), "glaukopisAndroid")
+  }
+
+  /**
+   * The two things the page asks of the Android part. The page is the app's
+   * own, read from the app's file; each function takes what it says and
+   * nothing else, and does its work on the thread of the interface.
+   */
+  inner class ForThePage {
+    /** The ground behind the system's bars, `#rrggbb`, with their signs light on a dark ground and dark on a light one. */
+    @JavascriptInterface
+    fun ground(colour: String, dark: Boolean) {
+      val parsed = try {
+        Color.parseColor(colour)
+      } catch (e: IllegalArgumentException) {
+        return
+      }
+      runOnUiThread {
+        findViewById<View>(android.R.id.content).setBackgroundColor(parsed)
+        val bars = WindowCompat.getInsetsController(window, window.decorView)
+        bars.isAppearanceLightStatusBars = !dark
+        bars.isAppearanceLightNavigationBars = !dark
+      }
+    }
+
+    /** Puts the app behind the others, as the system's Back does where nobody listens, its process kept. */
+    @JavascriptInterface
+    fun leave() {
+      runOnUiThread { moveTaskToBack(true) }
+    }
   }
 
   /**

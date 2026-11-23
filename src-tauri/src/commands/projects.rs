@@ -29,11 +29,39 @@ pub struct Trashed {
 /// JSON, and the bytes. See `api/projects.ts`.
 pub(crate) fn with_head<T: DeserializeOwned>(request: &Request<'_>) -> CommandResult<(T, Vec<u8>)> {
     let unread = |why: String| CommandError { kind: "invalid", message: tr!("core-projects-not-base64", error = why) };
-    let InvokeBody::Raw(body) = request.body() else { return Err(unread("not bytes".into())) };
+    let owned;
+    let body: &[u8] = match request.body() {
+        InvokeBody::Raw(body) => body,
+        // On Android the page cannot send a body by Tauri's own protocol, and
+        // its bytes come as JSON (found on the emulator: every change of the
+        // notebook was refused, and nothing written on the phone was kept).
+        InvokeBody::Json(value) => {
+            owned = bytes_of_json(value).ok_or_else(|| unread("not bytes".into()))?;
+            &owned
+        }
+    };
     let size = body.get(..4).map(|b| u32::from_le_bytes([b[0], b[1], b[2], b[3]]) as usize);
     let Some(head) = size.and_then(|n| body.get(4..4 + n)) else { return Err(unread("too short".into())) };
     let said = serde_json::from_slice(head).map_err(|e| unread(e.to_string()))?;
     Ok((said, body[4 + head.len()..].to_vec()))
+}
+
+/// Bytes as JSON gives them: an array of numbers, or an object whose keys
+/// are the places, as `JSON.stringify` writes a `Uint8Array`. Nothing where
+/// it is neither, or a number is no byte.
+fn bytes_of_json(value: &serde_json::Value) -> Option<Vec<u8>> {
+    let byte = |v: &serde_json::Value| v.as_u64().and_then(|n| u8::try_from(n).ok());
+    match value {
+        serde_json::Value::Array(items) => items.iter().map(byte).collect(),
+        serde_json::Value::Object(places) => {
+            let mut out = vec![0u8; places.len()];
+            for (place, v) in places {
+                *out.get_mut(place.parse::<usize>().ok()?)? = byte(v)?;
+            }
+            Some(out)
+        }
+        _ => None,
+    }
 }
 
 /// Parts one after another, each with its length before it (four bytes, least first).
@@ -313,4 +341,18 @@ pub fn project_history(state: State<'_, AppState>, id: String) -> CommandResult<
 #[tauri::command(async)]
 pub fn project_history_state(state: State<'_, AppState>, id: String, entry: String) -> CommandResult<String> {
     Ok(B64.encode(state.projects.history_state(&id, &entry)?))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn bytes_come_as_json_on_android_as_an_array_or_an_object_of_places() {
+        assert_eq!(bytes_of_json(&serde_json::json!([3, 0, 255])), Some(vec![3, 0, 255]));
+        assert_eq!(bytes_of_json(&serde_json::json!({"1": 7, "0": 2})), Some(vec![2, 7]));
+        assert_eq!(bytes_of_json(&serde_json::json!([256])), None);
+        assert_eq!(bytes_of_json(&serde_json::json!({"0": 1, "5": 2})), None, "a place missing");
+        assert_eq!(bytes_of_json(&serde_json::json!("AAEC")), None);
+    }
 }
