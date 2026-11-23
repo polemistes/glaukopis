@@ -36,6 +36,7 @@ const { watchInbox, takeInbox, arrivedWords } = await import('./arriving.svelte'
 const { Notebook } = await import('./model/notebook.svelte');
 
 const item = (over: Partial<InboxItem> = {}): InboxItem => ({
+  id: 'thing',
   kind: 'selection',
   url: 'https://example.org/owl',
   title: 'The owl',
