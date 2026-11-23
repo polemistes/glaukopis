@@ -28,10 +28,15 @@ core-sync-problem-notebook = Notatblokken lot seg ikke synkronisere. { $why }
 core-sync-problem-library = Biblioteket lot seg ikke synkronisere. { $why }
 # En fil i biblioteket, med navnet den har der.
 core-sync-file-too-large = «{ $name }» er større enn tjeneren tar imot (høyst { $most } MB), og finnes ikke på de andre enhetene dine.
-# Tjeneren har ikke plass til flere filer: hvor mange filer i biblioteket og i notatene på denne enheten som ikke ble sendt av den grunn. Sies så lenge det er slik.
+# Tjeneren har ikke plass til flere filer: hvor mange filer på denne enheten som ikke ble sendt av den grunn, de i notatene for seg (core-sync-server-full-notes). Sies så lenge det er slik.
 core-sync-server-full = { $count ->
     [one] Tjeneren er full. Én fil finnes ikke på de andre enhetene dine.
    *[other] Tjeneren er full. { $count } filer finnes ikke på de andre enhetene dine.
+}
+# Det samme om filene som notater har, framfor alt bilder, sagt før de andre.
+core-sync-server-full-notes = { $count ->
+    [one] Tjeneren er full. Én fil i notatene dine finnes ikke på de andre enhetene dine.
+   *[other] Tjeneren er full. { $count } filer i notatene dine finnes ikke på de andre enhetene dine.
 }
 core-sync-file-not-sent = «{ $name }» kunne ikke sendes til tjeneren. { $why }
 core-sync-file-not-fetched = «{ $name }» kunne ikke hentes fra tjeneren. { $why }

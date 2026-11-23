@@ -3930,10 +3930,11 @@ runs the server can let it take larger files (see `server.md`).
 more. A file there is not room for stays on the device that has it, and the
 settings there say that the server is full, and how many files are not on
 your other devices, for as long as that is so. The files of your notes are
-sent before those of the library, and small files before large ones, so
-what waits is the large files of the library. Ask whoever keeps the server
-for more room (see `server.md`). When there is room, **Synchronize now**
-sends what waited.
+sent before those of the library, and small files before large ones, and a
+tenth of the room is kept for the files of notes, so what waits is the
+large files of the library. Where files of your notes wait all the same,
+that is said by itself. Ask whoever keeps the server for more room (see
+`server.md`). When there is room, **Synchronize now** sends what waited.
 
 **An older version.** When a later version of Glaukopis has kept something
 in a form that an earlier one does not know, synchronization stops on the

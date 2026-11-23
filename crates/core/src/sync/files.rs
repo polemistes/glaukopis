@@ -44,6 +44,14 @@
 //! offered again whenever the files are looked at: when the library
 //! changes, when the writer asks for a round, and at the next start.
 //!
+//! Of what a home may hold, a tenth is kept for the files the notes hold,
+//! and no more than a gibibyte (`kept_for_notes`): the other files stop
+//! that far short of the limit. The order puts the notes' files first in
+//! one round only, and a library larger than its home would fill the home
+//! in the first, so that no picture put into a note afterwards, on any
+//! device, found room. Where files of the notes wait for room all the
+//! same, it is said of them apart.
+//!
 //! What fails for one file is said, and the others go on; what fails for
 //! the server as a whole ends it. A file whose sending or fetching fails as
 //! the network fails may be either, so the home is asked at once how it
@@ -97,10 +105,11 @@ pub struct Told {
     /// and not offered again in it.
     too_large: BTreeSet<String>,
     /// The files that were not sent when the files were last looked at,
-    /// because the home has not room for them. They are offered again
-    /// each time the files are looked at, and while there are any, every
-    /// round says that the server is full (`full`).
-    full: BTreeSet<String>,
+    /// because the home has not room for them, each with whether the
+    /// notes hold it. They are offered again each time the files are
+    /// looked at, and while there are any, every round says that the
+    /// server is full (`full`).
+    full: BTreeMap<String, bool>,
     /// How many times the files were looked at in this run.
     looks: u64,
     /// The files whose sending or fetching failed as the network fails
@@ -132,11 +141,78 @@ fn passed_over(times: u32) -> u64 {
 
 impl Told {
     /// That the server is full, in words, while files are not sent for it:
-    /// one of the problems of every round, whether the files were looked
+    /// among the problems of every round, whether the files were looked
     /// at in it or not, so that it is not said for half a minute and then
-    /// taken for mended.
-    pub fn full(&self) -> Option<String> {
-        (!self.full.is_empty()).then(|| tr!("core-sync-server-full", count = self.full.len()))
+    /// taken for mended. The files the notes hold are said apart, and
+    /// first: they are few, and what the writer misses on another device.
+    pub fn full(&self) -> Vec<String> {
+        let of_notes = self.full.values().filter(|notes| **notes).count();
+        let others = self.full.len() - of_notes;
+        let mut said = Vec::new();
+        if of_notes > 0 {
+            said.push(tr!("core-sync-server-full-notes", count = of_notes));
+        }
+        if others > 0 {
+            said.push(tr!("core-sync-server-full", count = others));
+        }
+        said
+    }
+}
+
+/// How much of what the files of a home may hold together is kept for the
+/// files the notes hold: a tenth, and no more than a gibibyte. The other
+/// files stop that far short of the limit.
+///
+/// The order of a round puts the notes' files first, but that is one
+/// round: a library larger than its home fills the home in the first, and
+/// from then on a picture put into a note finds no room, on whichever
+/// device it is taken. What the notes hold is small beside a library and
+/// is what a writer looks for on a phone, so room is kept for it. It is a
+/// share and no fixed amount, since a home may be set to hold little; and
+/// no more than a gibibyte, since a home may be set to hold very much.
+fn kept_for_notes(most: u64) -> u64 {
+    (most / 10).min(1 << 30)
+}
+
+/// The room the files of a home have, where the server says what a home may hold.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct Room {
+    /// How much more the home may hold.
+    left: u64,
+    /// How much of that is kept for the files the notes hold: what is
+    /// kept for them of the whole (`kept_for_notes`), less what their
+    /// files in the home hold already.
+    for_notes: u64,
+}
+
+impl Room {
+    /// The room of a home that may hold `most`, whose files hold `used`
+    /// together, `of_notes` of it in files the notes hold.
+    fn of(most: u64, used: u64, of_notes: u64) -> Room {
+        Room { left: most.saturating_sub(used), for_notes: kept_for_notes(most).saturating_sub(of_notes) }
+    }
+
+    /// Whether there is room for a file: one the notes hold may take all
+    /// that is left, another only what is not kept for the notes.
+    fn takes(&self, file: &Due) -> bool {
+        let kept = if file.notes { 0 } else { self.for_notes };
+        file.size.saturating_add(kept) <= self.left
+    }
+
+    /// The file was sent.
+    fn took(&mut self, file: &Due) {
+        self.left = self.left.saturating_sub(file.size);
+        if file.notes {
+            self.for_notes = self.for_notes.saturating_sub(file.size);
+        }
+    }
+
+    /// The server refused the file for want of room, though there seemed
+    /// to be room: another device filled the home meanwhile. Nothing as
+    /// large is offered in this round.
+    fn refused(&mut self, file: &Due) {
+        let kept = if file.notes { 0 } else { self.for_notes };
+        self.left = self.left.min(file.size.saturating_add(kept).saturating_sub(1));
     }
 }
 
@@ -295,8 +371,8 @@ pub fn bring(
     }
 
     let mut due: Vec<Due> = Vec::new();
-    // How much more the files of the home may hold, where the server says.
-    let mut room: Option<u64> = None;
+    // The room the files of the home have, where the server says what it may hold.
+    let mut room: Option<Room> = None;
     let offered: Vec<&str> = named
         .keys()
         .copied()
@@ -305,7 +381,12 @@ pub fn bring(
     if !offered.is_empty() {
         let (there, most) = home.files()?;
         let used: u64 = there.iter().map(|file| file.size).sum();
-        room = home.holds_at_most()?.map(|most| most.saturating_sub(used));
+        let of_notes: u64 = there
+            .iter()
+            .filter(|file| named.get(file.hash.as_str()).is_some_and(|named| named.notes))
+            .map(|file| file.size)
+            .sum();
+        room = home.holds_at_most()?.map(|most| Room::of(most, used, of_notes));
         let there: BTreeSet<&str> = there.iter().map(|f| f.hash.as_str()).collect();
         for hash in offered {
             let size = here[hash].1;
@@ -354,15 +435,15 @@ pub fn bring(
         }
     };
     // The files that are not sent in this round because the home has not room for them.
-    let mut full: BTreeSet<String> = BTreeSet::new();
+    let mut full: BTreeMap<String, bool> = BTreeMap::new();
     // How much a file held whose sending, or whose fetching, failed in this
     // round as the network fails while the server answered: nothing as
     // large goes the same way in the round.
     let (mut sent_below, mut fetched_below): (Option<u64>, Option<u64>) = (None, None);
     for file in &due {
-        if file.way == Way::Sent && room.is_some_and(|room| file.size > room) {
+        if file.way == Way::Sent && room.is_some_and(|room| !room.takes(file)) {
             // Said before it is sent, as a file too large is.
-            full.insert(file.hash.to_owned());
+            full.insert(file.hash.to_owned(), file.notes);
             continue;
         }
         let below = match file.way {
@@ -421,14 +502,16 @@ pub fn bring(
         match (file.way, came) {
             (Way::Sent, Ok(())) => {
                 note(file.hash, Some(&file.size.to_string()))?;
-                room = room.map(|room| room.saturating_sub(file.size));
+                if let Some(room) = &mut room {
+                    room.took(file);
+                }
             }
             // Another device filled the home since it was asked: this file
             // does not fit, and nothing as large is offered in this round.
             (Way::Sent, Err(Error::Refused { kind: "full", .. })) => {
-                full.insert(file.hash.to_owned());
-                let less = file.size.saturating_sub(1);
-                room = Some(room.map_or(less, |room| room.min(less)));
+                full.insert(file.hash.to_owned(), file.notes);
+                // Where the server says nothing of what a home may hold, this is all that is known of it.
+                room.get_or_insert(Room { left: u64::MAX, for_notes: 0 }).refused(file);
             }
             (Way::Sent, Err(Error::Refused { kind: "too-large", message })) => {
                 told.too_large.insert(file.hash.to_owned());
@@ -448,7 +531,7 @@ pub fn bring(
 
     // In the log once, when it is so and when more files are left by it,
     // not at every round.
-    if full.iter().any(|hash| !told.full.contains(hash)) {
+    if full.keys().any(|hash| !told.full.contains_key(hash)) {
         tracing::warn!(files = full.len(), room = ?room, "the home has not room for every file: those that do not fit are not sent");
     } else if full.is_empty() && !told.full.is_empty() {
         tracing::info!("the home has room for every file again");
@@ -536,17 +619,55 @@ mod tests {
     }
 
     #[test]
-    fn a_full_server_is_said_for_as_long_as_files_are_left_by_it() {
+    fn a_full_server_is_said_for_as_long_as_files_are_left_by_it_and_the_files_of_the_notes_apart() {
         let mut told = Told::default();
-        assert_eq!(told.full(), None);
-        told.full.insert("one".into());
-        let one = told.full().expect("it is said");
-        told.full.insert("two".into());
-        let two = told.full().expect("it is said");
-        assert!(two.contains('2'), "{two}");
+        assert!(told.full().is_empty());
+        told.full.insert("one".into(), false);
+        let one = told.full();
+        assert_eq!(one.len(), 1);
+        told.full.insert("two".into(), false);
+        let two = told.full();
+        assert!(two.len() == 1 && two[0].contains('2'), "{two:?}");
         assert_ne!(one, two, "one file is said otherwise than several");
+        // A file a note holds is said in a sentence of its own, before the others.
+        told.full.insert("a picture".into(), true);
+        let with_notes = told.full();
+        assert_eq!(with_notes.len(), 2);
+        assert!(with_notes[0].contains("notes") && with_notes[1] == two[0], "{with_notes:?}");
         told.full.clear();
-        assert_eq!(told.full(), None);
+        assert!(told.full().is_empty());
+    }
+
+    #[test]
+    fn a_tenth_of_a_home_and_no_more_than_a_gibibyte_is_kept_for_the_files_of_the_notes() {
+        const GIB: u64 = 1 << 30;
+        assert_eq!(kept_for_notes(10 * GIB), GIB, "of a home as the server makes one where nothing else is said");
+        assert_eq!(kept_for_notes(100 * GIB), GIB);
+        assert_eq!(kept_for_notes(1000), 100);
+        assert_eq!(kept_for_notes(0), 0);
+        let file = |size: u64, notes: bool| Due { hash: "a file", way: Way::Sent, size, notes };
+
+        // A home of 1000 with nothing in it: the library's files stop at 900, the notes' at 1000.
+        let mut room = Room::of(1000, 0, 0);
+        assert!(room.takes(&file(900, false)) && !room.takes(&file(901, false)));
+        assert!(room.takes(&file(1000, true)) && !room.takes(&file(1001, true)));
+        room.took(&file(900, false));
+        assert!(!room.takes(&file(1, false)), "what is left is the notes'");
+        assert!(room.takes(&file(100, true)));
+        // What the notes' files hold comes out of what is kept for them, and then out of what all may use.
+        room.took(&file(60, true));
+        assert_eq!(room, Room { left: 40, for_notes: 40 });
+        let mut room = Room::of(1000, 300, 250);
+        assert_eq!(room, Room { left: 700, for_notes: 0 }, "the notes hold more than was kept for them");
+        assert!(room.takes(&file(700, false)));
+        // A home filled to the brim before room was kept: nothing fits, of either.
+        assert!(!Room::of(1000, 1000, 0).takes(&file(1, true)));
+        // Refused though there seemed to be room: nothing as large is offered.
+        room.refused(&file(500, false));
+        assert!(!room.takes(&file(500, false)) && room.takes(&file(499, false)));
+        let mut unknown = Room { left: u64::MAX, for_notes: 0 };
+        unknown.refused(&file(500, true));
+        assert!(!unknown.takes(&file(500, true)) && unknown.takes(&file(499, false)));
     }
 
     #[test]

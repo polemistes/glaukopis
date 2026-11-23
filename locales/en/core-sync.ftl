@@ -28,10 +28,15 @@ core-sync-problem-notebook = The notebook could not be synchronized. { $why }
 core-sync-problem-library = The library could not be synchronized. { $why }
 # A file of the library, by the name it has there.
 core-sync-file-too-large = “{ $name }” is larger than the server takes ({ $most } MB at the most), and is not on your other devices.
-# The server has no room for more files: how many files of the library and of the notes on this device were not sent for that. Said for as long as it is so.
+# The server has no room for more files: how many files on this device were not sent for that, those of the notes apart (core-sync-server-full-notes). Said for as long as it is so.
 core-sync-server-full = { $count ->
     [one] The server is full. One file is not on your other devices.
    *[other] The server is full. { $count } files are not on your other devices.
+}
+# The same of the files that notes hold, pictures above all, said before the others.
+core-sync-server-full-notes = { $count ->
+    [one] The server is full. One file of your notes is not on your other devices.
+   *[other] The server is full. { $count } files of your notes are not on your other devices.
 }
 core-sync-file-not-sent = “{ $name }” could not be sent to the server. { $why }
 core-sync-file-not-fetched = “{ $name }” could not be fetched from the server. { $why }

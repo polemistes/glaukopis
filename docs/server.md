@@ -173,7 +173,9 @@ project. The server calls what one writer's computers keep together a *home*.
   may hold together (10 GB if not given), and `--max-home-file-mb` the most
   one of them may hold (512 MB). A computer with a file that does not fit
   keeps it and says that the server is full; give the settings larger
-  numbers and start the server again, and what waited is sent.
+  numbers and start the server again, and what waited is sent. A tenth of
+  `--max-home-mb`, and no more than 1 GB, is kept for the files of the
+  writer's notes: the files of the library stop that far short of it.
 - Changes reach the server from each computer a few seconds after they are
   written, and each computer asks every half minute whether anything came
   from another. Nothing is kept open between them, and no WebSocket is

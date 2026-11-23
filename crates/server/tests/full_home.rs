@@ -113,6 +113,16 @@ impl Device {
         attachments::hash_bytes(bytes)
     }
 
+    /// Takes a file into a note, as one dropped into it is taken: a file the notes hold alone. Its hash.
+    fn take_into_a_note(&self, name: &str, bytes: &[u8]) -> String {
+        let path = self.file(name, bytes);
+        let dir = self.lib().dir().to_owned();
+        let (taken, problems) = store_paths(&dir, &[path], false, &mut |_, _, _| {}, &Default::default());
+        assert!(problems.is_empty(), "{problems:?}");
+        self.lib().notebook_take(&taken).unwrap();
+        attachments::hash_bytes(bytes)
+    }
+
     /// Takes a picture as one pasted into a note is taken: a file the notes hold alone. Its hash.
     fn take_picture(&self, name: &str, bytes: &[u8]) -> String {
         self.lib().notebook_take_image(name, bytes).unwrap().hash
@@ -264,9 +274,9 @@ async fn a_home_too_full_for_the_files_of_the_library_still_takes_the_pictures_o
             computer.round();
             assert!(computer.home_files().contains(&first));
 
-            // Two more, of 50 and of 60, for which there is no room; and a picture in a note.
+            // Two more, of 50 and of 55, for which there is no room; and a picture in a note.
             let scan = computer.attach(&work.id, "scan.pdf", &kib(50, 2));
-            let plates = computer.take_in("plates.pdf", &kib(60, 3));
+            let plates = computer.take_in("plates.pdf", &kib(55, 3));
             let sketch = computer.take_picture("sketch", &PNG);
             let status = computer.once();
             assert_eq!(status.state, State::Idle, "the server was reached: {:?}", status.problem);
@@ -319,6 +329,56 @@ async fn a_home_too_full_for_the_files_of_the_library_still_takes_the_pictures_o
             assert!(computer.home_files().contains(&plates));
             assert_eq!((status.state, status.problem), (State::Idle, None));
             assert!(status.last.is_some(), "everything is the same");
+        },
+    )
+    .await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn the_files_of_the_library_stop_short_of_what_the_home_may_hold_and_a_picture_of_a_note_still_fits() {
+    with_server_set(
+        |config| config.max_home_bytes = 100 << 10,
+        |address| {
+            let (computer, phone) = (Device::computer(), Device::phone());
+            assert!(computer.sync.start(&address, "The desk", None).unwrap().on);
+            computer.round();
+            join(&phone, &computer, &address, "The phone");
+            phone.round();
+
+            // The home holds 100 KiB, of which a tenth is kept for the files
+            // of the notes. A library of one file of 5 KiB and three of 30:
+            // the smaller go first, and after two of 30 there are 35 KiB
+            // left. The third would fit in that; it does not fit in what is
+            // the library's, and waits.
+            let small = computer.take_in("leaflet.pdf", &kib(5, 4));
+            let large: Vec<String> =
+                (1..=3).map(|n| computer.take_in(&format!("volume-{n}.pdf"), &kib(30, n))).collect();
+            let status = computer.once();
+            assert_eq!(status.state, State::Idle, "{:?}", status.problem);
+            let of_the_library = status.problem.expect("one file waits");
+            assert!(of_the_library.starts_with("The server is full.") && !of_the_library.contains("notes"));
+            assert_eq!(of_the_library.lines().count(), 1, "{of_the_library}");
+            let there = computer.home_files();
+            assert!(there.contains(&small), "{there:?}");
+            assert_eq!(large.iter().filter(|file| there.contains(file)).count(), 2, "one of the three waits");
+
+            // A picture taken on the phone after that still fits, and reaches the computer.
+            let photograph = phone.take_picture("photograph", &PNG);
+            phone.round();
+            assert!(phone.home_files().contains(&photograph));
+            let status = computer.once();
+            assert_eq!(computer.bytes(&photograph).as_deref(), Some(&PNG[..]));
+            assert_eq!(status.problem.as_deref(), Some(of_the_library.as_str()), "the third volume waits still");
+
+            // A file of a note for which there is no room even so is said apart, and first.
+            let recording = computer.take_into_a_note("recording.bin", &kib(36, 5));
+            let status = computer.once();
+            assert!(!computer.home_files().contains(&recording));
+            let problem = status.problem.expect("two things are said");
+            let said: Vec<&str> = problem.lines().collect();
+            assert_eq!(said.len(), 2, "{problem}");
+            assert!(said[0].starts_with("The server is full.") && said[0].contains("of your notes"), "{problem}");
+            assert_eq!(said[1], of_the_library);
         },
     )
     .await;
