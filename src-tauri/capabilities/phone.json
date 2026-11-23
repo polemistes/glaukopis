@@ -1,0 +1,13 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "phone",
+  "description": "What the page of the phone may do on a computer (glaukopis --phone): what it may on a phone, and be shown, as every window on a computer is shown by its page. Never close or destroy itself: a window that stays is how the page knows it stays",
+  "windows": [
+    "phone"
+  ],
+  "permissions": [
+    "core:default",
+    "dialog:allow-open",
+    "core:window:allow-show"
+  ]
+}

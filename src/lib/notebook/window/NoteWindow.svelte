@@ -580,6 +580,15 @@
       flex-wrap: wrap;
       row-gap: 4px;
     }
+  }
+  /* And in a window as narrow as a phone, as glaukopis --phone has it. */
+  @media (max-width: 440px) {
+    .tools {
+      flex-wrap: wrap;
+      row-gap: 4px;
+    }
+  }
+  @media (pointer: coarse) {
     /* The whole field takes the finger, not the lines written alone: the
        web view of a phone gives a height in hundredths no meaning here,
        and a tap under the last line met nothing. */

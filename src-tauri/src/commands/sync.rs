@@ -39,7 +39,9 @@ pub struct ProjectApart {
 }
 
 /// The engine, telling the windows of this application what it has to tell.
-pub fn engine(app: &AppHandle, state: &AppState) -> Arc<Sync> {
+/// What `takes` says is what the device takes of its home: everything on a
+/// computer, the notes on a phone (`phone.rs`).
+pub fn engine(app: &AppHandle, state: &AppState, takes: Takes) -> Arc<Sync> {
     let (of_status, of_project, of_notebook, of_apart) = (app.clone(), app.clone(), app.clone(), app.clone());
     let told = |sent: tauri::Result<()>, what: &str| {
         if let Err(error) = sent {
@@ -61,13 +63,13 @@ pub fn engine(app: &AppHandle, state: &AppState) -> Arc<Sync> {
             told(of_apart.emit(PROJECT_APART, passed), "a project written in apart");
         }),
     };
-    // The application is a computer: it takes everything of its home.
+    // What the role says this device takes of its home.
     Arc::new(Sync::new(
         &state.data,
         state.projects.clone(),
         state.notebook.clone(),
         state.library_shared(),
-        Takes::Everything,
+        takes,
         hears,
     ))
 }

@@ -109,8 +109,10 @@ pub fn find_resources(installed: Option<PathBuf>) -> PathBuf {
     candidates
         .iter()
         .find(|c| c.join("csl").join("index.json").is_file())
+        .or(candidates.first())
         .cloned()
-        .unwrap_or_else(|| candidates[0].clone())
+        // Nowhere to look, as on a phone, which has no folder of resources.
+        .unwrap_or_default()
 }
 
 /// Where the copies of Zotero's databases are made.

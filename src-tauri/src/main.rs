@@ -29,5 +29,11 @@ fn main() {
         glaukopis_app::run_note_window();
         return;
     }
+    // Started as the phone, for trying it on a computer (`--phone`): that
+    // role, in a window as narrow as a phone, and nothing else.
+    if glaukopis_app::phone_asked(&args) {
+        glaukopis_app::run_phone();
+        return;
+    }
     glaukopis_app::run()
 }

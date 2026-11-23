@@ -3,18 +3,19 @@
 //! `glaukopis-phone` (`../src-phone`), built for Android alone, and empty
 //! where that package is built for anything else.
 #![cfg(not(phone_elsewhere))]
-// On a phone only the phone's role is started (`phone.rs`), and what the
-// roles of a computer are made of lies unused there. Until the roles are
-// each a file of their own (the plan's stage 1), that is allowed.
-#![cfg_attr(mobile, allow(dead_code, unused_imports))]
 
+// A role registers the commands its page calls. On a phone the others lie
+// unused, and the linker leaves them out (record 0121): that is allowed
+// there, and only there. They are not put behind the desktop one by one,
+// since the phone's page registers more of them as it grows.
+#[cfg_attr(mobile, allow(dead_code))]
 mod commands;
 #[cfg(test)]
 mod contract;
 mod error;
 mod log;
-#[cfg(mobile)]
 mod phone;
+#[cfg_attr(mobile, allow(dead_code))]
 mod state;
 // The roles: the application on a computer, the window of a note, the phone;
 // and what every role starts with.
@@ -28,6 +29,8 @@ mod starting;
 pub use application::run;
 #[cfg(desktop)]
 pub use note_window::run as run_note_window;
+#[cfg(desktop)]
+pub use phone::{asked as phone_asked, run as run_phone};
 
 /// Where Android starts the application: in the role of the phone.
 #[cfg(mobile)]

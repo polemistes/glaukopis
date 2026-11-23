@@ -14,6 +14,7 @@ import { logPage } from '$lib/api/system';
 import { guardPaste, pastesThroughGtk } from '$lib/util/paste';
 import { forwardToLog } from '$lib/shell/page-log';
 import { isNoteWindow } from '$lib/notebook/window/label';
+import { isPhone } from '$lib/phone/label';
 
 nameLanguagesBy(languageName);
 
@@ -47,10 +48,13 @@ if (inTauri)
   }, 5000);
 
 // The window of a note (record 0109) has a page of its own, and nothing of
-// the application: each is loaded only where it is shown.
+// the application: each is loaded only where it is shown. The phone shows
+// the same page until its own takes its place (stage 2 of
+// docs/plans/an-app-for-android.md, `src/lib/phone/mount.ts`).
 const target = document.getElementById('app')!;
-const app = isNoteWindow()
-  ? import('$lib/notebook/window/mount').then((page) => page.mountNoteWindow(target))
-  : import('./App.svelte').then(({ default: App }) => mount(App, { target }));
+const app =
+  isNoteWindow() || isPhone()
+    ? import('$lib/notebook/window/mount').then((page) => page.mountNoteWindow(target))
+    : import('./App.svelte').then(({ default: App }) => mount(App, { target }));
 
 export default app;

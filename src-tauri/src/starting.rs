@@ -124,6 +124,7 @@ pub(crate) fn speak_as_chosen(data: Option<&DataDir>) {
 /// Whether the harness runs the application: the hooks the e2e scripts
 /// reach the page by are there only then (`shell/testing.ts`), never in a
 /// working window.
+#[cfg(desktop)]
 pub(crate) fn testing() -> bool {
     std::env::var_os("GLAUKOPIS_E2E").is_some_and(|v| !v.is_empty())
 }

@@ -407,7 +407,7 @@ impl Start {
                 // The engine that keeps this computer the same as the
                 // writer's others (record 0120): made with the stores it
                 // shares with the commands, and started once the windows are.
-                let sync = commands::sync::engine(app, &state);
+                let sync = commands::sync::engine(app, &state, glaukopis_core::sync::Takes::Everything);
                 app.manage(*state);
                 app.manage(sync.clone());
                 // The windows are made only now that what their commands ask

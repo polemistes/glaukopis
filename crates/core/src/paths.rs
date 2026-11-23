@@ -178,6 +178,35 @@ pub fn default_root() -> PathBuf {
     platform_data_home().join("glaukopis")
 }
 
+/// Where the phone's role keeps its data on a computer (`glaukopis --phone`,
+/// for trying it): `GLAUKOPIS_DATA_DIR` where it names one, else
+/// `glaukopis-phone` in the place of the system for the data of programs,
+/// beside the application's folder and never in it. The file that says
+/// where the writer chose to keep the data is not read. It is never the
+/// application's usual folder: where the environment names that one, it is
+/// an error, said in English as the log is.
+pub fn phone_root() -> Result<PathBuf> {
+    let environment = std::env::var_os("GLAUKOPIS_DATA_DIR").filter(|v| !v.is_empty()).map(PathBuf::from);
+    phone_root_in(environment, &platform_data_home())
+}
+
+/// `phone_root`, given the environment's folder and the place of the system.
+fn phone_root_in(environment: Option<PathBuf>, data_home: &Path) -> Result<PathBuf> {
+    let usual = data_home.join("glaukopis");
+    let Some(root) = environment else { return Ok(data_home.join("glaukopis-phone")) };
+    let same_folder = match (fs::canonicalize(&root), fs::canonicalize(&usual)) {
+        (Ok(a), Ok(b)) => a == b,
+        _ => false,
+    };
+    if root == usual || same_folder {
+        return Err(Error::invalid(format!(
+            "{} is the application's own data folder, which the phone's role never works in",
+            root.display()
+        )));
+    }
+    Ok(root)
+}
+
 /// Whether `GLAUKOPIS_DATA_DIR` says where the data is: then the file of the
 /// location is neither read nor acted on.
 pub fn data_dir_from_environment() -> bool {
@@ -573,6 +602,18 @@ fn home() -> PathBuf {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_phone_never_works_in_the_applications_own_folder() {
+        let tmp = tempfile::tempdir().unwrap();
+        let home = tmp.path();
+        assert_eq!(phone_root_in(None, home).unwrap(), home.join("glaukopis-phone"));
+        let elsewhere = home.join("a run of the scripts");
+        assert_eq!(phone_root_in(Some(elsewhere.clone()), home).unwrap(), elsewhere);
+        assert!(phone_root_in(Some(home.join("glaukopis")), home).is_err(), "named as it is");
+        std::fs::create_dir_all(home.join("glaukopis")).unwrap();
+        assert!(phone_root_in(Some(home.join(".").join("glaukopis")), home).is_err(), "named otherwise");
+    }
 
     #[test]
     fn creates_the_layout() {
