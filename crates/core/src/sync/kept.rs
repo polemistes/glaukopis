@@ -232,6 +232,11 @@ impl Kept {
         write_json(&self.dir.join(format!("{name}.json")), value)
     }
 
+    /// Forgets what a round kept under a name: the next finds nothing kept of it.
+    pub fn forget_note(&self, name: &str) -> Result<()> {
+        remove(&self.dir.join(format!("{name}.json")))
+    }
+
     fn base_file(&self, name: &str) -> PathBuf {
         self.dir.join(BASE).join(format!("{name}.json"))
     }

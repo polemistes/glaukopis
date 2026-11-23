@@ -648,6 +648,13 @@ impl Records<'_> {
                 .is_some_and(|(hash, part)| records.contains(hash) || (part == MARK && marks.contains(hash)))
         })
     }
+
+    /// Whether anything was kept for the notes here that is to be told
+    /// again (`tell_again`): the one who makes the rounds must then have
+    /// the records meet their map once more, also where nothing else changes.
+    pub fn keeps_for_notes(&self) -> bool {
+        !self.kept_for_notes.borrow().is_empty() || !self.marks_kept_for_notes.borrow().is_empty()
+    }
 }
 
 impl Store for Records<'_> {

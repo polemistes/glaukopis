@@ -1160,6 +1160,8 @@ impl Sync {
             && cursor.is_some_and(|c| c.seen.as_ref() == docs.get(&name))
             && self.kept.noted::<LibraryLies>(LIBRARY_LIES).as_ref() == Some(&lies);
         let mut changed = false;
+        // Whether something stays here for the notes that is to be told again at the next round.
+        let mut again = false;
         if !quiet {
             // What was read from a damaged file is no change made here: the store meets its map as for the first time.
             for (amiss, store) in [
@@ -1198,7 +1200,16 @@ impl Sync {
             // What the library's rules made otherwise than the map said is told at the next round.
             let keys = keys_made_here(&self.library, doc);
             forget_agreed(&self.kept, references.name(), |name| keys.contains(name))?;
-            // What stays here for the notes, though another device took it out, is told again at the next round.
+            // What stays here for the notes, though another device took it
+            // out, is told again when the records next meet their map: at
+            // the next round, which must read the library for it also
+            // where nothing else has changed by then. So how the library's
+            // files lay is forgotten, and that first: a round that finds
+            // nothing kept of it is never one in which nothing changed.
+            again = records.keeps_for_notes();
+            if again {
+                self.kept.forget_note(LIBRARY_LIES)?;
+            }
             records.tell_again(&self.kept)?;
             own.set(
                 folders.written.get() + records.written.get() + references.written.get() + collections.written.get(),
@@ -1219,12 +1230,16 @@ impl Sync {
             let library = held(&self.library);
             (LibraryLies::of(&dir), library.writes() - writes)
         };
-        if written == own.get() {
-            if written > 0 || !quiet {
-                self.kept.note(LIBRARY_LIES, &now)?;
+        // And where something is to be told again, nothing is kept of how
+        // they lie: it was forgotten above, for the next round to read them.
+        if !again {
+            if written == own.get() {
+                if written > 0 || !quiet {
+                    self.kept.note(LIBRARY_LIES, &now)?;
+                }
+            } else if !quiet {
+                self.kept.note(LIBRARY_LIES, &lies)?;
             }
-        } else if !quiet {
-            self.kept.note(LIBRARY_LIES, &lies)?;
         }
         if self.kept.unsent(LIBRARY.kind) {
             self.exchange_maps(home, joined, LIBRARY, doc, docs, true)?;
