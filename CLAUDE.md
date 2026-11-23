@@ -91,11 +91,16 @@ No Tauri in it; everything that is data and not interface.
 
 The window and the commands, one file per area in `commands/`, each a thin
 call into the core. `contract.rs` is the test that writes
-`src/lib/api/contract.generated.ts`. `lib.rs` sets what the web view needs on
-Linux, and builds the application in its roles: itself (`run`), and the
-window of a note alone (`run_note_window`, for `glaukopis --note`, with the
-few commands of `commands/notewindow.rs`); the roles without a window, the
-Firefox helper and the reading of a PDF, are taken in `main.rs`. A command that can wait long or be called many times at once runs on
+`src/lib/api/contract.generated.ts`. The application is built in its roles,
+a file each: `application.rs`, itself on a computer (`run`, its windows and
+every command); `note_window.rs`, the window of a note alone (`glaukopis
+--note`, with the few commands of `commands/notewindow.rs`); `phone.rs`, the
+phone (below); and `starting.rs`, what every role starts with (the data
+folder opened and claimed, the language, what is told to the windows, what
+is said where starting fails, the compositor of WebKitGTK on Linux).
+`lib.rs` holds only the modules and what `main.rs` and Android call; the
+roles without a window, the Firefox helper and the reading of a PDF, are
+taken in `main.rs`. A command that can wait long or be called many times at once runs on
 `spawn_blocking` (see `commands/viewer.rs`), never as a plain synchronous
 `#[tauri::command(async)]`: the runtime's workers are few.
 `commands/sync.rs` makes the engine that keeps this computer the same as the
@@ -107,8 +112,15 @@ windows as a change of another window does.
 same sources are a second package, `src-phone`, whose library is
 `src-tauri/src/lib.rs`: built for Android alone, empty where it is built for
 anything else, so that a build for a computer makes nothing for it. Its role
-is `src-tauri/src/phone.rs` (for now the window of a note); what is a
-computer's alone stands behind `cfg(desktop)`. Its dependencies are those of
+is `src-tauri/src/phone.rs`: its folder opened as the application's, the
+engine told that the device takes the notes alone (the core's `sync::Takes`),
+the window labelled `phone` (for now showing the page of a note), and only
+the commands its page calls. `glaukopis --phone` is the same role on a
+computer, for trying it, never in the application's own data folder;
+`e2e/phone-role.mjs` tries it with a server. What is a computer's alone
+stands behind `cfg(desktop)`. On Android the launcher starts `StartActivity`,
+which looks at the web view before anything of Glaukopis loads (its words
+are Android's string resources), and then `MainActivity`, the page. Its dependencies are those of
 `src-tauri/Cargo.toml` without what is a computer's: keep them the same. The
 Android project, `src-phone/gen/android`, is kept in git: the manifest, the
 activity that keeps the page clear of the system's bars and the keyboard, the

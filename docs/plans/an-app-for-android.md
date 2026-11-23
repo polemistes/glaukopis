@@ -199,7 +199,7 @@ What it takes:
 Each is committed when it is checked. Stages 0 to 4 are the app the owner asked for; the rest come later, each with a plan of its own.
 
 0. **The trial. Done on 2026-11-22: record 0121.** The editor holds under Google's keyboard; Samsung's is the owner's phone's to answer, with the app built for it. As it was planned: The Rust targets for Android; TLS; the shell built for Android with one window that holds the editor of the texts and keeps a note. On the emulator and on the owner's phone. It answers: whether the core builds, for 64 bits and for 32, and whether its tests pass as a 32-bit program; how large the file is, and so whether typesetting is left out; **whether the editor holds under a phone's keyboard**, Samsung's on the owner's phone and Google's on the emulator (typing with suggestions, Enter, Backspace over marks, lists, selecting, pasting); whether the page keeps clear of the system's bars and follows Back on Android 16; how the oldest web views are tried; whether a share arrives; whether the camera opens; whether the harness reaches the emulator; how long a build takes and what it leaves on the disk. Should the editor not hold, the plan stops here and is told: the way left is notes written in a plain field and shown as they are, which is a lesser app and the owner's to choose. Ends with the record, and this plan corrected by what was found.
-1. **The role, and what a phone takes.** The shell divided by role, `glaukopis --phone`; a web view too old said by the Android part; the engine told what a device takes, with its tests against the server. (The phone's data folder and the backup turned off were done in the trial.) Its detailed part is *Stage 1, in detail*, below.
+1. **The role, and what a phone takes. Done on 2026-11-23: record 0122.** The shell divided by role, `glaukopis --phone`; a web view too old said by the Android part; the engine told what a device takes, with its tests against the server. (The phone's data folder and the backup turned off were done in the trial.) Its detailed part is *Stage 1, in detail*, below.
 2. **The notes shown, found and written; the synchronization set up.** The page of the phone. *Device* for *computer* in the words of the synchronization, on the computers too, with an addendum to its record. From here the owner has an app to use: a note written on the phone is on the computer.
 3. **Collecting.** Share, the selection's menu, the photograph, pictures and files, *New note* on the icon; sent when closed.
 4. **Given out.** The signed file, the job of the workflow, the newer version told, the website's folder, the chapter of the guide, the other languages in a round.
@@ -422,6 +422,16 @@ So that no builder adds it.
 - **A file that was the notes' and is no more** stays on the phone. **A file on the server that no record names** stays there until a computer of the home makes a round.
 - **The shell's commands sorted into a phone's and a computer's**, one by one. **The helpers of the three files of tests** made one module.
 - **Tests of the Kotlin** run by Gradle. **The key, the signed file, the workflow**: stage 4.
+
+### For stage 2, from the second reading of part A
+
+Found by the reading, none of them a fault of stage 1; each is to be decided when stage 2 is detailed.
+
+1. **A device whose notebook is refused** (a later form, too large, unreadable) still mirrors the library's records of the notes' files both ways, judged by the sweep against its stale notebook. A computer does so today. With a phone that sweeps, a picture could go off the server and come back at every start of the app, and the mark that a note holds a file could be taken off for a while, so that removing the file from the library on a computer deletes it from disk though a note holds it. Stage 2 decides whether a device whose notebook is refused sweeps at all, and whether it mirrors the records of the notes' files.
+2. **The sweep's protection** (`kept_for_notes`) leans on `Notebook::held()`, which is written only when the page saves the whole notebook. The phone's page must save it so, or a sweep elsewhere is not told again.
+3. **A home document in a later form ends a phone's whole round**, before its notebook, though a phone writes nothing into it. So notes written on an outdated phone stay there until the app is updated. Whether a phone should go on with its notebook then is the owner's to say.
+4. **A file that stops being the notes'** stays on the phone, as decided above, and is not taken away; and a phone that leaves and joins again offers again the records of files it never held, which then show as missing. Nothing is lost by either.
+5. **A lost `library/files.json`** is caught on a computer because its store holds files the record lacks. A phone whose notes hold no file has an empty store, and would tell every record as taken out. No path that loses the file alone is known; the guard is to be weighed.
 
 ### Chosen here, to be told
 
