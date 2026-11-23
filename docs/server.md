@@ -169,6 +169,11 @@ project. The server calls what one writer's computers keep together a *home*.
   other. A home holds sixteen computers at the most.
 - When the last computer leaves, the home is taken off the server with all
   it kept. What each computer holds stays on it.
+- A home holds so much and no more: `--max-home-mb` is the most its files
+  may hold together (10 GB if not given), and `--max-home-file-mb` the most
+  one of them may hold (512 MB). A computer with a file that does not fit
+  keeps it and says that the server is full; give the settings larger
+  numbers and start the server again, and what waited is sent.
 - Changes reach the server from each computer a few seconds after they are
   written, and each computer asks every half minute whether anything came
   from another. Nothing is kept open between them, and no WebSocket is
@@ -243,7 +248,8 @@ shared anew from any copy.
 | Sharing works, but the project is never "connected" | The proxy does not pass WebSocket on. See the lines for nginx above. |
 | "Too many attempts have been made from here" for everyone at once | The server is behind a proxy and was started without `--trust-proxy`, so that all callers seem to be the proxy. |
 | A figure is refused as too large, or does not reach the others | The limits `--max-file-mb` and `--max-room-mb`. Behind nginx, `client_max_body_size`. |
-| A file is refused as too large between a writer's own computers | The limits `--max-home-file-mb` and `--max-home-mb`. Behind nginx, `client_max_body_size`, which must let through `--max-home-file-mb`. |
+| A file is refused as too large between a writer's own computers | The limit `--max-home-file-mb`. Behind nginx, `client_max_body_size`, which must let through `--max-home-file-mb`. |
+| Glaukopis says that the server is full | The files of that writer's computers hold as much together as `--max-home-mb` lets them. Raise it and start the server again. |
 | A computer says that the server no longer lets it in | It was removed by another of the writer's computers. It can join again with a code made on one of them. |
 | Glaukopis says that the server does not take the latest changes | The project would be larger than `--max-project-mb` lets it be. |
 | Glaukopis says that a project has been written in by a later version | Someone in the project has a later Glaukopis, and has used something in a text that this one does not know. The one who is told updates Glaukopis. See *The versions of Glaukopis* below. |

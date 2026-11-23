@@ -3926,6 +3926,23 @@ others, unless it was changed there since: then it is kept, on all of them.
 which says so; the others know of the file and show it as missing. Whoever
 runs the server can let it take larger files (see `server.md`).
 
+**A server that is full.** The server keeps so much for each writer and no
+more. A file there is not room for stays on the device that has it, and the
+settings there say that the server is full, and how many files are not on
+your other devices, for as long as that is so. The files of your notes are
+sent before those of the library, and small files before large ones, so
+what waits is the large files of the library. Ask whoever keeps the server
+for more room (see `server.md`). When there is room, **Synchronize now**
+sends what waited.
+
+**An older version.** When a later version of Glaukopis has kept something
+in a form that an earlier one does not know, synchronization stops on the
+device with the earlier version, a computer or a phone. Its settings say:
+**Update is needed for synchronization.** Nothing more is sent from it or
+fetched to it. What is on it stays, and you can go on working there; when
+Glaukopis has been updated on it, it goes on by itself, and what was
+written meanwhile is brought along.
+
 ### Written on two computers apart
 
 When two computers were both written in while they could not reach each
