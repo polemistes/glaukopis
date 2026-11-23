@@ -10,12 +10,16 @@
 //! the server, says no project to be gone, and writes nothing into the home
 //! document. That is what is held here, rule by rule.
 //!
-//! And what the notes hold is kept (stage 2 of the plan), by the last four:
+//! And what the notes hold is kept (stage 2 of the plan), by the last six:
 //! a file a phone's note holds comes back to a computer that swept it out
 //! with less of the notebook than there is; a device whose notebook was
 //! refused says so, for the sweep to be left; a phone that loses the files
-//! of its library tells nothing as taken out; and a phone says whether what
-//! was written on it waits for a server that is not reached.
+//! of its library tells nothing as taken out; a phone says whether what
+//! was written on it waits for a server that is not reached; a picture
+//! that became the library's is not taken out of its lists by a device
+//! whose notes held it alone (two computers, since any device will do);
+//! and a lost file of the library is remembered through a start that
+//! never reaches the server.
 //!
 //! A device is a folder of data with the stores the application opens in
 //! it, and an engine that is told what the device takes: that is the one
@@ -1005,9 +1009,21 @@ async fn a_file_a_phones_note_holds_is_kept_when_a_computer_sweeps_it_with_less_
         // The computer sweeps with nothing held, as one that read less of the notebook than there is.
         assert_eq!(computer.lib().notebook_sweep(&HashSet::new()).unwrap(), 1);
         assert!(computer.bytes(&photograph).is_none() && computer.lib().files.get(&photograph).is_none());
+        computer.round();
+        // The round in which the phone keeps the picture asks for another
+        // at once, which is the one that tells it again: the phone's app
+        // may not be in front, where nothing is asked at regular times.
+        let phone = phone.given(Takes::Notes);
+        assert!(!phone.sync.asked(), "an engine just made has asked for no round");
+        phone.round();
+        assert!(phone.sync.asked(), "a round is asked for at once, to tell again what was kept");
         for _ in 0..2 {
             settle(&[&computer, &phone]);
         }
+        // A round in which nothing is kept asks for none.
+        let phone = phone.given(Takes::Notes);
+        phone.round();
+        assert!(!phone.sync.asked());
 
         assert_eq!(phone.bytes(&photograph).as_deref(), Some(&PNG[..]), "the phone holds the picture");
         assert_eq!(phone.lib().files.get(&photograph).expect("and its record").notebook, Some(Held::Only));
@@ -1231,6 +1247,142 @@ async fn a_phone_says_that_what_was_written_waits_while_the_server_is_not_reache
         assert_eq!(phone.once(), (State::Offline, false), "and once it was sent nothing waits");
         phone.looks_at(&server);
         computer.round();
+        assert_eq!(computer.bytes(&photograph).as_deref(), Some(&PNG[..]));
+    })
+    .await;
+}
+
+// And two more, of what the second reading of part A found.
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_picture_that_became_the_librarys_is_not_taken_out_of_its_lists_by_a_device_whose_notes_held_it_alone() {
+    with_server(|address, _| {
+        // Two computers suffice.
+        let (a, b) = (Device::computer(), Device::computer());
+        assert!(a.sync.start(&address, "The desk", None).unwrap().on);
+        a.round();
+        join(&b, &a, &address, "The laptop");
+        // A picture pasted into a note: on both the notebook holds it alone, and both have said that their notes hold it.
+        let picture = a.take_picture("pasted", &PNG);
+        a.note("with a picture");
+        a.notebook.say_held(std::slice::from_ref(&picture)).unwrap();
+        settle(&[&a, &b]);
+        b.notebook.say_held(std::slice::from_ref(&picture)).unwrap();
+        for device in [&a, &b] {
+            assert_eq!(device.bytes(&picture).as_deref(), Some(&PNG[..]));
+            assert_eq!(device.lib().files.get(&picture).expect("its record").notebook, Some(Held::Only));
+        }
+
+        // On the second the note goes into a document, and the picture is
+        // the library's too. Then the note is deleted there, and the sweep
+        // of its next start leaves the picture to the library alone.
+        b.lib().to_library(&picture, None).unwrap();
+        assert_eq!(b.lib().files.get(&picture).unwrap().notebook, Some(Held::Also));
+        b.notebook.say_held(&[]).unwrap();
+        assert_eq!(b.lib().notebook_sweep(&HashSet::new()).unwrap(), 0);
+        assert_eq!(b.lib().files.get(&picture).unwrap().notebook, None);
+        b.round();
+
+        // The first was not running meanwhile, and starts with what its
+        // notes held when it last said so: the picture, held alone.
+        settle(&[&a, &b]);
+        // The second's next sweep, its notes holding nothing.
+        assert_eq!(
+            b.lib().notebook_sweep(&HashSet::new()).unwrap(),
+            0,
+            "the picture is the library's: no sweep takes it"
+        );
+        b.round();
+        assert_eq!(b.bytes(&picture).as_deref(), Some(&PNG[..]), "it is on the second still");
+        assert!(b.home_files().contains(&picture), "and on the server");
+        for _ in 0..2 {
+            settle(&[&a, &b]);
+        }
+        for device in [&a, &b] {
+            assert_eq!(device.bytes(&picture).as_deref(), Some(&PNG[..]), "the picture is on both");
+            let lib = device.lib();
+            assert!(lib.files.get(&picture).expect("with its record").listed(), "which the library lists");
+            assert!(lib.file_views().iter().any(|file| file.hash == picture), "among its files");
+        }
+        assert!(a.home_files().contains(&picture), "and the server holds it");
+
+        // When the first has learnt that its notes hold the picture no more, it is the library's alone on both.
+        a.notebook.say_held(&[]).unwrap();
+        assert_eq!(a.lib().notebook_sweep(&HashSet::new()).unwrap(), 0);
+        assert_eq!(b.lib().notebook_sweep(&HashSet::new()).unwrap(), 0);
+        for _ in 0..2 {
+            settle(&[&a, &b]);
+        }
+        for device in [&a, &b] {
+            assert_eq!(device.lib().files.get(&picture).expect("its record").notebook, None);
+            assert_eq!(device.bytes(&picture).as_deref(), Some(&PNG[..]));
+        }
+    })
+    .await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_lost_file_of_the_library_is_remembered_through_a_start_that_never_reaches_the_server() {
+    with_server(|address, _| {
+        let computer = Device::computer();
+        assert!(computer.sync.start(&address, "The desk", None).unwrap().on);
+        let nagy =
+            computer.add("@book{nagy1979, author={Nagy, Gregory}, title={The Best of the Achaeans}, date={1979}}");
+        let lord = computer.add("@book{lord1960, author={Lord, Albert}, title={The Singer of Tales}, date={1960}}");
+        let homer = computer.lib().collection_create("Homer", None).unwrap();
+        computer.lib().collection_add(&homer.id, std::slice::from_ref(&nagy.id)).unwrap();
+        let letter = computer.take_in("letter.txt", LETTER);
+        computer.round();
+        let phone = Device::phone();
+        join(&phone, &computer, &address, "The phone");
+        settle(&[&computer, &phone]);
+        let said = computer.library_as_said();
+        assert_eq!(phone.library_as_said(), said);
+
+        // The three files of the phone's library are lost, and the phone is
+        // started where its server is not reached: no round comes to the library.
+        let dir = phone.lib().dir().to_owned();
+        let three = ["library.bib", "collections.json", "files.json"];
+        for name in three {
+            std::fs::remove_file(dir.join(name)).unwrap();
+        }
+        let nowhere = {
+            let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+            format!("http://{}", listener.local_addr().unwrap())
+        };
+        let server = phone.looks_at(&nowhere);
+        let phone = phone.given(Takes::Notes);
+        assert!(phone.library_as_said().is_empty(), "the library reads as one that was emptied");
+        assert!(phone.sync.round().is_err(), "the server is not reached");
+        // In that run each file is written anew: a picture taken, a reference added, a collection made.
+        let photograph = phone.take_picture("photograph", &PNG);
+        let own = phone.add("@book{own, title={Written on the phone}}");
+        let shelf = phone.lib().collection_create("Shelf", None).unwrap();
+        for name in three {
+            assert!(dir.join(name).is_file(), "{name} is on the disk again");
+        }
+        assert!(phone.sync.round().is_err());
+
+        // A new start, with the server back: nothing on the disk says that the files were lost.
+        phone.looks_at(&server);
+        let phone = phone.given(Takes::Notes);
+        for _ in 0..2 {
+            settle(&[&phone, &computer]);
+        }
+
+        // No record was told as taken out: nothing left the computer or the server.
+        {
+            let lib = computer.lib();
+            assert!(lib.get(&nagy.id).is_some() && lib.get(&lord.id).is_some(), "the computer holds its references");
+            assert_eq!(lib.collections.get(&homer.id).expect("its collection").entries, vec![nagy.id.clone()]);
+            assert!(lib.files.get(&letter).is_some(), "and the record of its file");
+        }
+        assert_eq!(computer.bytes(&letter).as_deref(), Some(LETTER), "and the file, byte for byte");
+        assert!(computer.home_files().contains(&letter), "which the server holds still");
+        let mut but_the_phones = computer.library_as_said();
+        but_the_phones.retain(|line| ![&photograph, &own.id, &shelf.id].iter().any(|new| line.contains(new.as_str())));
+        assert_eq!(but_the_phones, said, "all as before, but for what the phone added");
+        assert_eq!(phone.library_as_said(), computer.library_as_said(), "and the phone has it all again");
         assert_eq!(computer.bytes(&photograph).as_deref(), Some(&PNG[..]));
     })
     .await;
