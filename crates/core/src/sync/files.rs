@@ -58,7 +58,8 @@
 //! stands, a small thing to ask. Where that fails as well, the server is
 //! not reached, and the round ends. Where it is answered, the failure was
 //! the file's own: it is said, and nothing as large goes the same way in
-//! this round, since each try may send much before it fails. The file then
+//! this round, since each try may send much before it fails. The file is
+//! tried once more at the next round, and from its second failure it
 //! waits before it is tried again, one round, then two, then four, and is
 //! said the while (`Failing`), so that those as large go in the rounds
 //! between: tried at every round it would fail first at every round, and
@@ -133,10 +134,16 @@ struct Failing {
 }
 
 /// How many looks at the files a file is passed over after it failed for
-/// the `times`th time running: one, then two, four, and so on to
-/// sixty-four, which is about half an hour at the pace of the rounds.
+/// the `times`th time running: none after the first, then one, two, four,
+/// and so on to sixty-four, which is about half an hour at the pace of the
+/// rounds. None after the first, since most such failures are of the
+/// moment, and the next look may be the last for a while: the round a
+/// phone makes when its app leaves the front, after which it asks nothing.
 fn passed_over(times: u32) -> u64 {
-    1 << times.saturating_sub(1).min(6)
+    match times {
+        0 | 1 => 0,
+        times => 1 << (times - 2).min(6),
+    }
 }
 
 impl Told {
@@ -612,9 +619,9 @@ mod tests {
 
     #[test]
     fn a_file_that_fails_again_and_again_is_passed_over_longer_each_time() {
-        let waits: Vec<u64> = (1..=9).map(passed_over).collect();
-        assert_eq!(waits, [1, 2, 4, 8, 16, 32, 64, 64, 64]);
-        assert_eq!(passed_over(0), 1);
+        let waits: Vec<u64> = (1..=10).map(passed_over).collect();
+        assert_eq!(waits, [0, 1, 2, 4, 8, 16, 32, 64, 64, 64], "the first failure waits no look");
+        assert_eq!(passed_over(0), 0);
         assert_eq!(passed_over(u32::MAX), 64);
     }
 

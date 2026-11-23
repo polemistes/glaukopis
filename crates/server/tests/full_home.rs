@@ -464,20 +464,23 @@ async fn a_file_that_fails_at_every_try_waits_longer_each_time_and_those_as_larg
                 assert!(problem.contains("scan.pdf") && problem.lines().count() == 1, "{problem}");
             };
 
-            // The round in which it fails: nothing as large is sent in it.
-            said_of_the_scan(desk.once());
-            assert!(desk.home_files().is_empty());
-            // The next: the file waits, and those as large are sent.
+            // The round in which it fails, and the next, in which it is tried
+            // once more: nothing as large is sent in either.
+            for _ in 0..2 {
+                said_of_the_scan(desk.once());
+                assert!(desk.home_files().is_empty());
+            }
+            // The third: the file waits, and those as large are sent.
             said_of_the_scan(desk.once());
             let there = desk.home_files();
             assert!(there.contains(&plates) && there.contains(&atlas) && !there.contains(&scan), "{there:?}");
             // It is tried again after one round, then after two, then after four.
-            let mut tries = vec![1, tried.load(Ordering::SeqCst)];
-            for _ in 0..7 {
+            let mut tries = vec![1, 2, tried.load(Ordering::SeqCst)];
+            for _ in 0..8 {
                 said_of_the_scan(desk.once());
                 tries.push(tried.load(Ordering::SeqCst));
             }
-            assert_eq!(tries, [1, 1, 2, 2, 2, 3, 3, 3, 3], "how often it was tried after each round");
+            assert_eq!(tries, [1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 4], "how often it was tried after each round");
         },
     )
     .await;
@@ -534,6 +537,43 @@ async fn a_phone_that_is_not_in_front_asks_nothing_at_regular_times_for_a_file_t
             assert!(phone.sync.rests(), "it waits until it is woken");
             phone.sync.front(true);
             assert!(!phone.sync.rests());
+        },
+    )
+    .await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_picture_whose_sending_failed_once_is_sent_by_the_round_a_phone_makes_when_it_leaves_the_front() {
+    with_server_set(
+        |_| {},
+        |direct| {
+            // The network fails for a moment: the first sending of a file is cut off, and nothing after it.
+            let cut_once = Arc::new(AtomicBool::new(true));
+            let once = cut_once.clone();
+            let cut = move |asked: &str, _: u64| {
+                asked.starts_with("PUT /api/homes/") && asked.contains("/files/") && once.swap(false, Ordering::SeqCst)
+            };
+            let proxied = tokio::runtime::Handle::current().block_on(through(&direct, cut));
+            let (computer, phone) = (Device::computer(), Device::phone());
+            assert!(computer.sync.start(&direct, "The desk", None).unwrap().on);
+            computer.round();
+            join(&phone, &computer, &proxied, "The phone");
+            phone.round();
+
+            // A picture is taken; its sending is cut off, while the home answers when asked.
+            let photograph = phone.take_picture("photograph", &PNG);
+            let status = phone.once();
+            assert!(status.problem.is_some_and(|problem| problem.contains("could not be sent")));
+            assert!(!cut_once.load(Ordering::SeqCst) && !computer.home_files().contains(&photograph));
+
+            // The writer goes to another app. The round the phone makes then
+            // sends it: after that round nothing more is asked, and the
+            // picture would be on the phone alone until the app comes back.
+            phone.sync.front(false);
+            let status = phone.once();
+            assert!(computer.home_files().contains(&photograph), "sent by the round made on leaving the front");
+            assert_eq!((status.state, status.problem), (State::Idle, None));
+            assert!(phone.sync.rests());
         },
     )
     .await;
