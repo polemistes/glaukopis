@@ -21,6 +21,14 @@
 //! and a lost file of the library is remembered through a start that
 //! never reaches the server.
 //!
+//! And where the form has changed, the synchronization stops (the owner's
+//! rule of 2026-11-23): a device that meets a document of its home in a
+//! later form than its version knows, the notebook, a project, the
+//! library's document or the home document, sends, fetches and takes
+//! nothing more, says that an update is needed, and goes on when the
+//! application has been updated; a phone and a computer alike. It can
+//! still leave its home.
+//!
 //! A device is a folder of data with the stores the application opens in
 //! it, and an engine that is told what the device takes: that is the one
 //! difference between a computer and a phone. What the interface would do
@@ -31,6 +39,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::Duration;
 
+use glaukopis_core::Error;
 use glaukopis_core::history::now_ms;
 use glaukopis_core::library::files::{Held, store_paths};
 use glaukopis_core::library::{Entry, Library, attachments, draft_from_source};
@@ -38,10 +47,11 @@ use glaukopis_core::net::Client;
 use glaukopis_core::notebook::Notebook;
 use glaukopis_core::paths::DataDir;
 use glaukopis_core::projects::Projects;
-use glaukopis_core::sync::home::HomeDoc;
+use glaukopis_core::sync::home::{HOME_FORM, HomeDoc};
 use glaukopis_core::sync::kept::Kept;
+use glaukopis_core::sync::library::LIBRARY_FORM;
 use glaukopis_core::sync::remote::{Home, Listing};
-use glaukopis_core::sync::{self, Hears, State, Sync, Takes, whole};
+use glaukopis_core::sync::{self, Hears, Knows, State, Sync, Takes, whole};
 use glaukopis_server::{Config, Server, serve};
 use serde_json::{Map, Value, json};
 use tokio::sync::oneshot;
@@ -55,12 +65,19 @@ struct Device {
     notebook: Arc<Notebook>,
     library: Arc<Mutex<Library>>,
     sync: Sync,
+    /// What its engine was told that the device takes.
+    takes: Takes,
 }
 
 impl Device {
     /// A device that takes everything of its home.
     fn computer() -> Device {
         Self::opened(tempfile::tempdir().unwrap(), Takes::Everything)
+    }
+
+    /// A computer with a later version of the application, which knows the forms `knows`.
+    fn later_computer(knows: Knows) -> Device {
+        Self::of_version(tempfile::tempdir().unwrap(), Takes::Everything, knows)
     }
 
     /// A device that takes the notes.
@@ -71,20 +88,35 @@ impl Device {
     /// The stores of a folder opened, and an engine made that is told
     /// `takes`: as when the application is started in a role.
     fn opened(tmp: tempfile::TempDir, takes: Takes) -> Device {
+        Self::of_version(tmp, takes, Knows::default())
+    }
+
+    /// The same, with the engine of a version of the application that knows the forms `knows`.
+    fn of_version(tmp: tempfile::TempDir, takes: Takes, knows: Knows) -> Device {
         let data = DataDir::open(tmp.path().join("data")).unwrap();
         let projects = Projects::new(&data);
         let notebook = Arc::new(Notebook::new(&data));
         let library = Arc::new(Mutex::new(Library::open(&data).unwrap()));
-        let sync = Sync::new(&data, projects.clone(), notebook.clone(), library.clone(), takes, Hears::default());
-        Device { tmp, data, projects, notebook, library, sync }
+        let hears = Hears::default();
+        let sync = Sync::of_version(&data, projects.clone(), notebook.clone(), library.clone(), takes, hears, knows);
+        Device { tmp, data, projects, notebook, library, sync, takes }
     }
 
     /// The same folder, with all it holds and the home it is in, given an
     /// engine that is told another thing than the device joined as.
     fn given(self, takes: Takes) -> Device {
-        let Device { tmp, data, projects, notebook, library, sync } = self;
+        let Device { tmp, data, projects, notebook, library, sync, .. } = self;
         drop((sync, library, notebook, projects, data));
         Self::opened(tmp, takes)
+    }
+
+    /// The same folder, with all it holds and the home it is in, started
+    /// again: by the version it ran, or, with other `knows`, when the
+    /// application has been updated to a version that knows those forms.
+    fn started_again(self, knows: Knows) -> Device {
+        let Device { tmp, data, projects, notebook, library, sync, takes } = self;
+        drop((sync, library, notebook, projects, data));
+        Self::of_version(tmp, takes, knows)
     }
 
     /// A round, in which nothing is to go wrong.
@@ -129,6 +161,18 @@ impl Device {
     fn text(&self, id: &str) -> String {
         let doc = self.open(id);
         doc.get_or_insert_text("text").get_string(&doc.transact())
+    }
+
+    /// Writes into a project as a later version of the application does
+    /// that puts something of the form `form` into a text: the document
+    /// says its form, in the map `form`, and the words follow.
+    fn write_in_form(&self, id: &str, form: u32, words: &str) {
+        let doc = self.open(id);
+        let before = doc.transact().state_vector();
+        doc.get_or_insert_map("form").insert(&mut doc.transact_mut(), form.to_string(), true);
+        doc.get_or_insert_text("text").insert(&mut doc.transact_mut(), 0, words);
+        self.projects.append(id, &doc.transact().encode_state_as_update_v1(&before)).unwrap();
+        sync::wrote::mark(&self.projects.dir(id).unwrap());
     }
 
     fn has(&self, id: &str) -> bool {
@@ -199,6 +243,16 @@ impl Device {
         let before = doc.transact().state_vector();
         let notes = doc.get_or_insert_map("notes");
         notes.insert(&mut doc.transact_mut(), uuid(), words);
+        self.notebook.append(&doc.transact().encode_state_as_update_v1(&before), now_ms()).unwrap();
+    }
+
+    /// Writes a note as a later version of the application does that puts
+    /// something of the form `form` into it: the notebook says its form.
+    fn note_in_form(&self, form: u32, words: &str) {
+        let doc = self.notebook_open();
+        let before = doc.transact().state_vector();
+        doc.get_or_insert_map("form").insert(&mut doc.transact_mut(), form.to_string(), true);
+        doc.get_or_insert_map("notes").insert(&mut doc.transact_mut(), uuid(), words);
         self.notebook.append(&doc.transact().encode_state_as_update_v1(&before), now_ms()).unwrap();
     }
 
@@ -376,6 +430,41 @@ impl Device {
         })
     }
 
+    /// Says in a document of maps of the home (`home`, `library`) that it
+    /// is of the form `form`, and sets one more name of one of its maps, as
+    /// a later version of the application does that keeps it otherwise:
+    /// written into the server's document by hand.
+    fn raise_form_of_maps(&self, kind: &str, form: u32, map: &str, name: &str, value: &str) {
+        let doc = self.maps_of_the_home(kind);
+        let before = doc.vector();
+        doc.put("meta", "form", Some(&form.to_string()));
+        doc.put(map, name, Some(value));
+        let change = doc.beyond(Some(&before)).unwrap();
+        self.asked(|home| home.exchange(kind, "the", None, None, &[change.as_slice()], sync::FORM, false).unwrap());
+    }
+
+    /// That the synchronization has stopped on this device for a later
+    /// form: asked as the thread asks, it says so in the owner's words, and
+    /// that nothing waits. The device looks for its home where nothing
+    /// answers while it is asked: one that asked the server anything would
+    /// say that the server is not reached.
+    fn is_stopped(&self) {
+        let nowhere = {
+            let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+            format!("http://{}", listener.local_addr().unwrap())
+        };
+        let server = self.looks_at(&nowhere);
+        for hurried in [true, false] {
+            self.sync.once(hurried);
+            let status = self.sync.status();
+            assert_eq!(status.state, State::Outdated, "{:?}", status.problem);
+            assert_eq!(status.problem.as_deref(), Some("Update is needed for synchronization."));
+            assert!(status.on && !status.waiting);
+        }
+        self.looks_at(&server);
+        assert!(sync::notebook_refused(&self.data), "a device that is stopped sweeps no file out of its store");
+    }
+
     /// The home document as this device keeps it.
     fn home_kept(&self) -> HomeDoc {
         HomeDoc::load(Kept::new(&self.data).doc("home").unwrap().as_deref()).unwrap()
@@ -544,44 +633,251 @@ async fn a_phone_that_leaves_last_takes_the_home_and_what_it_never_held_off_the_
     .await;
 }
 
+/// What a later version of the application than this one knows: one more form of the texts.
+fn later_texts() -> Knows {
+    Knows { version: "later".into(), texts: sync::FORM + 1, ..Knows::default() }
+}
+
+/// That a round ended because it met a later form, and stopped the synchronization.
+fn stops(device: &Device) {
+    let error = device.sync.round().expect_err("the round ends where it meets the later form");
+    assert!(matches!(error, Error::Refused { kind: "later", .. }), "{error}");
+    device.is_stopped();
+}
+
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-async fn a_phone_older_than_the_form_of_the_notebook_is_refused_and_the_rest_of_its_round_goes_on() {
+async fn a_phone_older_than_the_form_of_the_notebook_stops_as_a_whole_and_goes_on_when_the_app_is_updated() {
     with_server(|address, _| {
-        let (computer, phone) = a_computer_and_a_phone(&address);
+        // The computer has a later version of the application than the phone.
+        let (computer, phone) = (Device::later_computer(later_texts()), Device::phone());
+        assert!(computer.sync.start(&address, "The desk", None).unwrap().on);
+        computer.round();
+        join(&phone, &computer, &address, "The phone");
+        phone.round();
         computer.note("from the desk");
         phone.note("from the street");
         settle(&[&computer, &phone]);
-        let both = vec!["from the desk".to_owned(), "from the street".to_owned()];
-        assert_eq!(phone.notes(), both);
+        let mut held = vec!["from the desk".to_owned(), "from the street".to_owned()];
+        assert_eq!(phone.notes(), held);
 
+        // The later version puts something of its form into a note, and a reference is added there.
+        computer.note_in_form(sync::FORM + 1, "of a later form");
         let nagy = computer.add("@book{nagy1979, title={The Best of the Achaeans}}");
         computer.round();
+        let listed = computer.listed();
 
-        // A later version writes the notebook in a form this one does not
-        // know: its name in the map `form`, as a document says its form, and
-        // a note beside it.
-        let later = sync::FORM + 1;
-        let doc = computer.notebook_open();
-        let before = doc.transact().state_vector();
-        doc.get_or_insert_map("form").insert(&mut doc.transact_mut(), later.to_string(), true);
-        doc.get_or_insert_map("notes").insert(&mut doc.transact_mut(), uuid(), "of a later form");
-        let change = doc.transact().encode_state_as_update_v1(&before);
-        computer
-            .asked(|home| home.exchange("notebook", "the", None, None, &[change.as_slice()], later, false).unwrap());
-        let digest = computer.listed()["notebook/the"].clone();
-
+        // On the phone meanwhile: a note, a picture, a reference.
         phone.note("written while the app was old");
-        let problems = phone.sync.round().expect("the round gives no error");
-        assert_eq!(problems.len(), 1, "one problem, of the notebook: {problems:?}");
-        assert_eq!(phone.listed()["notebook/the"], digest, "nothing of the phone's was taken");
-        let mut held = both.clone();
+        let photograph = phone.take_picture("photograph", &PNG);
+        let lord = phone.add("@book{lord1960, title={The Singer of Tales}}");
+        stops(&phone);
+        for _ in 0..2 {
+            assert!(phone.sync.round().is_err(), "and every round after it ends as it began");
+        }
+        // Nothing of the phone's was sent, of the notebook or of anything else.
+        assert_eq!(phone.listed(), listed, "the documents of the home are as the computer left them");
+        assert!(!phone.home_files().contains(&photograph), "the picture was not sent");
+        // And nothing was fetched: not the later note, and not the reference, though it is in no form of the texts.
         held.push("written while the app was old".to_owned());
         held.sort();
-        assert_eq!(phone.notes(), held, "the phone holds its own note still, and not the later one");
-        assert!(phone.lib().get(&nagy.id).is_some(), "the reference is on the phone: the round went on");
-        // And so at every round until the app is updated.
-        assert_eq!(phone.sync.round().unwrap().len(), 1);
-        assert_eq!(phone.listed()["notebook/the"], digest);
+        assert_eq!(phone.notes(), held);
+        assert!(phone.lib().get(&nagy.id).is_none(), "the round did not go on to the library");
+        // What the phone holds is as it was written.
+        assert_eq!(phone.bytes(&photograph).as_deref(), Some(&PNG[..]));
+        assert!(phone.lib().get(&lord.id).is_some());
+
+        // Started again by the same version, it is stopped from its start.
+        let phone = phone.started_again(Knows::default());
+        assert_eq!(phone.sync.status().state, State::Outdated, "before any round is made");
+        phone.is_stopped();
+        assert_eq!(phone.listed(), listed);
+
+        // The app is updated: it goes on, and what was written meanwhile is brought along.
+        let phone = phone.started_again(later_texts());
+        assert_eq!(phone.sync.status().state, State::Idle);
+        settle(&[&phone, &computer]);
+        held.push("of a later form".to_owned());
+        held.sort();
+        assert_eq!(phone.notes(), held, "the phone holds the later note");
+        assert_eq!(computer.notes(), held, "and the computer what was written on the phone");
+        assert!(phone.lib().get(&nagy.id).is_some() && computer.lib().get(&lord.id).is_some());
+        assert_eq!(computer.bytes(&photograph).as_deref(), Some(&PNG[..]));
+        assert!(!sync::notebook_refused(&phone.data), "its notebook was taken again");
+        assert_eq!(phone.sync.status().problem, None);
+    })
+    .await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_computer_that_meets_a_project_in_a_later_form_stops_as_a_whole_and_goes_on_when_it_is_updated() {
+    with_server(|address, _| {
+        let (desk, laptop) = (Device::later_computer(later_texts()), Device::computer());
+        assert!(desk.sync.start(&address, "The desk", None).unwrap().on);
+        desk.round();
+        join(&laptop, &desk, &address, "The laptop");
+        laptop.round();
+        let iliad = desk.project("The Iliad", WORDS);
+        let odyssey = laptop.project("The Odyssey", "Tell me, Muse");
+        settle(&[&desk, &laptop]);
+        assert!(laptop.has(&iliad) && desk.has(&odyssey));
+
+        // The later version puts something of its form into a text of the first project.
+        desk.write_in_form(&iliad, sync::FORM + 1, "Of a later form. ");
+        desk.round();
+
+        // On the laptop meanwhile: words in both projects, a note, a reference with a file, a setting.
+        laptop.write(&iliad, 0, "Written on the old laptop. ");
+        laptop.write(&odyssey, 0, "And here. ");
+        laptop.note("from the laptop");
+        let work = laptop.add("@book{w, title={A Work}}");
+        let scan = laptop.attach(&work.id, "scan.pdf", SCAN);
+        laptop.set("theme", json!("dark"));
+        stops(&laptop);
+
+        // What the round exchanged before it met the later form stands: the
+        // home document comes before the projects. What comes after them
+        // was not sent, and nothing went into the project of the later form.
+        desk.round();
+        assert_eq!(desk.settings().get("theme"), Some(&json!("dark")), "exchanged before the later form was met");
+        assert!(desk.notes().is_empty(), "the note was not sent");
+        assert!(desk.lib().get(&work.id).is_none() && !desk.home_files().contains(&scan), "nor the library");
+        assert!(!desk.text(&iliad).contains("old laptop"), "nothing was written into the project of a later form");
+        assert!(!laptop.text(&iliad).contains("later form"), "and nothing of it was taken");
+        // What the laptop holds is as it was written, and goes on being written.
+        assert!(laptop.text(&iliad).starts_with("Written on the old laptop. "));
+        assert_eq!(laptop.bytes(&scan).as_deref(), Some(SCAN));
+        laptop.note("and one more");
+        let listed = desk.listed();
+        laptop.is_stopped();
+        for _ in 0..2 {
+            assert!(laptop.sync.round().is_err());
+        }
+        assert_eq!(laptop.listed(), listed, "nothing more is sent");
+
+        // The application is updated on the laptop: it goes on with everything.
+        let laptop = laptop.started_again(later_texts());
+        settle(&[&laptop, &desk]);
+        assert_eq!(laptop.text(&iliad), desk.text(&iliad));
+        assert!(desk.text(&iliad).contains("Written on the old laptop. ") && desk.text(&iliad).contains("later form"));
+        assert!(desk.text(&odyssey).starts_with("And here. "));
+        assert_eq!(desk.notes(), vec!["and one more".to_owned(), "from the laptop".to_owned()]);
+        assert_eq!(desk.bytes(&scan).as_deref(), Some(SCAN));
+        assert_eq!(desk.library_as_said(), laptop.library_as_said());
+    })
+    .await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_computer_that_meets_the_librarys_document_in_a_later_form_stops_and_keeps_nothing_of_it() {
+    with_server(|address, _| {
+        let (desk, laptop) = (Device::computer(), Device::computer());
+        assert!(desk.sync.start(&address, "The desk", None).unwrap().on);
+        desk.round();
+        join(&laptop, &desk, &address, "The laptop");
+        laptop.round();
+        let nagy = desk.add("@book{nagy1979, title={The Best of the Achaeans}}");
+        settle(&[&desk, &laptop]);
+        assert!(laptop.lib().get(&nagy.id).is_some());
+
+        // The application is updated on the desk to a version that keeps
+        // the library's document otherwise: the document says its form,
+        // and something this version does not know is written in it.
+        let later = Knows { version: "later".into(), library: LIBRARY_FORM + 1, ..Knows::default() };
+        let desk = desk.started_again(later.clone());
+        desk.raise_form_of_maps("library", LIBRARY_FORM + 1, "later", "thing", "of a later form");
+        let singer = desk.add("@book{lord1960, title={The Singer of Tales}}");
+        desk.round();
+        let listed = desk.listed();
+
+        // The laptop, with a reference added meanwhile.
+        let parry = laptop.add("@book{parry1971, title={The Making of Homeric Verse}}");
+        stops(&laptop);
+        assert_eq!(laptop.listed(), listed, "nothing of the laptop's was sent into the later document");
+        // Nothing of the later document is kept here, or written to the library.
+        let kept = HomeDoc::load(Kept::new(&laptop.data).doc("library").unwrap().as_deref()).unwrap();
+        assert_eq!((kept.form(), kept.get("later", "thing")), (LIBRARY_FORM, None));
+        assert!(laptop.lib().get(&singer.id).is_none(), "what it says is not written to the library here");
+        assert!(laptop.lib().get(&parry.id).is_some() && laptop.lib().get(&nagy.id).is_some(), "which is as it was");
+
+        // Updated, it goes on.
+        let laptop = laptop.started_again(later);
+        settle(&[&laptop, &desk]);
+        assert!(desk.lib().get(&parry.id).is_some() && laptop.lib().get(&singer.id).is_some());
+        assert_eq!(desk.library_as_said(), laptop.library_as_said());
+    })
+    .await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_home_document_in_a_later_form_stops_a_phone_and_a_computer_alike() {
+    with_server(|address, _| {
+        let (desk, laptop, phone) = (Device::computer(), Device::computer(), Device::phone());
+        assert!(desk.sync.start(&address, "The desk", None).unwrap().on);
+        desk.round();
+        join(&laptop, &desk, &address, "The laptop");
+        join(&phone, &desk, &address, "The phone");
+        desk.note("from the desk");
+        settle(&[&desk, &laptop, &phone]);
+
+        // The application is updated on the desk to a version that keeps
+        // the home document otherwise, and a setting is changed there.
+        let later = Knows { version: "later".into(), home: HOME_FORM + 1, ..Knows::default() };
+        let desk = desk.started_again(later.clone());
+        desk.raise_form_of_maps("home", HOME_FORM + 1, "settings", "theme", "\"dark\"");
+        desk.round();
+        let listed = desk.listed();
+
+        laptop.note("from the laptop");
+        phone.note("from the street");
+        for device in [&laptop, &phone] {
+            stops(device);
+            assert_eq!(device.home_kept().form(), HOME_FORM, "nothing of the later document is kept");
+            assert_eq!(device.listed(), listed, "and nothing was sent");
+        }
+        assert_eq!(laptop.settings().get("theme"), None, "what the later document says is not written here");
+        // The notes are exchanged no more, on the phone either, which writes nothing into the home document.
+        assert_eq!(phone.notes(), vec!["from the desk".to_owned(), "from the street".to_owned()]);
+        assert_eq!(laptop.notes(), vec!["from the desk".to_owned(), "from the laptop".to_owned()]);
+
+        // Updated, both go on.
+        let (laptop, phone) = (laptop.started_again(later.clone()), phone.started_again(later));
+        settle(&[&laptop, &phone, &desk]);
+        let all = vec!["from the desk".to_owned(), "from the laptop".to_owned(), "from the street".to_owned()];
+        for device in [&desk, &laptop, &phone] {
+            assert_eq!(device.notes(), all);
+        }
+        assert_eq!(laptop.settings().get("theme"), Some(&json!("dark")));
+    })
+    .await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_device_that_is_stopped_for_a_later_form_can_still_leave_its_home() {
+    with_server(|address, _| {
+        let (computer, phone) = (Device::later_computer(later_texts()), Device::phone());
+        assert!(computer.sync.start(&address, "The desk", None).unwrap().on);
+        computer.round();
+        join(&phone, &computer, &address, "The phone");
+        phone.note("from the street");
+        settle(&[&phone, &computer]);
+        computer.note_in_form(sync::FORM + 1, "of a later form");
+        computer.round();
+        phone.note("written while the app was old");
+        stops(&phone);
+        let held = vec!["from the street".to_owned(), "written while the app was old".to_owned()];
+
+        // The devices of the home are told as ever, and it leaves as ever.
+        assert_eq!(phone.sync.told().unwrap().devices.len(), 2);
+        assert!(!phone.sync.stop().unwrap().on);
+        assert_eq!(phone.sync.status().state, State::Off);
+        assert!(!phone.data.sync().exists(), "what it kept of the home is gone, and of the stop with it");
+        assert_eq!(computer.sync.told().unwrap().devices.len(), 1, "the server was told");
+        assert_eq!(phone.notes(), held, "what it holds stays");
+
+        // Joined again with the same version, it meets the later form again, and stops again.
+        join(&phone, &computer, &address, "The phone");
+        assert_eq!(phone.sync.status().state, State::Idle);
+        stops(&phone);
         assert_eq!(phone.notes(), held);
     })
     .await;
@@ -1121,9 +1417,8 @@ async fn a_device_whose_notebook_is_not_taken_says_so_and_says_it_no_more_when_i
         computer
             .asked(|home| home.exchange("notebook", "the", None, None, &[change.as_slice()], later, false).unwrap());
         phone.note("written while the app was old");
-        let problems = phone.sync.round().expect("the round gives no error");
-        assert_eq!(problems.len(), 1, "one problem, of the notebook: {problems:?}");
-        assert!(sync::notebook_refused(&phone.data), "refused for its form, the phone says so");
+        assert!(phone.sync.round().is_err(), "the synchronization stops on the phone, as a whole");
+        assert!(sync::notebook_refused(&phone.data), "stopped for a later form, the phone says so");
         // What a device keeps of it goes with its home.
         assert!(!phone.sync.stop().unwrap().on);
         assert!(!sync::notebook_refused(&phone.data), "a device in no home says nothing of it");

@@ -951,20 +951,22 @@ impl Sync {
     /// when it is reached again. Not at every round, which would be every
     /// half minute for as long as the network is away; and never not at
     /// all, as it was, when the log could not say whether rounds had failed.
-    fn log_unreached(&self, failed: Option<&Error>) {
+    /// Whether anything was written.
+    fn log_unreached(&self, failed: Option<&Error>) -> bool {
         let why = match failed {
             Some(Error::Network(why)) => Some(why.clone()),
             _ => None,
         };
         let mut unreached = held(&self.unreached);
         if *unreached == why {
-            return;
+            return false;
         }
         match &why {
             Some(why) => tracing::warn!(%why, "a round ended because the server was not reached"),
             None => tracing::info!("the server is reached again"),
         }
         *unreached = why;
+        true
     }
 
     // ---- what waits to be sent ----
@@ -2074,5 +2076,77 @@ mod tests {
         assert!(!sync.waits());
         let status = sync.status();
         assert_eq!((status.state, status.waiting), (State::Off, false));
+    }
+
+    #[test]
+    fn a_server_that_is_not_reached_is_written_in_the_log_when_the_reason_is_another_and_not_at_every_round() {
+        let (_tmp, sync) = engine();
+        let away = Error::Network("no route to the host".into());
+        let behind = Error::Network("the proxy answered 502".into());
+        assert!(!sync.log_unreached(None), "nothing to say of a round that reached it");
+        assert!(sync.log_unreached(Some(&away)), "the first round that does not reach it");
+        for _ in 0..3 {
+            assert!(!sync.log_unreached(Some(&away)), "not again every half minute");
+        }
+        assert!(sync.log_unreached(Some(&behind)), "another reason is said");
+        assert!(!sync.log_unreached(Some(&behind)));
+        // A round that ends in any other way reached the server.
+        assert!(sync.log_unreached(Some(&Error::invalid("a document cannot be read"))), "reached again, said once");
+        assert!(!sync.log_unreached(None));
+        assert!(sync.log_unreached(Some(&away)), "and away again");
+    }
+
+    #[test]
+    fn a_device_stopped_for_a_later_form_says_so_from_its_start_until_it_is_another_version() {
+        let tmp = tempfile::tempdir().unwrap();
+        let data = DataDir::open(tmp.path().join("data")).unwrap();
+        let made = |knows: Knows| {
+            Sync::of_version(
+                &data,
+                Projects::new(&data),
+                Arc::new(Notebook::new(&data)),
+                Arc::new(Mutex::new(Library::open(&data).unwrap())),
+                Takes::Notes,
+                Hears::default(),
+                knows,
+            )
+        };
+        let kept = Kept::new(&data);
+        // A device in a home, at an address where nothing answers.
+        let joined = Joined { server: "http://127.0.0.1:1".into(), home: "h".into(), ..Default::default() };
+        kept.join(&joined, "t").unwrap();
+        assert_eq!(made(Knows::default()).status().state, State::Idle);
+
+        // It met a later form, and stopped.
+        let sync = made(Knows::default());
+        sync.outdate().unwrap();
+        assert!(super::super::notebook_refused(&data), "it lacks the notes of others from now on, and sweeps nothing");
+        // The same version, started again: stopped from the start, and it asks the server nothing.
+        let sync = made(Knows::default());
+        let status = sync.status();
+        assert_eq!(status.state, State::Outdated);
+        assert_eq!(status.problem, Some(tr!("core-sync-update-needed")));
+        assert!(sync.round().is_err_and(|error| of_a_later_form(&error)), "a round ends before it asks");
+        sync.once(true);
+        assert_eq!(sync.status().state, State::Outdated, "not taken for a server that is not reached");
+
+        // Another version, which knows a later form of the texts or is only
+        // a later version: it is not stopped, and its round asks the server.
+        for knows in
+            [Knows { texts: FORM + 1, ..Knows::default() }, Knows { version: "99.0.0".into(), ..Knows::default() }]
+        {
+            let sync = made(knows);
+            assert_eq!(sync.status().state, State::Idle);
+            assert!(
+                sync.round().is_err_and(|error| matches!(error, Error::Network(_))),
+                "it asks, and nothing answers"
+            );
+            assert_eq!(kept.noted::<Stopped>(OUTDATED), None, "what was kept of the stop is forgotten");
+            // Until it meets a later form again.
+            sync.outdate().unwrap();
+        }
+        // Leaving the home forgets it with everything else.
+        kept.leave().unwrap();
+        assert_eq!(made(Knows::default()).status().state, State::Off);
     }
 }
