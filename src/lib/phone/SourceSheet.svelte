@@ -128,7 +128,7 @@
 </script>
 
 <Sheet open title={t('notebook-source')} {onclose}>
-  <div class="form" data-phone-source>
+  <div class="form" data-phone-source-sheet>
     {#if current && current.sort === 'file'}
       <dl class="file">
         <dt>{t('notebook-source-file-name')}</dt>
