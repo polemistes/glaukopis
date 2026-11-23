@@ -1164,6 +1164,118 @@ Read before building, beside what stage 1 and stage 2 name for their parts C and
 
 **What holds it.** Beside the code, in `door.rs`, each test with a folder and a place of its own: a device in no home is done at once, and its folder holds nothing new, not even the claim's file; a folder joined by hand to a server at an address where nothing answers is to be tried again, and can be claimed anew after the round; while a round is under way (the test holds the place as the door's by its own two halves, with no server asked), the role is given the same engine and a state, the round's end changes nothing, and the folder cannot be claimed a second time; two rounds at once let the state go only when both have ended; a thing shared is put into the inbox of a folder that no application has opened, and what `put` refuses comes back as a problem. In `phone.rs`: the list of commands is as part A left it; `--round` is asked for wherever it stands after `--phone`. `e2e/phone-closed.mjs` and the scripts of the emulator are in *The scripts*.
 
+### Words
+
+**The phone's own**, new, in `locales/en/phone.ftl` and `locales/nb/phone.ftl`, made with the meeting points. Each with a comment over it in the file, as here.
+
+| Name | English | Bokmål |
+| --- | --- | --- |
+| `phone-photograph` (the button of the row over the keyboard that opens the phone's camera, and puts the photograph taken into the note) | Photograph | Ta bilde |
+| `phone-picture-or-file` (the button of the row over the keyboard that opens the system's picker, and puts the pictures and files chosen into the note) | Picture or file | Bilde eller fil |
+| `phone-file-too-large` (said under *Some files could not be taken in*, of a file chosen that is larger than a note takes; `$most` is a number of megabytes) | { $name } is larger than { $most } MB | { $name } er større enn { $most } MB |
+
+**In `core-notebook.ftl`** (A), in the core's own form, which begins with a small letter since it stands after other words:
+
+| Name | English | Bokmål |
+| --- | --- | --- |
+| `core-notebook-shared-empty` (what another app handed over held neither words nor files) | nothing was shared | ingenting ble delt |
+| `core-notebook-shared-unread` (a file another app handed over could not be read from it) | { $name } could not be read | { $name } kunne ikke leses |
+
+**Strings of Android's** (C), in `res/values/collecting.xml` and `res/values-nb/collecting.xml`: they are shown where no page runs.
+
+| Name | English | Bokmål |
+| --- | --- | --- |
+| `new_note` (on the app's icon held down; the words of `notebook-new-note`) | New note | Nytt notat |
+| `shared_not_taken` (Android's small message where nothing of what was shared could be put into the notebook; the core's words follow it after a colon where there are any) | Glaukopis could not take this in | Glaukopis kunne ikke ta imot dette |
+
+**Used as they are**: `notebook-files-not-taken`, over what could not be taken in a note; `core-notebook-file-too-large`, of a file shared that is larger than 50 MB; `notebook-new-note` is what the string of Android repeats. What is said in Android's menus is the app's name: *Glaukopis* in the sheet of Share and in the menu over selected words. The other seven languages get the words of this stage in the round of stage 4, and read English until then. What the door and the Android part write into the log is in English, as the log is.
+
+### The scripts
+
+**Through `glaukopis --phone`, with the harness that is there.** Each is written by its part and run by the main thread; its first comment says what it covers, and its screenshots are `e2e/output/phone-<script>-<n>-<what>.png`.
+
+1. **`e2e/phone-collect.mjs`** (B). Before the role is started, three things of the kind `shared` are laid into `notebook/inbox/` of its folder as `shared.rs` lays them (an `item.json`, and under `files/` each file by the SHA-256 of what it holds, worked out by the script): words alone; an address alone with a subject; a picture with words beside it. The role starts: three notes, not looked at, and the inbox empty. The first begins as the words do, is not named, and its source is *No source*. The second is named by the subject, its text is the address, and its source says the page. The third holds the words and the picture as a figure, whose source is the file, and the row of the list shows the picture small. Then, with the page running and `window.glaukopisAndroid` stood in for by the script (an object that counts how often `leave` is asked): a fourth thing laid into the inbox and `asked({ arrived: [its name] })`: the note of it is shown, without the keyboard's cursor in it; Back (the hook): the notes, and `leave` was asked once. A note opened from the list, a fifth thing arrived: its note is shown; the arrow at its head: the note from before, and `leave` not asked again. `asked({ note: true })`: a new note, with the cursor in its text, in the box that receives; Back: the notes, and `leave` not asked. In a note: the two buttons are in the row and within the window; `file('plate.png', …)`: a figure in the text, the file its source; `file('paper.pdf', …)`: a file at the note's end; a file of two megabytes and a half at random, which goes in five pieces: the store's file has the hash the script worked out, and `notebook/taking` holds nothing. `notebook_take_files` is refused. No errors in the page. Once more at 320 by 568: the row of seven is within the window.
+2. **`e2e/phone-closed.mjs`** (C). With the real server, the application as a computer and the phone's role, each in a folder of the run, as `e2e/phone-sync.mjs` makes them. In a folder that is in no home, `glaukopis --phone --round` ends with 0, and the folder holds nothing new. The phone joins the computer's home, and both settle. The server is ended; a note is written on the phone (the hook); the phone's role is ended. `glaukopis --phone --round` ends with 1: the server was not reached. The server is started again on the same folder and port: `glaukopis --phone --round` ends with 0, and the note is in the computer's notebook, with the phone's role never started. With the phone's role running, `glaukopis --phone --round` ends with 1 and harms nothing: the role's page writes a note after it, which is on the computer.
+
+**The scripts there are**, run once what they cover is merged: `e2e/phone-role.mjs` and `e2e/phone-sync.mjs` (the role is opened through the door, and the engine made otherwise); `e2e/phone-notes.mjs` and `e2e/phone-note.mjs` (the arrow, the places, the row of tools, the hook `picture`); `e2e/note-window.mjs` and `e2e/notebook-plugin.mjs` (a computer takes its inbox in as before, and the log begins as before); `e2e/synchronization.mjs` (the application's engine is made as before).
+
+**On the emulator** (`e2e/android/`, all C's; the new device unless said; one emulator at a time, and never beside another capped unit). `device.mjs` gets what they share: a share sent (`share({ text, subject, stream, type })`, which is `am start` with what is given), the process ended without the app being stopped (`am kill`), what lies in a folder of the app's own, which app is in front (`dumpsys activity activities`), and the network taken away and given back.
+
+1. **`share.mjs`**, new. With the app not running, words are shared: the app comes to the front on a note that holds them, with *No source*; Back: the app is not in front; started from the launcher, it shows the notes, with the note. An address with a subject: the note is named by the subject, and its source is the page. With the app behind the others, words shared again: it comes to the front on the new note. The words of the selection's menu (`PROCESS_TEXT`): a note. A picture, as the fifth try found it can be shared: the note holds it as a figure, and `notebook/sharing/` of the app's folder is empty. A share of nothing (no words, no file): the app does not come to the front. A file larger than 50 MB (made on the device with `dd`): no note, and the words on the screen say that it is too large (`screenText`, while Android's message is there).
+2. **`collect.mjs`**, new. *New note* asked for as the icon's shortcut asks (`am start -a org.glaukopis.app.NEW_NOTE -n org.glaukopis.app/.StartActivity`), with the app not running and with it behind: a new note with the keyboard up; Back twice: the notes. `dumpsys shortcut` names the shortcut. In a note, *Photograph* pressed by a tap: the emulator's camera, the photograph taken and accepted as the seventh try found; the note holds a figure, its source says when it was taken, and the folder wry left the file in is empty. *Picture or file*: two files chosen in the system's picker by taps, one a PDF: a figure and a file in the note. And with `always_finish_activities` on, which the script turns off again whatever happens: *Photograph*, the photograph taken, the app back: the photograph is a note of its own in the list, and the folder is empty.
+3. **`closed.mjs`**, new. The server on this machine, reached from the emulator as `10.0.2.2`, and the application as a computer under the harness, as `sync.mjs` has them; the emulator joins the home. The network taken away; a note typed; Home; the process ended (`am kill`). The network given back: within two minutes, without the app being started by anyone (the work run by `cmd jobscheduler run -f` where Android waits longer), the note is in the computer's notebook, and the log of that run in the app's folder says that the round was the door's. Then the role taking over: a file of 40 MB shared, the network made slow (`adb emu network speed gsm`), Home, the process ended, the work run; while the log says that the round is under way, the app is started from the launcher: the notes are shown, no message says that the folder is in use, the log says that the role took what the door had opened, and with the network fast again the status comes to rest.
+4. **Once more**: `page.mjs`, `sync.mjs` and `typing.mjs` (the app starts, joins and is typed in as before), and `web-view.mjs` on the old device, with a share sent before it: the screen says that there is no web view, and the inbox in the app's folder holds the thing.
+
+**By the owner's hand**, on the owner's phone, with the app built for it: a page shared from the browser, and words selected there and shared; *Glaukopis* in the menu over selected words, in the browser and in another app; a picture shared from the gallery, several at once, and a PDF from the files; Back after each, which is to show the app one shared from; *New note* on the icon held down; *Photograph*, with Samsung's camera, and once with the phone set to keep its photographs as HEIF; *Picture or file*; a note written in flight mode, the app swiped away, flight mode off: the note on the computer within some minutes, with the app not opened; and what Android's settings list of the app's leaves.
+
+### The order of the work, and what each step is checked by
+
+Edits first, then `cargo fmt --all` and `pnpm format`. Every step is committed when its checks pass.
+
+1. **C: the ten trials on the emulator.** What was found is told, and this section corrected where it is otherwise, before any agent begins.
+2. **C: the meeting points**, one commit on main. Checked by `pnpm check`, `pnpm test`, `cargo test -p glaukopis-core`.
+3. **A and B begin**, each in a worktree of its own from that commit. A alone builds Rust meanwhile, with the main thread's `target/`: `cargo test -p glaukopis-core -p glaukopis`, `cargo clippy --workspace --all-targets -- -D warnings`, `pnpm check`, `pnpm test`, `node scripts/check-locales.mjs nb`. B runs `pnpm check` and `pnpm test`. Neither builds the application, anything for Android, or runs a script. The main thread meanwhile writes the Kotlin, the manifest, the resources and `door.rs`, and builds none of it.
+4. **A is merged** when the main thread has read its diff: the tests of the two packages, clippy, `pnpm check` and `pnpm test` on what was merged.
+5. **C: the door and the role**, on what was merged: `door.rs`, `phone.rs`, `log.rs`, `engine_for`, `--round`. Checked by `cargo test -p glaukopis-core -p glaukopis`, both clippies (for computers, and `. packaging/android/env.sh && cargo clippy -p glaukopis-phone -p glaukopis-core --no-default-features --target aarch64-linux-android -- -D warnings`), then `pnpm e2e:build`, the server built (`cargo build -p glaukopis-server`), and `e2e/phone-closed.mjs`, `e2e/phone-role.mjs`, `e2e/phone-sync.mjs`, `e2e/synchronization.mjs`, `e2e/note-window.mjs`.
+6. **B is merged** when the main thread has read its diff: `pnpm check`, `pnpm test`; `pnpm e2e:build`; `e2e/phone-collect.mjs`, `e2e/phone-notes.mjs`, `e2e/phone-note.mjs`, `e2e/notebook-plugin.mjs`. What a script finds is mended by the main thread where it is building to this section, and given back to the part's model where it is not.
+7. **C: Android's own**: the app built for trying in a capped unit; `share.mjs`, `collect.mjs`, `closed.mjs`, and the four once more; clippy for Android once more. Then a release built for the emulator's processor, in which a share, *New note* on the icon and a round with the app closed are tried once by hand of the script's commands: what the shrinking of a release takes away is found there and nowhere else.
+8. **The end of the stage**, by the main thread: the record of it (the next free number in `docs/adr/`, with its line in `docs/adr/README.md`): what a thing shared is and how it becomes a note, who reads a share and why, the door and the one opening in a process, when Android is asked for a round, what the trials found, and who built what; the map in `CLAUDE.md` (`door.rs`, the Kotlin's files, `shared.rs`, `pieces.rs`, the new scripts); this plan: the stage marked done, and corrected by what was found; the paragraphs of the guide for Share, the selection's menu, the icon and what is sent with the app closed, beside B's in `docs/plans/phone-guide/collecting.md`. The app is built for the owner's phone as before, with the list of what to try. The owner is told what was chosen here.
+
+Nine scripts of the computer's harness, two to three minutes each, two of them new; seven runs on the emulators.
+
+### Left out of stage 3
+
+So that no builder adds it.
+
+- **A note made of what was shared without the app coming to the front.** Taking in is the page's work. A thing shared while the web view will not do, or while the notebook cannot be read, waits in the inbox.
+- **Anything fetched from a page shared**: its title, its text, a picture of it. **Anything read as HTML** (`EXTRA_HTML_TEXT`). **What an app puts into the clip data** of a share.
+- **A box or a tag chosen as one shares**; the app's notes or boxes offered in the sheet of Share; anything shared *from* Glaukopis to another app; a file opened *with* Glaukopis (`VIEW`); a link or a file of a note opened in another app.
+- **A leave asked of the user**: the camera's (the phone's camera app takes the photograph), and the one that lets an app read where a photograph was taken (`ACCESS_MEDIA_LOCATION`): a photograph says where it was taken only where the file handed over says it.
+- **In *Photograph***: a view of the camera of our own, several photographs in a row, the front camera chosen, a photograph cut or straightened. **In *Picture or file***: a file larger than 50 MB; a picture of a kind the figures do not show (HEIF, where the phone is set so) made one that they do: it is a file in the note, as on a computer.
+- **A file's own time** on a phone: a copy's time is when it was copied. When and where a photograph was taken are said.
+- **How many files** a share may hold: as many as were handed over.
+- **A round at regular times**, a word from the system when something arrives, work that is hurried, a choice of Wi-Fi alone. The round with the app closed is a whole round, so what was written elsewhere comes with it; nothing is asked for the sake of that alone.
+- **A thread that looks at the inbox** on a phone. **The place kept** from one start to the next: a note arrived at is not where the app starts.
+- **An empty note left behind** by *New note* on the icon is not taken away: it is as one made by *New note* in the app.
+- **Anything of the engine**: items 7, 8 and 10 of *After stage 2* are another's work. **The trash for notes.** **What a picture in a note is**: built on what it is today.
+- **On a computer**: nothing of the application's page; `notebook_take_piece` and its two fellows are not the application's; *Photograph* in `glaukopis --phone` opens the dialog of files.
+- **The leave of the phone's page to open the system's picker by Tauri's plugin** (`dialog:allow-open`), which nothing has used since stage 2, stays as it is.
+- **The credits** of what the app for Android brings (WorkManager; `jni`), the other seven languages, the chapter of the guide: stage 4. **Tests of the Kotlin** run by Gradle.
+
+### Chosen here, to be told
+
+With the other choices that await the owner.
+
+1. What another app hands over is read by the small activity that starts first, before the page; the page is told the name of the thing and nothing else.
+2. An address shared with nothing else becomes a note whose text is the address, with the page as the source of it. The subject, where the other app gives one, names the note, also where words or files were shared.
+3. An address shared with files beside it stays words, as an address among other words does.
+4. Files are those the other app names as what it shares, and never the small picture it shows in the sheet.
+5. After Share the app shows the note, without the keyboard. The system's Back then leaves Glaukopis, so that the app one shared from is in front, and Glaukopis is where it was when it is next opened; the arrow at the head of the note goes to that place without leaving.
+6. *New note* on the icon makes a note in the box that receives, with the keyboard up; Back from it is the notes.
+7. A picture or a file chosen, and a photograph taken, has itself as its source in the note, as a file dropped into a note on a computer has: its name, and of a photograph when and where it was taken, where it says. A picture stands where the cursor was, a file that is no picture at the end of the note.
+8. A file of a note on a phone is 50 MB at the most, shared or chosen, as in the window of a note on a computer.
+9. A file goes from the page into the store in pieces of half a megabyte.
+10. The file the camera wrote is removed once the photograph is in the note. A photograph taken while Android ended the app is a note of its own when the app comes back.
+11. Android is asked for one round whenever the app leaves the front, to be made when the phone has a network; where the server is not reached, it is tried eight times more over some four hours. It is a whole round: what was written elsewhere comes with it.
+12. The role takes over what a round with the app closed has opened, when the app is opened while one is under way.
+13. `glaukopis --phone --round` makes the door's round on a computer, for trying.
+14. `jni`, which Tauri is built on, is named among the phone's own dependencies.
+15. While the files of a share are copied nothing is drawn but, after a moment, a turning ring; what could not be taken is said in Android's small message.
+16. A thing shared while the web view is too old is kept, and becomes a note when the app first runs.
+17. The icon of *New note* on the app's icon is Lucide's plus.
+
+### For the owner
+
+Nothing here stops the building. These are the owner's to say:
+
+1. **What a picture in a note is** (the owner's question of 2026-11-23, not decided here). Stage 3 meets it in three places, and is built on what a picture is today: a figure in the text of a note, whose file the notebook holds, with a source of its own. A share of pictures alone makes a note that holds them, so the pictures are in a note and are not the note. *Photograph* puts the picture into the note that is being written. And nothing on the phone makes a picture of a note into one a document can use: that is done on a computer today, where a file a note holds is put among the library's. Whatever is decided, what a phone collects is kept as every picture of a note is, and changes with them.
+2. **Glaukopis is offered for everything that is shared**, of any kind, so it stands in every sheet of Share on the phone. It can be offered for words, pictures and PDFs alone.
+3. **Back after Share** leaves Glaukopis for the app one shared from. The other way is that Back shows the notes, and one goes back to the other app by Android's own means.
+4. **Where a photograph was taken.** Android takes it out of a photograph that a gallery hands over, unless the app asks the user for leave to read it, which Glaukopis does not. So a photograph shared seldom says where; one taken by *Photograph* says it where the camera is set to write it.
+5. **What Android's settings will list of the app**: beside the network, that it may keep the phone awake, start with the phone, and run a service in the foreground. They come with WorkManager, which the owner agreed to; none is asked of the user, and Glaukopis starts no service.
+6. **50 MB for a file of a note on a phone.** A film is often larger, and is then refused with words.
+7. **The new words**, in the tables above, in English and Bokmål: *Photograph* (*Ta bilde*), *Picture or file* (*Bilde eller fil*), the message of a share that could not be taken, and *New note* on the icon. They are built as written until said otherwise.
+
 ## Who builds what
 
 The way that held on 2026-11-13 and 2026-11-16: the main thread reads the code, settles every choice and writes one part of the plan for each agent (the decisions, the files, the names and properties where two parts meet, what to verify); each agent builds in a worktree of its own; the main thread reads every diff, merges, builds once and runs the application.
