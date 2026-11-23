@@ -9,6 +9,12 @@
  * The web view's history is not used: on Android it does not count, and
  * Back with it left the app (the trial of 2026-11-23). Every change happens
  * at once. The place is not kept from one start to the next.
+ *
+ * A place can also be arrived at from outside the page (stage 3: what
+ * another app shared, a new note asked for from the icon). Back from it
+ * then leaves the app, so that the app the writer came from is in front
+ * again; the arrow at the head of the place goes to the place before
+ * without leaving (`up`).
  */
 
 import { onBackButtonPress } from '@tauri-apps/api/app';
@@ -18,8 +24,11 @@ import { over } from '$lib/ui/over';
 export type Place =
   { at: 'notes' } | { at: 'note'; note: string; fresh?: boolean } | { at: 'settings' };
 
-/** A step: a place gone to, or something that lies over a place, with what closes it. */
-type Step = { place: Place } | { close: () => void };
+/**
+ * A step: a place gone to, which leaves the app at Back where it was arrived
+ * at from outside, or something that lies over a place, with what closes it.
+ */
+type Step = { place: Place; leaves?: boolean } | { close: () => void };
 
 const NOTES: Place = { at: 'notes' };
 
@@ -64,21 +73,59 @@ class Places {
     this.#shown();
   }
 
-  /** Back: closes what lies over the place, or goes to the place before; at the notes, leaves the app. */
-  back(): void {
+  /**
+   * Arrives at a place from outside the page, as another app's share does:
+   * what lies over the place shown is closed first, as Back closes it, and a
+   * place arrived at before is taken away, since one arrived at does not lie
+   * on another. Back from the place then shows the place before it and, where
+   * `leaves`, puts the app behind the others.
+   */
+  arrive(place: Place, leaves = true): void {
+    // Everything that lies over the place is closed, the one on top first.
+    while (this.#closed());
     const last = this.#steps[this.#steps.length - 1];
-    if (last && 'close' in last) {
-      // Taken out first: what it closes then finds its step gone already.
-      this.#steps.pop();
-      last.close();
-      return;
-    }
+    if (last && 'place' in last && last.leaves) this.#steps.pop();
+    this.#steps.push({ place, leaves });
+    this.#shown();
+  }
+
+  /**
+   * Back: closes what lies over the place, or goes to the place before; from
+   * a place arrived at from outside it also puts the app behind the others;
+   * at the notes, it leaves the app.
+   */
+  back(): void {
+    if (this.#closed()) return;
     if (this.#steps.length > 1) {
-      this.#steps.pop();
+      const last = this.#steps.pop();
       this.#shown();
+      if (last && 'place' in last && last.leaves) window.glaukopisAndroid?.leave();
       return;
     }
     window.glaukopisAndroid?.leave();
+  }
+
+  /**
+   * The arrow at the head of a place: closes what lies over the place, as
+   * Back does, or goes to the place before, whether the place was arrived at
+   * from outside or not; at the notes, nothing. It never leaves the app.
+   */
+  up(): void {
+    if (this.#closed()) return;
+    if (this.#steps.length > 1) {
+      this.#steps.pop();
+      this.#shown();
+    }
+  }
+
+  /** Closes what lies over the place, where something does; gives whether it did. */
+  #closed(): boolean {
+    const last = this.#steps[this.#steps.length - 1];
+    if (!last || !('close' in last)) return false;
+    // Taken out first: what it closes then finds its step gone already.
+    this.#steps.pop();
+    last.close();
+    return true;
   }
 
   /** Makes a step of something that lies over a place; gives back what it calls when it has closed. */

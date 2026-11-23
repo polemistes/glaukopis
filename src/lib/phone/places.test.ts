@@ -109,6 +109,100 @@ describe('the places of the phone', () => {
     expect(places.depth).toBe(1);
   });
 
+  it('show a place arrived at', () => {
+    places.arrive({ at: 'note', note: 'shared' });
+    expect(places.current).toEqual({ at: 'note', note: 'shared' });
+    expect(places.depth).toBe(2);
+  });
+
+  it('show the place under one arrived at, and ask to leave once, at Back from it', () => {
+    places.arrive({ at: 'note', note: 'shared' });
+    places.back();
+    expect(places.current).toEqual({ at: 'notes' });
+    expect(leave).toHaveBeenCalledTimes(1);
+    // The notes are the place now, and Back from them leaves as it always did.
+    places.back();
+    expect(leave).toHaveBeenCalledTimes(2);
+  });
+
+  it('show the place under one arrived at at the arrow, and not ask to leave', () => {
+    places.go({ at: 'note', note: 'before' });
+    places.arrive({ at: 'note', note: 'shared' });
+    places.up();
+    expect(places.current).toEqual({ at: 'note', note: 'before' });
+    expect(leave).not.toHaveBeenCalled();
+    places.up();
+    expect(places.current).toEqual({ at: 'notes' });
+    // At the notes the arrow does nothing, and never leaves the app.
+    places.up();
+    expect(places.current).toEqual({ at: 'notes' });
+    expect(places.depth).toBe(1);
+    expect(leave).not.toHaveBeenCalled();
+  });
+
+  it('go on from a place gone to by hand, which Back shows before it leaves the app', () => {
+    places.go({ at: 'note', note: 'before' });
+    places.arrive({ at: 'note', note: 'shared' });
+    places.back();
+    expect(places.current).toEqual({ at: 'note', note: 'before' });
+    expect(leave).toHaveBeenCalledTimes(1);
+    places.back();
+    expect(places.current).toEqual({ at: 'notes' });
+    expect(leave).toHaveBeenCalledTimes(1);
+  });
+
+  it('close a sheet that lies over the place when a place is arrived at', () => {
+    places.go({ at: 'note', note: 'before' });
+    const first = opened();
+    const second = opened();
+    places.arrive({ at: 'note', note: 'shared' });
+    expect(first.open).toBe(false);
+    expect(second.open).toBe(false);
+    expect(places.current).toEqual({ at: 'note', note: 'shared' });
+    expect(places.depth).toBe(3);
+    places.up();
+    expect(places.current).toEqual({ at: 'note', note: 'before' });
+  });
+
+  it('leave one step where a place is arrived at twice, and Back then shows the place from before', () => {
+    places.arrive({ at: 'note', note: 'first' });
+    places.arrive({ at: 'note', note: 'second' });
+    expect(places.current).toEqual({ at: 'note', note: 'second' });
+    expect(places.depth).toBe(2);
+    places.back();
+    expect(places.current).toEqual({ at: 'notes' });
+    expect(leave).toHaveBeenCalledTimes(1);
+  });
+
+  it('leave a place arrived at with leaves false as any place is left', () => {
+    places.arrive({ at: 'note', note: 'new', fresh: true }, false);
+    expect(places.current).toEqual({ at: 'note', note: 'new', fresh: true });
+    places.back();
+    expect(places.current).toEqual({ at: 'notes' });
+    expect(leave).not.toHaveBeenCalled();
+  });
+
+  it('close a sheet opened over a place arrived at at Back, and the place stays', () => {
+    places.arrive({ at: 'note', note: 'shared' });
+    const sheet = opened();
+    places.back();
+    expect(sheet.open).toBe(false);
+    expect(places.current).toEqual({ at: 'note', note: 'shared' });
+    expect(leave).not.toHaveBeenCalled();
+    places.back();
+    expect(places.current).toEqual({ at: 'notes' });
+    expect(leave).toHaveBeenCalledTimes(1);
+  });
+
+  it('close a sheet at the arrow, as Back does, and the place stays', () => {
+    places.arrive({ at: 'note', note: 'shared' });
+    const sheet = opened();
+    places.up();
+    expect(sheet.open).toBe(false);
+    expect(places.current).toEqual({ at: 'note', note: 'shared' });
+    expect(leave).not.toHaveBeenCalled();
+  });
+
   it('let a dialog make a step through what lies over the window', () => {
     let open = true;
     const closed = over.opened!(() => (open = false));

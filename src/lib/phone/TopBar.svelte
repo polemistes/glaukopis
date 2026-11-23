@@ -4,6 +4,8 @@
    * one, its title, and at its right end what the place gives it (where it
    * has no title, that takes the whole row, as the notes' field that finds
    * does). As high as its words and buttons need, never less than a row.
+   * The arrow goes to the place before, as the system's Back does, but a
+   * place arrived at from outside is left by it without leaving the app.
    */
   import type { Snippet } from 'svelte';
   import ArrowLeft from '@lucide/svelte/icons/arrow-left';
@@ -20,7 +22,7 @@
 
 <header class="bar" class:back data-phone-bar>
   {#if back}
-    <IconButton label={t('phone-back')} data-phone-back onclick={() => places.back()}>
+    <IconButton label={t('phone-back')} data-phone-back onclick={() => places.up()}>
       <ArrowLeft size={22} />
     </IconButton>
   {/if}

@@ -99,7 +99,9 @@
   });
 
   // Where the note is there no more, the view goes back: once, and with
-  // nothing of its own lying over it, so that Back leaves the place.
+  // nothing of its own lying over it, so that the arrow leaves the place.
+  // It goes up and does not go back: a note arrived at from outside, and
+  // deleted, shows the notes, and the app stays where it is.
   let present = false;
   $effect(() => {
     if (note) {
@@ -117,7 +119,7 @@
     opened = null;
     await tick();
     const at = places.current;
-    if (at.at === 'note' && at.note === id) places.back();
+    if (at.at === 'note' && at.note === id) places.up();
   }
 
   const ICONS = {

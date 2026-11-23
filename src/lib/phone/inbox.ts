@@ -7,12 +7,23 @@
  * as on a computer (`notebook/arriving.svelte.ts`): what is asked while one
  * is made is taken right after it. Where nothing waits, the notebook is not
  * even opened.
+ *
+ * Which note was made of which thing is kept for the run (`noteOfThing`), so
+ * that the page can go to the note of what another app shared (stage 3, `asked.ts`).
  */
 
 import { notebookInboxTake, notebookInboxWaiting, type InboxItem } from '$lib/api/notebook';
-import { notesOfInbox } from '$lib/notebook/inbox';
+import { madeOfInbox } from '$lib/notebook/inbox';
 import type { Notebook } from '$lib/notebook/model/notebook.svelte';
 import { theNotebook } from '$lib/notebook/open.svelte';
+
+/** The note made of each thing taken from the inbox in this run, by the name of the thing there. */
+const notesOfThings = new Map<string, string>();
+
+/** The note made in this run of a thing that lay in the inbox, by its name there; none where it made none, or was not taken in this run. */
+export function noteOfThing(thing: string): string | undefined {
+  return notesOfThings.get(thing);
+}
 
 /** Takes what lies in the inbox, once; gives the notes made. */
 async function takeOnce(): Promise<string[]> {
@@ -40,9 +51,10 @@ async function takeOnce(): Promise<string[]> {
   }
   if (!items.length) return [];
   try {
-    const ids = notesOfInbox(notebook, items);
+    const made = madeOfInbox(notebook, items);
+    for (const { thing, note } of made) if (thing) notesOfThings.set(thing, note);
     await notebook.flush().catch(() => {});
-    return ids;
+    return made.map((m) => m.note);
   } catch (error) {
     console.error('what came into the notebook could not be made notes', error);
     return [];
