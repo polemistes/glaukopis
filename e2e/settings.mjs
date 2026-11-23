@@ -235,7 +235,7 @@ try {
   check(
     'the settings have no help texts but those of the dictionaries, the synchronization and translators',
     // The sentence under Synchronization is the owner's (2026-11-23): what is synchronized.
-    abouts.length === 3 && /Hunspell/.test(abouts[0]) && /synchronized between devices/.test(abouts[1]) && /translators/.test(abouts[2]),
+    abouts.length === 3 && /Hunspell/.test(abouts[0]) && /^Projects, the library, the notebook and/.test(abouts[1]) && /translators/.test(abouts[2]),
     JSON.stringify(abouts),
   );
   const defaults = await app.exec(

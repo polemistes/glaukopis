@@ -399,7 +399,10 @@ try {
     const letter = near(info.width, 612) && near(info.height, 792);
     check("as one page, on the system's paper", info.pages === 1 && (a4 || letter), JSON.stringify(info));
     const dpi = resolutionsIn(imagePdf);
-    check('at its own size, taken as 300 dots per inch', dpi.length === 1 && dpi[0] >= 290 && dpi[0] <= 310, dpi.join(', '));
+    // The owl (resources/brand/owl.png, drawn anew on 2026-11-22) is 3159 by
+    // 4212 pixels: at 300 dots per inch larger than the page, so it is shrunk
+    // to the page, and has more dots to the inch than 300, never fewer.
+    check('larger than the page at 300 dots per inch, it is shrunk to the page', dpi.length === 1 && dpi[0] > 310 && dpi[0] < 450, dpi.join(', '));
   }
 
   // ---- from the files of the library: the menu of a file, and the file read there ----

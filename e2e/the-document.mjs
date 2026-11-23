@@ -127,7 +127,10 @@ try {
   check('without a mark, the title of the chapter entered carries no number', (await titleNumber(app)) === null);
   await pagesWith(app, 'Gamma', false).catch(() => {});
   const alone = await pagesText(app);
-  check('and the pages are of the chapter alone', alone.includes('Alpha') && !alone.includes('Gamma'), alone.slice(0, 80));
+  // The chapter's own title is the document's, which stands on a title page
+  // only where the tree places one (record 0118): its pages hold nothing of
+  // the rest of the book.
+  check('and the pages are of the chapter alone', !alone.includes('Beta') && !alone.includes('Gamma'), alone.slice(0, 80));
   check('nothing carries the sign', !(await app.exists('[data-document-sign], [data-document-name]')));
 
   // --- The project's own element marked: the book is the document wherever one is ---
