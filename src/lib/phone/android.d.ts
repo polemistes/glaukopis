@@ -18,6 +18,8 @@ interface GlaukopisAndroid {
   asked(): string;
   /** Says that the photograph the camera left for the page has been taken in, so that its file is removed. */
   photographed(): void;
+  /** Brings the keyboard up for what has the cursor: Android does so by itself only after a touch. */
+  keyboard?(): void;
 }
 
 interface Window {

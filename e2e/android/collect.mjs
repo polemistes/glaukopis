@@ -49,13 +49,30 @@ const leftByCamera = async () => (await shell(`ls -A ${cameraFolder} 2>/dev/null
 const newNote = () => shell(`am start -a org.glaukopis.app.NEW_NOTE -n ${PACKAGE}/.StartActivity`);
 
 let port = 9370;
+/**
+ * One connection to the page for each process of the app. Where the page
+ * begins on the screen is found once by a tap of its own (`middle`), which
+ * is made at the notes, where it falls on nothing: in a note it would land
+ * in the text, or on a figure.
+ */
+let connected = null;
 async function withPage(fn) {
-  const p = await page(port++);
-  try {
-    return await fn(p);
-  } finally {
-    p.close();
+  const pid = (await shell(`pidof ${PACKAGE} || true`)).trim();
+  if (!connected || connected.pid !== pid) {
+    connected?.p.close();
+    const p = await page(port++);
+    connected = { pid, p, measured: false };
   }
+  return fn(connected.p);
+}
+/** Where the page begins, found at the notes. */
+async function measure() {
+  await withPage(async (p) => {
+    if (connected.measured) return;
+    await until(() => p.evaluate(`!!document.querySelector('[data-phone-notes]')`), 'the notes', 15000);
+    await p.middle('[data-phone-notes]');
+    connected.measured = true;
+  });
 }
 const noteShown = () =>
   withPage((p) =>
@@ -72,6 +89,7 @@ const noteShown = () =>
   );
 const notesShown = () => withPage((p) => until(() => p.evaluate(`!!document.querySelector('[data-phone-notes]')`), 'the notes', 15000));
 const rowCount = () => withPage((p) => p.evaluate(`document.querySelectorAll('[data-phone-row]').length`));
+/** Taps what the page shows by its selector. */
 async function press(selector) {
   await withPage(async (p) => {
     const at = await p.middle(selector);
@@ -83,6 +101,7 @@ async function press(selector) {
 await shell(`pm clear ${PACKAGE}`).catch(() => {});
 await start();
 await notesShown();
+await measure();
 check('the shortcut New note is named by the system', (await shell('dumpsys shortcut')).includes('new_note'));
 
 // ---- 1. New note, the app not running ----
@@ -98,6 +117,7 @@ await sleep(800);
 await shell('input keyevent 4');
 await sleep(1200);
 check('Back twice: the notes', (await inFront()) === PACKAGE && (await notesShown()));
+await measure();
 
 // ---- 2. New note, the app behind ----
 await shell('input keyevent KEYCODE_HOME');
@@ -150,7 +170,21 @@ check('Picture or file: two chosen, a figure and a file in the note', !!note, JS
 await screenshot('collect-3-picture-or-file');
 
 // ---- 5. the process ended while the camera is in front ----
-const before = await rowCount().catch(() => 0);
+// Counted at the notes; then a note there is opened, from which the camera
+// is asked. Back puts the keyboard away first where it is up. (Android may
+// have ended the app's process while the picker was in front, so nothing is
+// pressed in the page before the notes are shown.)
+if (await keyboardUp()) {
+  await shell('input keyevent 4');
+  await sleep(800);
+}
+await shell('input keyevent 4');
+await sleep(1200);
+await notesShown();
+await measure();
+const before = await rowCount();
+await press('[data-phone-row]');
+await noteShown();
 await press('[data-phone-tool="photograph"]');
 await until(async () => (await inFront()) === 'com.android.camera2', 'the camera', 15000);
 await tapWords('Shutter', { said: true, exact: true, most: 15000 });
@@ -164,6 +198,7 @@ await shell('input keyevent 4');
 await sleep(1500);
 await shell(`am start -n ${PACKAGE}/.StartActivity`);
 await notesShown();
+await measure();
 const after = await until(async () => {
   const n = await rowCount();
   return n > before ? n : null;

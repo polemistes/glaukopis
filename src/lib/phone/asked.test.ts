@@ -91,6 +91,20 @@ describe('answering what was asked', () => {
     expect(leave).not.toHaveBeenCalled();
   });
 
+  it('asks the Android part for the keyboard once a new note asked for is shown, since no touch brought it', async () => {
+    vi.useFakeTimers();
+    const keyboard = vi.fn();
+    window.glaukopisAndroid = { ground: () => {}, leave, asked, photographed: () => {}, keyboard };
+    try {
+      await answer({ arrived: [], note: true });
+      expect(keyboard).not.toHaveBeenCalled();
+      vi.advanceTimersByTime(1000);
+      expect(keyboard).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('makes the new note after the inbox was taken in, between two steps of undo', async () => {
     const order: string[] = [];
     inbox.takeInbox.mockImplementation(async () => order.push('taken'));

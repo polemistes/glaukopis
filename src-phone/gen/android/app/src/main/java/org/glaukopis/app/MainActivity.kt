@@ -127,6 +127,21 @@ class MainActivity : TauriActivity() {
       return said.toString()
     }
 
+    /**
+     * The keyboard brought up for what the page has given the cursor: Android
+     * shows it by itself only after a touch, and a new note asked for from
+     * the icon has had none.
+     */
+    @JavascriptInterface
+    fun keyboard() {
+      runOnUiThread {
+        val view = webView ?: return@runOnUiThread
+        view.requestFocus()
+        val keys = getSystemService(INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+        keys.showSoftInput(view, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
+      }
+    }
+
     /** The photograph the camera left for the page has been taken in: its file is removed. */
     @JavascriptInterface
     fun photographed() {

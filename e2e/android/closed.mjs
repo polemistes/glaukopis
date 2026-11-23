@@ -154,17 +154,28 @@ try {
   // ---- 3. the role takes over a round under way ----
   await shell('dd if=/dev/urandom of=/sdcard/Download/forty.bin bs=1048576 count=40 2>/dev/null');
   await shell('am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d file:///sdcard/Download/forty.bin');
-  await adb('emu', 'network', 'speed', 'gsm');
   await shareFile('forty.bin');
   await until(async () => (await shell('dumpsys activity activities | grep -m1 topResumedActivity')).includes(PACKAGE), 'the app on the note shared', 30000);
+  await sleep(3000);
+  // The network taken away before the app leaves the front, so that the
+  // round Android is asked for then waits, and the process can be ended:
+  // Android ends no process while work of it runs.
+  await shell('cmd connectivity airplane-mode enable');
   await sleep(3000);
   await shell('input keyevent KEYCODE_HOME');
   await sleep(1500);
   await shell(`am kill ${PACKAGE}`);
   await sleep(1500);
+  check('the app\'s process is ended with the file unsent', !(await shell(`pidof ${PACKAGE} || true`)).trim());
   const before = (await log()).split(NO_WINDOW).length;
-  await runWork();
-  const underWay = await until(async () => (await log()).split(NO_WINDOW).length > before, 'the round under way', 30000, 500).catch(() => false);
+  // Slow, so that the round with no window is still under way when the app is opened.
+  await adb('emu', 'network', 'speed', 'gsm');
+  await shell('cmd connectivity airplane-mode disable');
+  const underWay = await until(async () => {
+    if ((await log()).split(NO_WINDOW).length > before) return true;
+    await runWork();
+    return false;
+  }, 'the round under way', 60000, 2000).catch(() => false);
   check('the round with no window is under way', underWay);
   await shell(`am start -n ${PACKAGE}/.StartActivity`);
   const shown = await withPage((p) => until(() => p.evaluate(`!!document.querySelector('[data-phone-notes]')`), 'the notes', 20000)).catch(() => false);

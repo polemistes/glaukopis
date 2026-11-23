@@ -58,7 +58,13 @@ async function makeNote() {
   const note = notebook.addNote({ box: notebook.receiving });
   notebook.checkpoint();
   places.arrive({ at: 'note', note, fresh: true }, false);
+  // The editor takes the cursor once the note is drawn; Android shows the
+  // keyboard by itself only after a touch, and the icon was the last one.
+  setTimeout(() => window.glaukopisAndroid?.keyboard?.(), KEYBOARD_AFTER);
 }
+
+/** How long after a new note is shown the keyboard is asked for: the editor has the cursor by then. */
+const KEYBOARD_AFTER = 300;
 
 /**
  * The note of what another app shared, shown: the last of the things

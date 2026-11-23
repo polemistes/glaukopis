@@ -26,10 +26,18 @@
         android:usesCleartextTraffic="${usesCleartextTraffic}">
         <!-- One way in: whatever starts the app enters here, which looks
              whether the device has a web view the page can run in before
-             anything of Glaukopis is loaded, and then starts the page. -->
+             anything of Glaukopis is loaded, and then starts the page.
+             It has a task of no affinity, kept out of the recent apps,
+             which goes when it ends: in the page's task it would stay
+             that task's first intent, and Android takes a second share
+             or New note equal to it in all but its words as asking only
+             for the task to be brought to the front, and starts nothing
+             (found on the emulator). -->
         <activity
             android:name=".StartActivity"
             android:label="@string/main_activity_title"
+            android:taskAffinity=""
+            android:excludeFromRecents="true"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

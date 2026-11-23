@@ -138,7 +138,11 @@ const before = note.id;
 await shell('input keyevent KEYCODE_HOME');
 await sleep(1500);
 await share({ text: 'Shared with the app behind.' });
-note = await shown();
+// The note shown before stays shown until the new one is arrived at.
+note = await until(async () => {
+  const n = await shown();
+  return n.text.includes('Shared with the app behind.') ? n : null;
+}, 'the new note shown', 20000, 700).catch(() => shown());
 check('with the app behind, a share brings it to the front on the new note', (await front()) && note.id !== before && note.text.includes('Shared with the app behind.'), JSON.stringify(note));
 
 // ---- 5. the app behind and its process ended ----
@@ -181,17 +185,19 @@ await tapWords('No thanks', { exact: true, most: 3000 }).catch(() => {});
 const words = await until(async () => (await onScreen()).find((n) => n.text.includes('Athena kept an owl')), 'the words of the page', 15000).catch(() => null);
 let selectionNote = null;
 if (words) {
-  await shell(`input swipe ${words.x - 60} ${words.y} ${words.x - 60} ${words.y} 1200`);
+  // Chrome draws the menu over a selection, and the menu of its ⋮, itself:
+  // neither is in the window's dump, so both are found by their places,
+  // as the trials of stage 3 found them on this device. The first word is
+  // held down, at the left of its line: a press between two words selects
+  // nothing.
+  const width = Number(/(\d+)x\d+/.exec(await shell('wm size'))[1]);
+  await shell(`input swipe ${Math.round(width * 0.12)} ${words.y} ${Math.round(width * 0.12)} ${words.y} 1200`);
   await sleep(1500);
-  await tapWords('More options', { said: true, most: 4000 }).catch(async () => {
-    // The ⋮ of the menu over the selection is drawn by Chrome and not in the dump everywhere: found by its place, right of the last word of the menu.
-    const menu = (await onScreen()).filter((n) => ['Copy', 'Share', 'Select all'].includes(n.text));
-    const last = menu.sort((a, b) => b.x - a.x)[0];
-    if (last) await tap(last.x + 190, last.y);
-  });
+  const more = { x: width * 0.8, y: words.y - 122 };
+  await tap(more.x, more.y);
   await sleep(1500);
   await screenshot('share-3-selection-menu');
-  await tapWords('Glaukopis', { exact: true, most: 5000 });
+  await tap(more.x - 90, more.y + 254);
   selectionNote = await shown().catch(() => null);
 }
 check('a word selected in Chrome and given to Glaukopis by the menu over it is a note', !!selectionNote && selectionNote.text.trim().length > 0, JSON.stringify(selectionNote));
@@ -199,9 +205,12 @@ console.log(`      the selection's menu handed over: ${JSON.stringify(selectionN
 await back();
 await sleep(2000);
 check('Back: Chrome is in front again', (await inFront()) === 'com.android.chrome', await inFront());
-const chromeTask = await shell('dumpsys activity activities');
-const chromeHolds = /Task\{[^\n]*A=\d+:com\.android\.chrome[\s\S]*?(?=\n {2}\* Task|$)/.exec(chromeTask)?.[0] ?? '';
-check('and its task holds no activity of Glaukopis', !chromeHolds.includes(PACKAGE), '');
+// Chrome's task: its line, and the activities under it until the next task.
+const tasks = (await shell('dumpsys activity activities')).split('\n');
+const at = tasks.findIndex((line) => /\* Task\{.*A=\d+:com\.android\.chrome /.test(line));
+const chromeHolds = [];
+for (let i = at + 1; at >= 0 && i < tasks.length && !/\* Task\{/.test(tasks[i]); i++) if (/\* Hist/.test(tasks[i])) chromeHolds.push(tasks[i].trim());
+check('and its task holds no activity of Glaukopis', at >= 0 && !chromeHolds.some((h) => h.includes(PACKAGE)), chromeHolds.join(' | '));
 await shell('am clear-debug-app');
 await shell('rm -f /data/local/tmp/chrome-command-line');
 await adb('reverse', '--remove', 'tcp:8766');
