@@ -200,7 +200,7 @@ Each is committed when it is checked. Stages 0 to 4 are the app the owner asked 
 
 0. **The trial. Done on 2026-11-22: record 0121.** The editor holds under Google's keyboard; Samsung's is the owner's phone's to answer, with the app built for it. As it was planned: The Rust targets for Android; TLS; the shell built for Android with one window that holds the editor of the texts and keeps a note. On the emulator and on the owner's phone. It answers: whether the core builds, for 64 bits and for 32, and whether its tests pass as a 32-bit program; how large the file is, and so whether typesetting is left out; **whether the editor holds under a phone's keyboard**, Samsung's on the owner's phone and Google's on the emulator (typing with suggestions, Enter, Backspace over marks, lists, selecting, pasting); whether the page keeps clear of the system's bars and follows Back on Android 16; how the oldest web views are tried; whether a share arrives; whether the camera opens; whether the harness reaches the emulator; how long a build takes and what it leaves on the disk. Should the editor not hold, the plan stops here and is told: the way left is notes written in a plain field and shown as they are, which is a lesser app and the owner's to choose. Ends with the record, and this plan corrected by what was found.
 1. **The role, and what a phone takes. Done on 2026-11-23: record 0122.** The shell divided by role, `glaukopis --phone`; a web view too old said by the Android part; the engine told what a device takes, with its tests against the server. (The phone's data folder and the backup turned off were done in the trial.) Its detailed part is *Stage 1, in detail*, below.
-2. **The notes shown, found and written; the synchronization set up.** The page of the phone. *Device* for *computer* in the words of the synchronization, on the computers too, with an addendum to its record. From here the owner has an app to use: a note written on the phone is on the computer. Its detailed part is *Stage 2, in detail*, below.
+2. **The notes shown, found and written; the synchronization set up. Done on 2026-11-23: record 0123.** The page of the phone. *Device* for *computer* in the words of the synchronization, on the computers too, with an addendum to its record. From here the owner has an app to use: a note written on the phone is on the computer. Its detailed part is *Stage 2, in detail*, below.
 3. **Collecting.** Share, the selection's menu, the photograph, pictures and files, *New note* on the icon; sent when closed.
 4. **Given out.** The signed file, the job of the workflow, the newer version told, the website's folder, the chapter of the guide, the other languages in a round.
 5. *Later, should the owner want it:* **text read on the phone.** Photographs measured first; then Tesseract brought along, the languages, *Read the text*; PDFs after.
@@ -856,6 +856,15 @@ So that no builder adds it.
 - **The fourth finding** of *For stage 2*: a file that stops being the notes' stays on a phone; a phone that leaves and joins again offers again the records of files it never held. Nothing is lost by either, and neither is mended.
 - **The tree of projects** read from the home document. **A setting that follows the writer** to a phone: none does.
 - **The thread that looks at the inbox**, on a phone. **Tests of the Kotlin** run by Gradle. **A name for the phone** as its owner gave it in Android's settings: the model is offered.
+
+### After stage 2: what the second reading of part A left, and what the running app found
+
+1. **A device back after a while** keeps once, and sends again, a picture deleted elsewhere while it was away: its first round judges by what the notes held when it last ran. One round trip a picture, nothing lost; the mend, should it be wanted, is to keep without forgetting the base and decide at the next round.
+2. **Narrow windows for a lost file of the library**, each needing a crash or a failure at that moment: between the library's reading at a start and the engine being made; between the guard and the library's own reading within a round; a `sync.json` that cannot be read at the moment the guard asks. And a `library.bib` that is there with nothing in it reads as emptied.
+3. **`waiting` is false** where a phone's notes are held back by a home document or a notebook of a later form; the line then says what `problem` says.
+4. **A file left to try again** waits the half minute, not at once, also when the app is behind, so that a file that fails for its own sake does not make the engine ask without pause.
+5. **On Android a body of bytes arrives as JSON**: found on the emulator, where nothing written on the phone was kept until `with_head` took that form (record 0123).
+6. **The settings' script** has failed since the synchronization was built: the sentence under *Synchronization* counts as a help text. The owner's to say.
 
 ### Chosen here, to be told
 

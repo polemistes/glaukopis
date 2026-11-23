@@ -2035,3 +2035,10 @@ Done on the same day: record 0121 says what was found. Glaukopis runs on
 Android as the window of a note; the editor holds under Google's keyboard;
 nothing made with Tauri starts on Android 7, so the oldest is 8. Samsung's
 keyboard is the owner's phone's to answer.
+
+Of the work after stage 1, with the session's model set to Opus:
+
+> Follow the plan.
+
+Stage 2 was built on 2026-11-23 so, the parts given to the models the plan
+names: record 0123.

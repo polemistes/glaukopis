@@ -36,3 +36,7 @@ Date: 2026-11-22. Status: built on 2026-11-22 from the plan `docs/plans/the-same
 - ***Show the changes* needs the history of the project to be on**: the review compares with a moment, and only a project whose history is kept can be shown as it was then. Where it is off, the writer is offered the earlier versions, among which the project as it stood before is kept.
 - **A file larger than the server takes** stays on the computer that has it, which says so; the others know of the file and show it as missing.
 - **A deletion or a mistake is synchronized as faithfully as anything.** What covers a mistake is the trash and the earlier versions, on every computer.
+
+## Addendum, 2026-11-23: a device, not a computer
+
+A phone is one of the writer's devices since stage 2 of the app for Android (record 0123), and takes the notes alone (record 0122). So the words of the synchronization say *device* (Bokmål *enhet*) wherever a phone may be meant, on the computers too: the list of the home, *Add a device…*, *Name of this device*, *Stop synchronizing on this device*, the toast of what was written apart. The owner chose the word on 2026-11-22. The names of the messages and the hooks of the scripts stay as they were; the other seven languages follow in their round. `sync_computer` is `sync_device`, and on Android it offers the phone's model. The sentence under *Synchronization* stays as it was on a computer, and a phone has a sentence of its own, since it holds the notebook and the references alone.
