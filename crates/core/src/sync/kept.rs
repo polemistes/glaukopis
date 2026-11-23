@@ -11,7 +11,9 @@
 //! sync/library/sync.json
 //! sync/base/<name>.json   what a store and its map agreed on when they last met (`mirror`)
 //! sync/<name>.json        what a round keeps from one run to the next (`note`): how the library's
-//!                         files lay (`library-lies`), whether the notebook was refused (`notebook-refused`)
+//!                         files lay (`library-lies`), whether the notebook was refused (`notebook-refused`),
+//!                         that the synchronization stopped for a later form, with what the version
+//!                         knew then (`outdated`)
 //! ```
 //!
 //! and, with each document that is synchronized, in its own folder:

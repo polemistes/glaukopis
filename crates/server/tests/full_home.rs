@@ -241,8 +241,19 @@ async fn a_home_too_full_for_the_files_of_the_library_still_takes_the_pictures_o
     with_server_set(
         |config| config.max_home_bytes = 64 << 10,
         |address| {
+            // The computer reaches the server by a way that counts the files
+            // of more than 45 KiB whose sending is begun, and cuts nothing.
+            let begun = Arc::new(AtomicUsize::new(0));
+            let counted = begun.clone();
+            let counting = move |asked: &str, length: u64| {
+                if asked.starts_with("PUT /api/homes/") && asked.contains("/files/") && length > 45 << 10 {
+                    counted.fetch_add(1, Ordering::SeqCst);
+                }
+                false
+            };
+            let counted_way = tokio::runtime::Handle::current().block_on(through(&address, counting));
             let (computer, phone) = (Device::computer(), Device::phone());
-            assert!(computer.sync.start(&address, "The desk", None).unwrap().on);
+            assert!(computer.sync.start(&counted_way, "The desk", None).unwrap().on);
             computer.round();
             join(&phone, &computer, &address, "The phone");
             phone.round();
@@ -264,6 +275,11 @@ async fn a_home_too_full_for_the_files_of_the_library_still_takes_the_pictures_o
             let there = computer.home_files();
             assert!(there.contains(&sketch), "the picture of the note was sent");
             assert!(!there.contains(&scan) && !there.contains(&plates), "what does not fit was not");
+            assert_eq!(
+                begun.load(Ordering::SeqCst),
+                0,
+                "its sending was not even begun: the server need not refuse it"
+            );
 
             // The phone has the picture.
             phone.round();
@@ -281,6 +297,11 @@ async fn a_home_too_full_for_the_files_of_the_library_still_takes_the_pictures_o
             let status = computer.once();
             assert_eq!((status.state, status.problem.as_deref()), (State::Idle, Some(full.as_str())));
             assert_eq!(status.last, None, "and not everything is the same");
+            assert_eq!(
+                begun.load(Ordering::SeqCst),
+                0,
+                "asked for again and again, what does not fit is still not sent"
+            );
 
             // Room is made: the first file leaves the library. It is taken
             // off the server before anything is sent, and of the two that
@@ -289,6 +310,7 @@ async fn a_home_too_full_for_the_files_of_the_library_still_takes_the_pictures_o
             let status = computer.once();
             let there = computer.home_files();
             assert!(!there.contains(&first) && there.contains(&scan) && !there.contains(&plates), "{there:?}");
+            assert_eq!(begun.load(Ordering::SeqCst), 1, "the one there is room for, and not the other");
             let one = status.problem.expect("one is left");
             assert!(one.starts_with("The server is full.") && one != full, "{one}");
             // And more: the last fits, and nothing is wrong any more.
