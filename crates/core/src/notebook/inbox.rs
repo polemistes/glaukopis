@@ -1,13 +1,15 @@
 //! The notebook's inbox: what the plugin for Firefox hands to the helper
-//! (`host`), and the notes written in a window of their own (`note`),
-//! kept until the application takes them in. Neither writer needs a
-//! running application, and the application is reached from nowhere: it
-//! looks here at its start and while it runs.
+//! (`host`), the notes written in a window of their own (`note`), and what
+//! other apps hand to Glaukopis on a phone (`shared`), kept until the
+//! application takes them in. None of the writers needs a running
+//! application, and the application is reached from nowhere: it looks here
+//! at its start and while it runs (on a phone it is told, by the part of
+//! the app that wrote).
 //!
 //! ```text
 //! notebook/inbox/<id>/item.json   what the thing is (`Collected`)
 //! notebook/inbox/<id>/image       its picture, as it came, where it has one
-//! notebook/inbox/<id>/files/<hash> of a note, each file it holds, by what it holds
+//! notebook/inbox/<id>/files/<hash> of a note or of a thing shared, each file it holds, by what it holds
 //! notebook/inbox/.tmp-<id>/       a thing being written
 //! notebook/inbox/.unread-<id>/    a thing that could not be read, set aside
 //! ```
@@ -64,6 +66,12 @@ pub enum Kind {
     /// A note its writer wrote in a window of its own (`note`): plain
     /// words, from no page. Never what the plugin hands over.
     Note,
+    /// What another app handed to Glaukopis on a phone (`shared`): words,
+    /// and files, which lie beside it as those of a note do. Never what the
+    /// plugin hands over. Of it the words are in `text`, the subject the
+    /// other app gave in `title`, and nothing else is said: whether the
+    /// words are an address is read where the thing is taken in.
+    Shared,
 }
 
 /// A thing the plugin collected, as it sends it, or a note written in a
@@ -99,8 +107,8 @@ pub struct Collected {
     /// `text` for whatever cannot read it. Nothing for the other kinds.
     #[serde(default, skip_serializing_if = "Value::is_null")]
     pub doc: Value,
-    /// Of a note, the files it holds, which lie beside it in the inbox
-    /// (`files/<hash>`). None for the other kinds.
+    /// Of a note or of a thing shared, the files it holds, which lie beside
+    /// it in the inbox (`files/<hash>`). None for the other kinds.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub files: Vec<HeldFile>,
 }
@@ -232,12 +240,13 @@ impl Inbox {
         Ok(id)
     }
 
-    /// Puts a note into the inbox, cut to the limits, with the files it
-    /// holds moved into it from `from`, where each lies named by its hash
-    /// (the same disk: a rename). It is there whole, or not at all: where
-    /// it cannot be put, the files are moved back. Its text in `doc` is
-    /// refused where it is larger than `MAX_TEXT`, a file where it is
-    /// larger than `MAX_FILE`. Gives its id.
+    /// Puts a thing that holds files into the inbox, whatever its kind (a
+    /// note written in a window of its own, or a thing shared), cut to the
+    /// limits, with the files it holds moved into it from `from`, where each
+    /// lies named by its hash (the same disk: a rename). It is there whole,
+    /// or not at all: where it cannot be put, the files are moved back. Its
+    /// text in `doc` is refused where it is larger than `MAX_TEXT`, a file
+    /// where it is larger than `MAX_FILE`. Gives its id.
     pub fn put_note(&self, note: &Collected, from: &Path) -> Result<String> {
         let note = note.clone().limited();
         if serde_json::to_vec(&note.doc)?.len() > MAX_TEXT {
@@ -579,6 +588,16 @@ mod tests {
             {"type": "text", "text": "w".repeat(MAX_TEXT)}]}]});
         assert!(inbox.put_note(&long, tmp.path()).is_err());
         assert!(inbox.ids().is_empty());
+    }
+
+    #[test]
+    fn a_thing_shared_is_read_from_its_words_with_everything_else_empty() {
+        let collected: Collected = serde_json::from_str(r#"{"kind":"shared","text":"x"}"#).unwrap();
+        assert_eq!(collected.kind, Kind::Shared);
+        assert_eq!(collected.text, "x");
+        assert!(collected.url.is_empty() && collected.title.is_empty() && collected.when.is_empty());
+        assert!(collected.html.is_empty() && collected.alt.is_empty() && collected.name.is_empty());
+        assert!(collected.doc.is_null() && collected.files.is_empty());
     }
 
     #[test]

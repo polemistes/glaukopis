@@ -5870,6 +5870,7 @@ export const inboxItems: notebook.InboxItem[] = [
     "doc": null,
     "files": [],
     "html": "",
+    "id": "1763208000000-abcdefgh",
     "image": {
       "file": {
         "added": "2026-01-01T00:00:00Z",
@@ -5920,6 +5921,7 @@ export const inboxItems: notebook.InboxItem[] = [
     "doc": null,
     "files": [],
     "html": "<p>What it <em>says</em>.</p>",
+    "id": "1763208060000-bcdefghi",
     "image": null,
     "kind": "selection",
     "text": "What it says.",
@@ -5998,10 +6000,64 @@ export const inboxItems: notebook.InboxItem[] = [
       }
     ],
     "html": "",
+    "id": "1763294400000-cdefghij",
     "image": null,
     "kind": "note",
     "text": "A bold word.",
     "title": "",
+    "url": "",
+    "when": "2026-01-01T00:00:00Z"
+  },
+  {
+    "alt": "",
+    "doc": null,
+    "files": [
+      {
+        "file": {
+          "added": "2026-01-01T00:00:00Z",
+          "alt": "",
+          "bookmarks": [],
+          "exists": true,
+          "folder": "00000000-0000-4000-8000-000000000000",
+          "hash": "4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5",
+          "height": 1,
+          "kind": "picture",
+          "madeFrom": null,
+          "name": "plate.png",
+          "origin": "/data/plate.png",
+          "path": "attachments/4f/4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5/plate.png",
+          "references": [],
+          "size": 70,
+          "width": 1
+        },
+        "place": null,
+        "shown": {
+          "added": "2026-01-01T00:00:00Z",
+          "alt": "",
+          "bookmarks": [],
+          "exists": true,
+          "folder": "00000000-0000-4000-8000-000000000000",
+          "hash": "4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5",
+          "height": 1,
+          "kind": "picture",
+          "madeFrom": null,
+          "name": "plate.png",
+          "origin": "/data/plate.png",
+          "path": "attachments/4f/4ff6ab670a58c14270e034e2090d9a432caa263a14e0a25785386b0c12f880b5/plate.png",
+          "references": [],
+          "size": 70,
+          "width": 1
+        },
+        "taken": "2026-01-01T00:00:00Z",
+        "time": null
+      }
+    ],
+    "html": "",
+    "id": "1763380800000-defghijk",
+    "image": null,
+    "kind": "shared",
+    "text": "\"What it says.\"",
+    "title": "Including link: ",
     "url": "",
     "when": "2026-01-01T00:00:00Z"
   }

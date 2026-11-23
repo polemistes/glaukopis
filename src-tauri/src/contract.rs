@@ -612,6 +612,7 @@ fn what_is_sent_is_what_the_interface_declares() {
         {"type": "text", "text": " word."}]}]});
     let inbox_items = vec![
         crate::commands::notebook::InboxItem {
+            id: "1763208000000-abcdefgh".into(),
             kind: glaukopis_core::notebook::inbox::Kind::Region,
             url: "https://example.org/an-article".into(),
             title: "An article".into(),
@@ -630,6 +631,7 @@ fn what_is_sent_is_what_the_interface_declares() {
             files: Vec::new(),
         },
         crate::commands::notebook::InboxItem {
+            id: "1763208060000-bcdefghi".into(),
             kind: glaukopis_core::notebook::inbox::Kind::Selection,
             url: "https://example.org/an-article".into(),
             title: "An article".into(),
@@ -643,6 +645,7 @@ fn what_is_sent_is_what_the_interface_declares() {
         },
         // A note written in a window of its own (record 0109): a text of a bold word, and a file it holds.
         crate::commands::notebook::InboxItem {
+            id: "1763294400000-cdefghij".into(),
             kind: glaukopis_core::notebook::inbox::Kind::Note,
             url: String::new(),
             title: String::new(),
@@ -657,6 +660,26 @@ fn what_is_sent_is_what_the_interface_declares() {
                 shown: Some(taken_in.files[0].clone()),
                 time: None,
                 taken: None,
+                place: None,
+            }],
+        },
+        // What another app handed over on a phone: words, a subject, and a photograph that says when it was taken.
+        crate::commands::notebook::InboxItem {
+            id: "1763380800000-defghijk".into(),
+            kind: glaukopis_core::notebook::inbox::Kind::Shared,
+            url: String::new(),
+            title: "Including link: ".into(),
+            when: "2026-11-17T12:00:00Z".into(),
+            text: "\"What it says.\"".into(),
+            html: String::new(),
+            alt: String::new(),
+            image: None,
+            doc: Value::Null,
+            files: vec![crate::commands::notebook::NotebookFile {
+                file: taken_in.files[0].clone(),
+                shown: Some(taken_in.files[0].clone()),
+                time: None,
+                taken: Some("2026-11-15T14:03:22".into()),
                 place: None,
             }],
         },

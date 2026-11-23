@@ -164,13 +164,17 @@ export const notebookSayHeld = (files: string[]) => call<void>('notebook_say_hel
 export type InboxKind = 'page' | 'selection' | 'image' | 'region' | 'note' | 'shared';
 
 /**
- * A thing the plugin for Firefox handed to the helper, or a note written in
- * a window of its own, as the application takes it out of the notebook's
- * inbox: where it came from, and what it is.
+ * A thing the plugin for Firefox handed to the helper, a note written in a
+ * window of its own, or what another app handed over on a phone, as the
+ * application takes it out of the notebook's inbox: where it came from, and
+ * what it is. Of a thing shared the words are `text`, the subject the other
+ * app gave is `title` (whatever it says: it is read only where the thing is
+ * taken in, `notebook/inbox.ts`), and the files are `files`; nothing else
+ * is said.
  */
 export interface InboxItem {
-  /** Its name in the inbox. (The meeting points of stage 3: part A makes it always there.) */
-  id?: string;
+  /** Its name in the inbox, by which the page knows which note it made of the thing. */
+  id: string;
   kind: InboxKind;
   /** The address of the page, and its title. */
   url: string;
@@ -187,7 +191,7 @@ export interface InboxItem {
   image: NotebookFile | null;
   /** Of a note, its text as ProseMirror's JSON of the body schema; null for the rest. Not to be trusted. */
   doc: unknown;
-  /** Of a note, the files it holds, taken into the store, each by the hash the note names it by. */
+  /** Of a note or of a thing shared, the files it holds, taken into the store, each by the hash the thing names it by. */
   files: NotebookFile[];
 }
 

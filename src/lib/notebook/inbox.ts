@@ -7,7 +7,11 @@
  * part of a page, is a note holding the picture as a figure. A note
  * written in a window of its own (record 0109) is a note without a name
  * and with no source, its text as it was written, read with care
- * (`window/text.ts`). Each lies in the box that receives (`model/boxes.ts`).
+ * (`window/text.ts`). What another app handed over on a phone (stage 3 of
+ * `docs/plans/an-app-for-android.md`) is a note of its words, as they were
+ * handed over, and of its files, each with itself as its source; only an
+ * address shared alone is read, as a page (`noteOfShared`). Each lies in the
+ * box that receives (`model/boxes.ts`).
  *
  * The HTML the plugin gives is not to be trusted. It is read without being
  * run, in a document of its own that is never put into the page; every
@@ -23,7 +27,7 @@ import { formOfText, raiseForm } from '$lib/editor/form';
 import { bodySchema, safeHref } from '$lib/editor/schema';
 import { fileEnding } from '$lib/util/file-name';
 import type { Notebook } from './model/notebook.svelte';
-import { figureOf, holdTaken } from './taking';
+import { figureOf, fileSourceOf, holdTaken } from './taking';
 import { readNoteDoc } from './window/text';
 
 /** What is not read at all, with all it holds: what runs, what is drawn or loaded, what is typed into. */
@@ -328,6 +332,81 @@ function madeOf(when: string, fallback: string): string {
   return when && !Number.isNaN(time.getTime()) ? time.toISOString() : fallback;
 }
 
+/**
+ * The address that words are, where they are an address and nothing else:
+ * with the white space at their ends taken away they hold none, they read
+ * as an address (`new URL`) whose way is `http` or `https`, and it may be
+ * followed. As the writer's words they are written, so that the address is
+ * as it was handed over. None where they are anything else.
+ */
+export function addressAlone(text: string): string | null {
+  const address = text.trim();
+  if (!address || /\s/.test(address)) return null;
+  let url: URL;
+  try {
+    url = new URL(address);
+  } catch {
+    return null;
+  }
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') return null;
+  return safeHref(address) ? address : null;
+}
+
+/** Gives the source of a page by its address, the same for the same address in one taking; none where there is no address. */
+type SourceOf = (url: string, title: string, read: string) => string | null;
+
+/**
+ * Makes the note of a thing another app handed over, which lies in the box
+ * that receives, not looked at, and gives its id; none, and no note, where
+ * the thing holds no words and none of its files could be taken in.
+ *
+ * What the words are is read in one case: an address and nothing else, and
+ * no file beside it. It is then the text of the note, taken as a passage of
+ * the page it names, the subject the other app gave being the title of that
+ * page and the name of the note. In every other case the words are written
+ * as they were handed over, a paragraph to each line that holds anything,
+ * in one passage with no source, and the note has no name: the subject is an
+ * app's own words (a browser says *Including link:* of what was selected),
+ * and what it is said of cannot be known. Each file comes after the words,
+ * held with itself as its source, a picture as a figure, any other file as a
+ * file in the note. Neither `html` nor `doc` of such a thing is looked at.
+ */
+function noteOfShared(
+  notebook: Notebook,
+  item: InboxItem,
+  made: string,
+  sourceOf: SourceOf,
+): string | null {
+  const lines = item.text.split(/\r?\n/).filter((l) => l.trim());
+  if (!lines.length && !item.files.length) return null;
+  const address = item.files.length ? null : addressAlone(item.text);
+  const subject = item.title.trim();
+  const note = notebook.addNote({
+    made,
+    box: notebook.receiving,
+    seen: false,
+    ...(address && subject ? { name: subject } : {}),
+  });
+  if (address) {
+    const passage = notebook.addPassage(sourceOf(address, subject, made), address);
+    notebook.addText(note, address, passage);
+  } else if (lines.length) {
+    const passage = notebook.addPassage(null, lines.join('\n'));
+    notebook.addText(note, lines.join('\n'), passage);
+  }
+  for (const taken of item.files) {
+    holdTaken(notebook, taken, notebook.addSource(fileSourceOf(taken)));
+    if (taken.shown) notebook.addFigure(note, figureOf(taken.shown));
+    else
+      notebook.addFile(note, {
+        hash: taken.file.hash,
+        name: taken.file.name,
+        extension: fileEnding(taken.file.name),
+      });
+  }
+  return note;
+}
+
 /** A note made of a thing taken from the inbox, with the thing's name there (`InboxItem.id`). */
 export interface MadeOfInbox {
   thing: string;
@@ -337,9 +416,10 @@ export interface MadeOfInbox {
 /**
  * Makes a note of each thing in the inbox, in order, all in one step of
  * undo: of what the plugin handed over with the page as the source of what
- * is in it; of a note written in a window of its own as it was written. A
- * picture that did not come leaves nothing to make a note of. Gives the
- * ids of the notes made.
+ * is in it; of a note written in a window of its own as it was written; of
+ * what another app handed over as `noteOfShared` says. A picture that did
+ * not come leaves nothing to make a note of. Gives the ids of the notes
+ * made.
  */
 export function notesOfInbox(notebook: Notebook, items: InboxItem[]): string[] {
   return madeOfInbox(notebook, items).map((made) => made.note);
@@ -356,12 +436,12 @@ export function madeOfInbox(notebook: Notebook, items: InboxItem[]): MadeOfInbox
   // The notebook knows a source it was given only once the step is made:
   // within it, things from one page are given its source here.
   const pages = new Map<string, string>();
-  const sourceOf = (item: InboxItem, read: string): string | null => {
-    const url = item.url.trim();
+  const sourceOf: SourceOf = (address, title, read) => {
+    const url = address.trim();
     if (!url) return null;
     let id = pages.get(url);
     if (!id) {
-      id = notebook.addSource({ sort: 'web', url, title: item.title.trim(), read });
+      id = notebook.addSource({ sort: 'web', url, title: title.trim(), read });
       pages.set(url, id);
     }
     return id;
@@ -370,9 +450,13 @@ export function madeOfInbox(notebook: Notebook, items: InboxItem[]): MadeOfInbox
     items.flatMap((item, i) => {
       // Of things with no time, the later stands above.
       const made = madeOf(item.when, new Date(now + i).toISOString());
+      if (item.kind === 'shared') {
+        const note = noteOfShared(notebook, item, made, sourceOf);
+        return note ? [{ thing: item.id, note }] : [];
+      }
       const pictured = item.kind === 'image' || item.kind === 'region';
       if (pictured && !item.image) return [];
-      const source = sourceOf(item, made);
+      const source = sourceOf(item.url, item.title, made);
       const id = notebook.addNote({
         made,
         box: notebook.receiving,
@@ -395,7 +479,7 @@ export function madeOfInbox(notebook: Notebook, items: InboxItem[]): MadeOfInbox
             extension: fileEnding(taken.file.name),
           });
       } else writeWords(notebook, id, item, source);
-      return [{ thing: item.id ?? '', note: id }];
+      return [{ thing: item.id, note: id }];
     }),
   );
 }
