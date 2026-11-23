@@ -1321,71 +1321,100 @@ async fn a_picture_that_became_the_librarys_is_not_taken_out_of_its_lists_by_a_d
     .await;
 }
 
+/// How the files of a library are found lost, and what then becomes of the run that finds it.
+#[derive(Debug, Clone, Copy)]
+enum Found {
+    /// When the application is started, and its round does not reach the server.
+    AtAStartWhoseRoundFails,
+    /// When the application is started, and it ends before any round is made.
+    AtAStartWithoutARound,
+    /// While the application runs, by the library read anew, and its round does not reach the server.
+    WhileItRuns,
+}
+
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn a_lost_file_of_the_library_is_remembered_through_a_start_that_never_reaches_the_server() {
     with_server(|address, _| {
-        let computer = Device::computer();
-        assert!(computer.sync.start(&address, "The desk", None).unwrap().on);
-        let nagy =
-            computer.add("@book{nagy1979, author={Nagy, Gregory}, title={The Best of the Achaeans}, date={1979}}");
-        let lord = computer.add("@book{lord1960, author={Lord, Albert}, title={The Singer of Tales}, date={1960}}");
-        let homer = computer.lib().collection_create("Homer", None).unwrap();
-        computer.lib().collection_add(&homer.id, std::slice::from_ref(&nagy.id)).unwrap();
-        let letter = computer.take_in("letter.txt", LETTER);
-        computer.round();
-        let phone = Device::phone();
-        join(&phone, &computer, &address, "The phone");
-        settle(&[&computer, &phone]);
-        let said = computer.library_as_said();
-        assert_eq!(phone.library_as_said(), said);
-
-        // The three files of the phone's library are lost, and the phone is
-        // started where its server is not reached: no round comes to the library.
-        let dir = phone.lib().dir().to_owned();
-        let three = ["library.bib", "collections.json", "files.json"];
-        for name in three {
-            std::fs::remove_file(dir.join(name)).unwrap();
+        for found in [Found::AtAStartWhoseRoundFails, Found::AtAStartWithoutARound, Found::WhileItRuns] {
+            lost_and_remembered(&address, found);
         }
-        let nowhere = {
-            let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
-            format!("http://{}", listener.local_addr().unwrap())
-        };
-        let server = phone.looks_at(&nowhere);
-        let phone = phone.given(Takes::Notes);
-        assert!(phone.library_as_said().is_empty(), "the library reads as one that was emptied");
-        assert!(phone.sync.round().is_err(), "the server is not reached");
-        // In that run each file is written anew: a picture taken, a reference added, a collection made.
-        let photograph = phone.take_picture("photograph", &PNG);
-        let own = phone.add("@book{own, title={Written on the phone}}");
-        let shelf = phone.lib().collection_create("Shelf", None).unwrap();
-        for name in three {
-            assert!(dir.join(name).is_file(), "{name} is on the disk again");
-        }
-        assert!(phone.sync.round().is_err());
-
-        // A new start, with the server back: nothing on the disk says that the files were lost.
-        phone.looks_at(&server);
-        let phone = phone.given(Takes::Notes);
-        for _ in 0..2 {
-            settle(&[&phone, &computer]);
-        }
-
-        // No record was told as taken out: nothing left the computer or the server.
-        {
-            let lib = computer.lib();
-            assert!(lib.get(&nagy.id).is_some() && lib.get(&lord.id).is_some(), "the computer holds its references");
-            assert_eq!(lib.collections.get(&homer.id).expect("its collection").entries, vec![nagy.id.clone()]);
-            assert!(lib.files.get(&letter).is_some(), "and the record of its file");
-        }
-        assert_eq!(computer.bytes(&letter).as_deref(), Some(LETTER), "and the file, byte for byte");
-        assert!(computer.home_files().contains(&letter), "which the server holds still");
-        let mut but_the_phones = computer.library_as_said();
-        but_the_phones.retain(|line| ![&photograph, &own.id, &shelf.id].iter().any(|new| line.contains(new.as_str())));
-        assert_eq!(but_the_phones, said, "all as before, but for what the phone added");
-        assert_eq!(phone.library_as_said(), computer.library_as_said(), "and the phone has it all again");
-        assert_eq!(computer.bytes(&photograph).as_deref(), Some(&PNG[..]));
     })
     .await;
+}
+
+/// A phone loses the three files of its library; the run that finds them
+/// lost never comes to the library in a round, and writes each of them
+/// anew; and the phone is started again where its server is reached.
+fn lost_and_remembered(address: &str, found: Found) {
+    let computer = Device::computer();
+    assert!(computer.sync.start(address, "The desk", None).unwrap().on);
+    let nagy = computer.add("@book{nagy1979, author={Nagy, Gregory}, title={The Best of the Achaeans}, date={1979}}");
+    let lord = computer.add("@book{lord1960, author={Lord, Albert}, title={The Singer of Tales}, date={1960}}");
+    let homer = computer.lib().collection_create("Homer", None).unwrap();
+    computer.lib().collection_add(&homer.id, std::slice::from_ref(&nagy.id)).unwrap();
+    let letter = computer.take_in("letter.txt", LETTER);
+    computer.round();
+    let phone = Device::phone();
+    join(&phone, &computer, address, "The phone");
+    settle(&[&computer, &phone]);
+    let said = computer.library_as_said();
+    assert_eq!(phone.library_as_said(), said);
+
+    // The three files of the phone's library are lost, where its server is not reached.
+    let dir = phone.lib().dir().to_owned();
+    let three = ["library.bib", "collections.json", "files.json"];
+    for name in three {
+        std::fs::remove_file(dir.join(name)).unwrap();
+    }
+    let nowhere = {
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        format!("http://{}", listener.local_addr().unwrap())
+    };
+    let server = phone.looks_at(&nowhere);
+    let phone = match found {
+        Found::WhileItRuns => {
+            *phone.lib() = Library::open(&phone.data).unwrap();
+            phone
+        }
+        Found::AtAStartWhoseRoundFails | Found::AtAStartWithoutARound => phone.given(Takes::Notes),
+    };
+    assert!(phone.library_as_said().is_empty(), "{found:?}: the library reads as one that was emptied");
+    let rounds = !matches!(found, Found::AtAStartWithoutARound);
+    if rounds {
+        assert!(phone.sync.round().is_err(), "{found:?}: the server is not reached");
+    }
+    // In that run each file is written anew: a picture taken, a reference added, a collection made.
+    let photograph = phone.take_picture("photograph", &PNG);
+    let own = phone.add("@book{own, title={Written on the phone}}");
+    let shelf = phone.lib().collection_create("Shelf", None).unwrap();
+    for name in three {
+        assert!(dir.join(name).is_file(), "{found:?}: {name} is on the disk again");
+    }
+    if rounds {
+        assert!(phone.sync.round().is_err());
+    }
+
+    // A new start, with the server back: no file of the library says that it was lost.
+    phone.looks_at(&server);
+    let phone = phone.given(Takes::Notes);
+    for _ in 0..2 {
+        settle(&[&phone, &computer]);
+    }
+
+    // No record was told as taken out: nothing left the computer or the server.
+    {
+        let lib = computer.lib();
+        assert!(lib.get(&nagy.id).is_some() && lib.get(&lord.id).is_some(), "{found:?}: the computer's references");
+        assert_eq!(lib.collections.get(&homer.id).expect("its collection").entries, vec![nagy.id.clone()]);
+        assert!(lib.files.get(&letter).is_some(), "{found:?}: and the record of its file");
+    }
+    assert_eq!(computer.bytes(&letter).as_deref(), Some(LETTER), "{found:?}: and the file, byte for byte");
+    assert!(computer.home_files().contains(&letter), "{found:?}: which the server holds still");
+    let mut but_the_phones = computer.library_as_said();
+    but_the_phones.retain(|line| ![&photograph, &own.id, &shelf.id].iter().any(|new| line.contains(new.as_str())));
+    assert_eq!(but_the_phones, said, "{found:?}: all as before, but for what the phone added");
+    assert_eq!(phone.library_as_said(), computer.library_as_said(), "{found:?}: and the phone has it all again");
+    assert_eq!(computer.bytes(&photograph).as_deref(), Some(&PNG[..]));
 }
 
 /// A picture of four points by three, in one colour.
