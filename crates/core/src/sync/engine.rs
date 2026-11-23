@@ -1279,22 +1279,23 @@ impl Sync {
         if !send {
             return Ok(news);
         }
-        // What was written into the document here and not sent: the mark
-        // says it, since a name taken out of a map shows in no state
-        // vector. And all that a server lacks which holds less of the
-        // document than this device does, as one that lost it.
-        if self.kept.unsent(maps.kind) || !whole::covers(&theirs.now, &doc.vector())? {
-            let sent = self.ask(
-                home,
-                maps.kind,
-                "the",
-                Some(&theirs.digest),
-                Some(&theirs.now),
-                &|since| doc.beyond(since).map(Some),
-                false,
-            )?;
-            news |= self.take_maps(joined, maps, doc, docs, &of, &sent)?;
-        }
+        // Then what the document here holds beyond the server's, each time
+        // and not only where it is marked as holding something unsent: a
+        // name taken out of a map shows in no state vector, and the mark is
+        // written after the document, so that an application that ended
+        // between the two keeps a document that holds what was never sent
+        // and nothing that says so. What was deleted is in what is sent
+        // always, and the server takes it as often as it comes.
+        let sent = self.ask(
+            home,
+            maps.kind,
+            "the",
+            Some(&theirs.digest),
+            Some(&theirs.now),
+            &|since| doc.beyond(since).map(Some),
+            false,
+        )?;
+        news |= self.take_maps(joined, maps, doc, docs, &of, &sent)?;
         self.kept.mark_unsent(maps.kind, false)?;
         Ok(news)
     }

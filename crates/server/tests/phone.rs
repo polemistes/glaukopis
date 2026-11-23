@@ -884,6 +884,50 @@ async fn a_computer_whose_kept_document_of_the_library_is_of_a_later_form_stops_
     .await;
 }
 
+/// Writes a name into the home document as the device keeps it, by hand,
+/// or takes it out, in a map no store reads; with `marked`, the document
+/// is marked as holding something unsent, as the engine marks it.
+fn write_into_the_kept_home_document(device: &Device, value: Option<&str>, marked: bool) {
+    let kept = Kept::new(&device.data);
+    let doc = HomeDoc::load(kept.doc("home").unwrap().as_deref()).unwrap();
+    assert!(doc.put("by-hand", "name", value));
+    kept.keep_doc("home", &doc.whole()).unwrap();
+    if marked {
+        kept.mark_unsent("home", true).unwrap();
+    }
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_name_taken_out_of_the_home_document_goes_with_its_next_exchange_though_nothing_marked_it_unsent() {
+    with_server(|address, _| {
+        let (desk, laptop) = (Device::computer(), Device::computer());
+        assert!(desk.sync.start(&address, "The desk", None).unwrap().on);
+        desk.round();
+        join(&laptop, &desk, &address, "The laptop");
+        settle(&[&laptop, &desk]);
+        let said = |device: &Device| device.maps_of_the_home("home").get("by-hand", "name");
+
+        // A name is written into the home document on the laptop, and sent.
+        write_into_the_kept_home_document(&laptop, Some("value"), true);
+        let laptop = laptop.started_again(Knows::default());
+        laptop.round();
+        assert_eq!(said(&laptop).as_deref(), Some("value"));
+
+        // It is taken out, and the document kept; the application ends
+        // before it has marked the document as holding something unsent.
+        // A name taken out shows in no state vector either.
+        write_into_the_kept_home_document(&laptop, None, false);
+        let laptop = laptop.started_again(Knows::default());
+        // The desk changes something, and the laptop exchanges the document for that.
+        desk.set("theme", json!("dark"));
+        desk.round();
+        laptop.round();
+        assert_eq!(laptop.settings().get("theme"), Some(&json!("dark")));
+        assert_eq!(said(&laptop), None, "what the document here held beyond the server's went with the exchange");
+    })
+    .await;
+}
+
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn a_device_that_is_stopped_for_a_later_form_can_still_leave_its_home() {
     with_server(|address, _| {
