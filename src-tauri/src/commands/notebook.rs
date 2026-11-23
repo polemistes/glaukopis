@@ -556,10 +556,15 @@ mod tests {
         let tmp = tempfile::tempdir().unwrap();
         let root = tmp.path().join("data");
         // The folder opened as when the application starts: a run. The claim
-        // of the run before is let go when its state is dropped, but may be
-        // held for an instant more by a program that another test is
-        // starting just then, which is born with what this process has
-        // open: so a folder found in use is asked for again.
+        // of the run before is let go when its state is dropped. Yet, run
+        // beside the other tests, the folder was now and then found in use
+        // right after, and never when this test ran alone or the tests one
+        // at a time. What is believed to hold the claim for that instant,
+        // and was not proven: a program that another test is starting just
+        // then (each opening of a folder asks the programs it finds for
+        // their versions), which between its fork and its exec holds every
+        // descriptor this process has open, that of the claim among them.
+        // So a folder found in use is asked for again.
         let open = || {
             let began = std::time::Instant::now();
             loop {
