@@ -21,6 +21,12 @@ export interface ToolsInfo {
   ocrLanguages: string[];
   /** Draws the pages of PDFs that cannot be drawn otherwise. */
   pdftoppm: Tool | null;
+  /**
+   * The programs found that are made for a newer macOS than this Mac has,
+   * and are not run (`pandoc`, `tesseract`, `pdftoppm`), with the least
+   * macOS each needs: `14.8`.
+   */
+  needsNewerSystem?: Record<string, string>;
   resources: string;
 }
 

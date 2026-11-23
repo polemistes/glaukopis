@@ -611,6 +611,11 @@
                   {t('settings-program-old', { least: program.found.least })}
                 {:else if program.found}
                   {program.found.path}
+                {:else if tools.needsNewerSystem?.[program.id]}
+                  {t('settings-program-needs-newer-system', {
+                    program: program.name,
+                    least: tools.needsNewerSystem[program.id],
+                  })}
                 {:else}
                   {t('settings-program-missing', { need: program.need })}
                 {/if}

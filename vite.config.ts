@@ -19,6 +19,9 @@ export default defineConfig({
     // chrome111: the web view of Android the page needs, which the app looks for
     // before it starts the page (LEAST_WEB_VIEW in StartActivity.kt): the two
     // are changed together.
+    // safari15 is below what the page needs of a web view (Safari 16.4,
+    // shell/web-view.ts), so that an older one still reads the page that
+    // says so.
     target: ['es2022', 'safari15', 'chrome111'],
     sourcemap: false,
     chunkSizeWarningLimit: 1500,

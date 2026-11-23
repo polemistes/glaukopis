@@ -4760,6 +4760,15 @@ in *Applications* and **Open** does the same. If macOS says it is damaged,
 or you would rather use the Terminal, run `xattr -cr
 /Applications/Glaukopis.app` there and open it again.
 
+On a Mac, Glaukopis draws its window with Safari's engine, and needs
+Safari 16.4 or newer, which macOS 11 Big Sur and later get with *Software
+Update*; on an older system it says so at its start, and goes no further.
+The Tesseract that comes with Glaukopis may need a newer macOS than
+Glaukopis itself. Where it does, it is not used, and *Settings* ›
+*Programs* says which macOS it needs: text in scans and images is then read
+only with a Tesseract installed otherwise, told of under *Where Tesseract
+is*.
+
 ### New versions
 
 On Windows and macOS, Glaukopis asks at its start whether a newer version

@@ -98,6 +98,8 @@ ocr-picture-map = Lag et element av den
 
 ocr-settings-looking = Leter…
 ocr-settings-missing = Ikke funnet. Trengs for å lese tekst fra skannede sider og bilder. Installer tesseract med pakkebehandleren på systemet ditt, sammen med dataene for språkene du leser (tesseract-data-eng for engelsk på Arch, tesseract-data-nor for norsk, tesseract-data-grc for gammelgresk, …), eller si nedenfor hvor det er.
+# Tesseract-programmet som ble funnet, er laget for en nyere macOS enn denne Macen har, og brukes ikke. $least er en versjon av macOS: 14.8.
+ocr-settings-needs-newer-system = Tesseract-programmet som ble funnet, krever macOS { $least } eller nyere. Det trengs bare for å lese tekst i skanninger og bilder.
 ocr-settings-by-itself = Finnes av seg selv
 ocr-settings-where = Hvor Tesseract er
 ocr-settings-look-failed = Det gikk ikke å lete etter Tesseract

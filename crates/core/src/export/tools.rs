@@ -3,8 +3,9 @@
 //! are installed. They are looked for where the settings say, then on the
 //! path, then beside the application.
 
+use std::collections::BTreeMap;
 use std::ffi::OsStr;
-use std::io::{Read, Write};
+use std::io::{Read, Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -69,6 +70,13 @@ pub struct Tools {
     pub ocr_languages: Vec<String>,
     /// Draws the pages of PDFs that cannot be drawn otherwise.
     pub pdftoppm: Option<Tool>,
+    /// The programs found that are made for a newer macOS than this Mac has,
+    /// and are not run (`pandoc`, `tesseract`, `pdftoppm`), with the least
+    /// macOS each needs: `14.8`. Where Homebrew builds Tesseract for those
+    /// that come with the application, it is built for the macOS it is built
+    /// on, and an older Mac would refuse it each time it is asked anything.
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub needs_newer_system: BTreeMap<String, String>,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -321,7 +329,20 @@ pub fn languages_in(said: &str) -> Vec<String> {
 
 pub fn discover(configured: &Configured) -> Tools {
     let mut tools = Tools::default();
-    if let Some(path) = find("pandoc", configured.pandoc.as_deref(), &configured.beside) {
+    // A program made for a newer macOS is not run at all: it is noted.
+    let mut runs_here = |program: &str, path: PathBuf| match too_new_for_this_system(&path) {
+        Some(least) => {
+            tracing::warn!(path = %path.display(), %least, "a program made for a newer macOS than this one");
+            tools.needs_newer_system.insert(program.to_owned(), least);
+            None
+        }
+        None => Some(path),
+    };
+    let pandoc = find("pandoc", configured.pandoc.as_deref(), &configured.beside).and_then(|p| runs_here("pandoc", p));
+    let ocr =
+        find("tesseract", configured.tesseract.as_deref(), &configured.beside).and_then(|p| runs_here("tesseract", p));
+    let pdftoppm = find("pdftoppm", None, &configured.beside).and_then(|p| runs_here("pdftoppm", p));
+    if let Some(path) = pandoc {
         let version = version_of(&path, "Pandoc");
         tools.pandoc_api = run(&path, "Pandoc", ["-f", "markdown", "-t", "json"], Some(b""), None)
             .ok()
@@ -340,7 +361,7 @@ pub fn discover(configured: &Configured) -> Tools {
             tools.latex.push(engine.to_owned());
         }
     }
-    if let Some(path) = find("tesseract", configured.tesseract.as_deref(), &configured.beside) {
+    if let Some(path) = ocr {
         let version = version_in(&said(&path, &["--version"]));
         let mut listed = said(&path, &["--list-langs"]);
         let mut tool = Tool::found(path, version, None);
@@ -372,11 +393,97 @@ pub fn discover(configured: &Configured) -> Tools {
         tools.ocr_languages = languages_in(&listed);
         tools.tesseract = Some(tool);
     }
-    if let Some(path) = find("pdftoppm", None, &configured.beside) {
+    if let Some(path) = pdftoppm {
         let version = version_in(&said(&path, &["-v"]));
         tools.pdftoppm = Some(Tool::found(path, version, None));
     }
     tools
+}
+
+/// The least macOS a program is made for, where it is made for a newer one
+/// than this Mac has: `14.8`. Nothing elsewhere than on a Mac, and nothing
+/// for what cannot be read.
+pub fn too_new_for_this_system(program: &Path) -> Option<String> {
+    let here = this_macos()?;
+    let least = least_macos(program)?;
+    (least > here).then(|| macos_version(least))
+}
+
+/// The version of macOS that runs here, as Mach-O writes one
+/// (`xxxx.yy.zz` in a number); nothing elsewhere.
+fn this_macos() -> Option<u32> {
+    #[cfg(target_os = "macos")]
+    {
+        static HERE: std::sync::OnceLock<Option<u32>> = std::sync::OnceLock::new();
+        *HERE.get_or_init(|| {
+            let out = Command::new("/usr/bin/sw_vers").arg("-productVersion").output().ok()?;
+            let n = numbers(String::from_utf8_lossy(&out.stdout).trim());
+            let at = |i: usize| n.get(i).copied().unwrap_or(0).min(255);
+            (!n.is_empty()).then(|| (n[0] << 16) | (at(1) << 8) | at(2))
+        })
+    }
+    #[cfg(not(target_os = "macos"))]
+    None
+}
+
+/// A version as Mach-O writes it, said: `14.8`, `11.0.1`.
+fn macos_version(v: u32) -> String {
+    let (major, minor, patch) = (v >> 16, (v >> 8) & 0xff, v & 0xff);
+    if patch == 0 { format!("{major}.{minor}") } else { format!("{major}.{minor}.{patch}") }
+}
+
+/// The least macOS a program says it runs on, read from its Mach-O head:
+/// the part for this processor of a program for several. Nothing for what is
+/// no Mach-O program (a script, a program of another system) or says nothing.
+fn least_macos(program: &Path) -> Option<u32> {
+    let mut file = std::fs::File::open(program).ok()?;
+    let mut head = [0u8; 32];
+    file.read_exact(&mut head).ok()?;
+    let word = |b: &[u8], at: usize, big: bool| {
+        let w: [u8; 4] = b.get(at..at + 4)?.try_into().ok()?;
+        Some(if big { u32::from_be_bytes(w) } else { u32::from_le_bytes(w) })
+    };
+    // One for several processors: its parts are listed, big-endian.
+    let mut start = 0u64;
+    if word(&head, 0, true)? == 0xcafe_babe {
+        let count = word(&head, 4, true)?.min(16) as usize;
+        let mut list = vec![0u8; 8 + count * 20];
+        file.seek(SeekFrom::Start(0)).ok()?;
+        file.read_exact(&mut list).ok()?;
+        let mine: u32 = if cfg!(target_arch = "aarch64") { 0x0100_000c } else { 0x0100_0007 };
+        start = (0..count).find_map(|i| {
+            let at = 8 + i * 20;
+            (word(&list, at, true)? == mine).then(|| word(&list, at + 8, true)).flatten()
+        })? as u64;
+        file.seek(SeekFrom::Start(start)).ok()?;
+        file.read_exact(&mut head).ok()?;
+    }
+    let size = match word(&head, 0, false)? {
+        0xfeed_facf => 32,
+        0xfeed_face => 28,
+        _ => return None,
+    };
+    let count = word(&head, 16, false)? as usize;
+    let commands = (word(&head, 20, false)? as usize).min(1 << 20);
+    let mut all = vec![0u8; commands];
+    file.seek(SeekFrom::Start(start + size)).ok()?;
+    file.read_exact(&mut all).ok()?;
+    let mut at = 0;
+    for _ in 0..count {
+        let (command, length) = (word(&all, at, false)?, word(&all, at + 4, false)? as usize);
+        match command {
+            // LC_BUILD_VERSION: the platform, then the least version.
+            0x32 if word(&all, at + 8, false)? == 1 => return word(&all, at + 12, false),
+            // LC_VERSION_MIN_MACOSX, of older programs.
+            0x24 => return word(&all, at + 8, false),
+            _ => {}
+        }
+        if length < 8 {
+            return None;
+        }
+        at += length;
+    }
+    None
 }
 
 /// The names of the fonts of the system, in small letters. Nothing, where
@@ -452,6 +559,53 @@ mod tests {
         let tools = Tools { pandoc: Some(old), ..Default::default() };
         let said = tools.pandoc().unwrap_err().to_string();
         assert!(said.contains("3.1.1") && said.contains("3.1.10"), "{said}");
+    }
+
+    /// A Mach-O head of 64 bits with one command, as the linker writes it.
+    fn mach_o(command: u32, words: &[u32]) -> Vec<u8> {
+        let mut c = vec![command, 8 + 4 * words.len() as u32];
+        c.extend_from_slice(words);
+        let mut b: Vec<u8> = [0xfeed_facf_u32, 0x0100_0007, 3, 2, 1, 4 * c.len() as u32, 0, 0]
+            .iter()
+            .flat_map(|w| w.to_le_bytes())
+            .collect();
+        b.extend(c.iter().flat_map(|w| w.to_le_bytes()));
+        b
+    }
+
+    #[test]
+    fn the_least_macos_a_program_is_made_for() {
+        let tmp = tempfile::tempdir().unwrap();
+        let at = |name: &str, bytes: &[u8]| {
+            let p = tmp.path().join(name);
+            std::fs::write(&p, bytes).unwrap();
+            p
+        };
+        // LC_BUILD_VERSION: macOS (1), 14.8, made with the SDK of 15.0, no tools.
+        let built = at("built", &mach_o(0x32, &[1, 0x000e_0800, 0x000f_0000, 0]));
+        assert_eq!(least_macos(&built), Some(0x000e_0800));
+        assert_eq!(macos_version(0x000e_0800), "14.8");
+        assert_eq!(macos_version(0x000b_0001), "11.0.1");
+        // LC_VERSION_MIN_MACOSX, 10.13.
+        let older = at("older", &mach_o(0x24, &[0x000a_0d00, 0]));
+        assert_eq!(least_macos(&older), Some(0x000a_0d00));
+        // For iOS (2): not this.
+        assert_eq!(least_macos(&at("ios", &mach_o(0x32, &[2, 0x0011_0000, 0, 0]))), None);
+        // In a program for several processors, the part for this one.
+        let thin = mach_o(0x32, &[1, 0x000e_0800, 0, 0]);
+        let mine: u32 = if cfg!(target_arch = "aarch64") { 0x0100_000c } else { 0x0100_0007 };
+        let mut fat: Vec<u8> =
+            [0xcafe_babe_u32, 1, mine, 3, 64, thin.len() as u32, 0].iter().flat_map(|w| w.to_be_bytes()).collect();
+        fat.resize(64, 0);
+        fat.extend(&thin);
+        assert_eq!(least_macos(&at("fat", &fat)), Some(0x000e_0800));
+        // A script, and nothing at all.
+        assert_eq!(least_macos(&at("script", b"#!/bin/sh\necho 5.5\n")), None);
+        assert_eq!(least_macos(&at("empty", b"")), None);
+        // Only a Mac refuses what is made for a newer one.
+        if !cfg!(target_os = "macos") {
+            assert_eq!(too_new_for_this_system(&built), None);
+        }
     }
 
     #[test]

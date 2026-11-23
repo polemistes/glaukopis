@@ -15,6 +15,7 @@ import { guardPaste, pastesThroughGtk } from '$lib/util/paste';
 import { forwardToLog } from '$lib/shell/page-log';
 import { isNoteWindow } from '$lib/notebook/window/label';
 import { isPhone } from '$lib/phone/label';
+import { missingFromWebView, sayTooOld } from '$lib/shell/web-view';
 
 nameLanguagesBy(languageName);
 
@@ -49,12 +50,16 @@ if (inTauri)
 
 // The window of a note (record 0109) and the phone (docs/plans/an-app-for-android.md)
 // have pages of their own, and nothing of the application: each is loaded
-// only where it is shown.
+// only where it is shown. A web view too old for any of them is told of in
+// their place (shell/web-view.ts), rather than failing here and there.
 const target = document.getElementById('app')!;
-const app = isPhone()
-  ? import('$lib/phone/mount').then((page) => page.mountPhone(target))
-  : isNoteWindow()
-    ? import('$lib/notebook/window/mount').then((page) => page.mountNoteWindow(target))
-    : import('./App.svelte').then(({ default: App }) => mount(App, { target }));
+const missing = missingFromWebView();
+const app = missing.length
+  ? sayTooOld(target, missing)
+  : isPhone()
+    ? import('$lib/phone/mount').then((page) => page.mountPhone(target))
+    : isNoteWindow()
+      ? import('$lib/notebook/window/mount').then((page) => page.mountNoteWindow(target))
+      : import('./App.svelte').then(({ default: App }) => mount(App, { target }));
 
 export default app;

@@ -86,6 +86,8 @@ settings-looking = Looking…
 # "need" is what the program is needed for: settings-pandoc-need.
 settings-program-missing = Not found. { $need } Install it with the package manager of your system, or say below where it is.
 settings-program-old = Older than Glaukopis needs: { $least } or newer.
+# The program found is made for a newer macOS than this Mac has, and is not used. $least is a version of macOS: 14.8.
+settings-program-needs-newer-system = The { $program } found needs macOS { $least } or newer.
 # The field for the path to a program, and the title of the dialog that chooses it.
 settings-program-where = Where { $program } is
 settings-program-found-by-itself = Found by itself

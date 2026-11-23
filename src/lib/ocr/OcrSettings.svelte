@@ -67,6 +67,8 @@
   }
 
   const found = $derived(tools?.tesseract ?? null);
+  // Made for a newer macOS: a note, since few read scans.
+  const needs = $derived(tools?.needsNewerSystem?.tesseract);
 </script>
 
 <div class="program" data-program="tesseract">
@@ -75,6 +77,8 @@
       <span class="mark"></span>
     {:else if found}
       <span class="mark ok"><Check size={13} /></span>
+    {:else if needs}
+      <span class="mark"></span>
     {:else}
       <span class="mark"><TriangleAlert size={13} /></span>
     {/if}
@@ -88,6 +92,8 @@
           {t('ocr-settings-looking')}
         {:else if found}
           {found.path}
+        {:else if needs}
+          {t('ocr-settings-needs-newer-system', { least: needs })}
         {:else}
           {t('ocr-settings-missing')}
         {/if}
