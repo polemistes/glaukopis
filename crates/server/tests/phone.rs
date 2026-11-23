@@ -996,6 +996,28 @@ async fn a_file_a_phones_note_holds_is_kept_when_a_computer_sweeps_it_with_less_
         );
         assert!(phone.home_files().contains(&photograph), "and the server holds it");
         assert_eq!(computer.library_as_said(), phone.library_as_said());
+
+        // A file of the library that a note has come to hold as well. The
+        // computer sweeps once more, with the picture held and that file
+        // not: the mark goes off its record there, and nothing else. On the
+        // phone, whose notes hold the file, the mark stays, and it is told
+        // again though nothing was written to the phone's library by it.
+        let letter = computer.take_in("letter.txt", LETTER);
+        computer.lib().notebook_hold(std::slice::from_ref(&letter)).unwrap();
+        phone.notebook.say_held(&[photograph.clone(), letter.clone()]).unwrap();
+        settle(&[&computer, &phone]);
+        assert_eq!(phone.bytes(&letter).as_deref(), Some(LETTER), "held by a note, the file is on the phone");
+        let held: HashSet<&str> = [photograph.as_str()].into();
+        assert_eq!(computer.lib().notebook_sweep(&held).unwrap(), 0);
+        assert_eq!(computer.lib().files.get(&letter).expect("its record").notebook, None);
+        for _ in 0..2 {
+            settle(&[&computer, &phone]);
+        }
+        for device in [&phone, &computer] {
+            let mark = device.lib().files.get(&letter).expect("its record").notebook;
+            assert_eq!(mark, Some(Held::Also), "the mark is as it was on the phone, and on the computer again");
+        }
+        assert_eq!(computer.library_as_said(), phone.library_as_said());
     })
     .await;
 }

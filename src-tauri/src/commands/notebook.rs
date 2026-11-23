@@ -586,23 +586,27 @@ mod tests {
         let stored = |state: &AppState| state.library().stored_path(&hash).is_some();
         drop(state);
 
-        // Refused when the run began: nothing is swept, also where it is taken again meanwhile.
+        // Refused when the run began, and taken again before the sweep is
+        // asked for: the notes of others have just come to the disk, and
+        // the page that asks may have read the notebook before they did.
         keep("true");
         let state = open();
         assert!(state.notebook_refused);
-        assert_eq!(sweep(&state, &[]).unwrap(), 0);
-        assert!(stored(&state), "the file is still in the store");
         keep("false");
         assert_eq!(sweep(&state, &[]).unwrap(), 0);
-        assert!(stored(&state));
+        assert!(stored(&state), "the file is still in the store");
         drop(state);
 
-        // Refused in the run, after it began.
+        // Refused in the run, after it began: nothing is swept when it is
+        // asked for, nor later in the run, when it is taken again.
         let state = open();
         assert!(!state.notebook_refused);
         keep("true");
         assert_eq!(sweep(&state, &[]).unwrap(), 0);
         assert!(stored(&state), "nor where it is refused when the sweep is asked for");
+        keep("false");
+        assert_eq!(sweep(&state, &[]).unwrap(), 0);
+        assert!(stored(&state), "nothing is swept in such a run");
         drop(state);
 
         // The same folder without that: the file no note holds leaves the store.
