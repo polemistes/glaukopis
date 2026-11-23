@@ -43,6 +43,14 @@ describe('the places of the phone', () => {
     expect(leave).not.toHaveBeenCalled();
   });
 
+  it('make no second step where the place shown is gone to again', () => {
+    places.go({ at: 'settings' });
+    places.go({ at: 'settings' });
+    expect(places.depth).toBe(2);
+    places.back();
+    expect(places.current).toEqual({ at: 'notes' });
+  });
+
   it('close a sheet at Back, and the place stays', () => {
     places.go({ at: 'note', note: 'n1' });
     const sheet = opened();

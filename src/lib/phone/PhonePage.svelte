@@ -93,8 +93,10 @@
 
   // ---- in front and not ----
 
-  /** What is written before the app leaves the front; done before it comes back. */
-  let leaving: Promise<void> | null = null;
+  /** Whether the app has left the front. */
+  let away = false;
+  /** What is done as the app leaves the front and comes back, one after another, so that the engine is told in the order it happened. */
+  let turns: Promise<void> = Promise.resolve();
 
   /**
    * The app leaves the front: what is not yet written of the notebook, the
@@ -102,8 +104,9 @@
    * Android may end the app at any moment after.
    */
   function leave() {
-    if (leaving) return;
-    leaving = (async () => {
+    if (away) return;
+    away = true;
+    turns = turns.then(async () => {
       const nb = theNotebook.current;
       await nb?.flush().catch((error) => console.warn('The notebook was not written', error));
       await settings.flush().catch((error) => console.warn('The settings were not written', error));
@@ -111,27 +114,26 @@
       await syncFront(false).catch((error) =>
         console.warn('The synchronization was not told the app left the front', error),
       );
-    })();
+    });
   }
 
   /** The app comes back to the front: the engine told, the inbox taken in, the pictures not here tried again. */
-  async function come() {
-    if (!leaving) return;
-    const left = leaving;
-    await left;
-    if (leaving !== left) return;
-    leaving = null;
-    syncFront(true).catch((error) =>
-      console.warn('The synchronization was not told the app is in front', error),
-    );
-    void takeInbox();
-    void pictures.again();
+  function come() {
+    if (!away) return;
+    away = false;
+    turns = turns.then(async () => {
+      await syncFront(true).catch((error) =>
+        console.warn('The synchronization was not told the app is in front', error),
+      );
+      void takeInbox();
+      void pictures.again();
+    });
   }
 
   onMount(() => {
     const onvisibility = () => {
       if (document.visibilityState === 'hidden') leave();
-      else void come();
+      else come();
     };
     document.addEventListener('visibilitychange', onvisibility);
     window.addEventListener('pagehide', leave);

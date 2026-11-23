@@ -23,6 +23,11 @@ type Step = { place: Place } | { close: () => void };
 
 const NOTES: Place = { at: 'notes' };
 
+/** Whether two places are the same: the same note, or the same of the others. */
+function samePlace(a: Place, b: Place): boolean {
+  return a.at === b.at && (a.at !== 'note' || (b.at === 'note' && a.note === b.note));
+}
+
 /** Whether the page is on Android, where Back is the system's and the app can be put behind. */
 function onAndroid(): boolean {
   return (
@@ -51,8 +56,10 @@ class Places {
     });
   }
 
-  /** Goes to a place, a step that Back takes back. */
+  /** Goes to a place, a step that Back takes back; none where it is the place shown, pressed twice. */
   go(place: Place): void {
+    const last = this.#steps[this.#steps.length - 1];
+    if (last && 'place' in last && samePlace(last.place, place)) return;
     this.#steps.push({ place });
     this.#shown();
   }
