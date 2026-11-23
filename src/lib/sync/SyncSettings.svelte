@@ -116,6 +116,13 @@
     ),
   );
   const refused = $derived(status?.state === 'refused');
+  /**
+   * Stopped for a later form, until the application is updated: the engine
+   * says what is needed as the problem, and makes no round, so none is
+   * offered. The devices are still told and taken out, and the device can
+   * still leave.
+   */
+  const outdated = $derived(status?.state === 'outdated');
 
   // The devices, while it is on and they are not yet known: asked once
   // more where they could not be told. It depends on whether it is on and
@@ -135,7 +142,7 @@
     if (!status) return '';
     if (status.state === 'working') return t('sync-working');
     if (status.state === 'offline') return t('sync-offline');
-    if (status.state === 'refused') return t('sync-refused');
+    if (status.state === 'refused' || status.state === 'outdated') return t('sync-refused');
     return status.last ? t('sync-last', { when: ago(status.last) }) : t('sync-never');
   });
   const well = $derived(status?.state === 'idle' && !status.problem && !!status.last);
@@ -358,7 +365,7 @@
           {/if}
         </div>
       </div>
-      {#if !refused}
+      {#if !refused && !outdated}
         <div class="buttons">
           <Button
             size="sm"

@@ -31,6 +31,8 @@ sync-last = Last synchronized { $when }
 sync-never = Not synchronized yet
 sync-offline = The server cannot be reached. What is written here is kept, and sent when it can be.
 sync-refused = Synchronization has stopped on this device
+# The line over the notes of a phone whose app is older than the form of something that is synchronized: the synchronization has stopped on it until the app is updated. The words are the owner's, and the core says the same in the settings (core-sync-update-needed).
+sync-outdated = Update is needed for synchronization.
 sync-now = Synchronize now
 sync-computers = Devices
 sync-this-computer = { $name } (this device)

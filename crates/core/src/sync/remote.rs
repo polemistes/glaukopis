@@ -156,6 +156,22 @@ fn framed(head: &Value, changes: &[&[u8]]) -> Vec<u8> {
     out
 }
 
+/// Whether a server's refusal to take a file says that the home has not
+/// room for it. The server says so as it says that a file is too large
+/// (413 `too-large`), and only its words tell the two apart: the test of
+/// the server in `crates/server/tests/full_home.rs` holds them to be the
+/// words read here. A refusal named `full`, and the status 507, which says
+/// the same of any server, are taken so too. What a proxy answers of its
+/// own (502, 503, 504) is the network's, and is none of this.
+fn no_room(status: u16, body: &[u8]) -> bool {
+    let value: Value = serde_json::from_slice(body).unwrap_or(Value::Null);
+    let named = value.get("error").and_then(Value::as_str);
+    let message = value.get("message").and_then(Value::as_str).unwrap_or("");
+    status == 507
+        || named == Some("full")
+        || (named == Some("too-large") && message.starts_with("there is not room for the file"))
+}
+
 /// The head of an answer and what follows it.
 fn unframed(body: &[u8]) -> Option<(Value, &[u8])> {
     let length = u32::from_le_bytes(body.get(..4)?.try_into().ok()?) as usize;
@@ -268,10 +284,30 @@ impl<'a> Home<'a> {
         self.remote.files_in(&self.path(""), &self.token)
     }
 
-    /// Sends a file of the store under its hash, from the disk as it is read.
+    /// The most the files of the home may hold together, where the server
+    /// says it: asked before a file is sent, with what the home holds
+    /// (`files`), so that one that does not fit is not sent at all.
+    pub fn holds_at_most(&self) -> Result<Option<u64>> {
+        Ok(self.ask("GET", "", None)?.get("maxHomeBytes").and_then(Value::as_u64))
+    }
+
+    /// Sends a file of the store under its hash, from the disk as it is
+    /// read. A home that has not room for it refuses as `full`, whatever
+    /// the server called its refusal (`no_room`).
     pub fn send_file(&self, hash: &str, path: &Path) -> Result<()> {
         let answer = self.client.send_file(&self.remote.file_url(&self.path(""), hash), &self.token, path)?;
-        if (200..300).contains(&answer.status) { Ok(()) } else { Err(self.remote.refusal(answer.status, &answer.body)) }
+        if (200..300).contains(&answer.status) {
+            return Ok(());
+        }
+        let refusal = self.remote.refusal(answer.status, &answer.body);
+        if no_room(answer.status, &answer.body) {
+            let message = match refusal {
+                Error::Refused { message, .. } => message,
+                other => other.to_string(),
+            };
+            return Err(Error::Refused { kind: "full", message });
+        }
+        Err(refusal)
     }
 
     /// Fetches a file the home holds into `into`, which writes to the file
@@ -309,5 +345,27 @@ mod tests {
         );
         assert_eq!(unframed(&[9, 0, 0, 0, b'{']), None, "cut short");
         assert_eq!(unframed(&[2, 0, 0, 0, b'n', b'o']), None, "no head");
+    }
+
+    #[test]
+    fn a_home_without_room_is_told_from_a_file_too_large_and_from_a_proxy_that_answers_for_the_server() {
+        let said = |error: &str, message: &str| json!({ "error": error, "message": message }).to_string().into_bytes();
+        // As the server says it today: a file too large by its name, and no room by its words.
+        let full =
+            "there is not room for the file: the files of a home may hold 10 GB together at the most on this server";
+        assert!(no_room(413, &said("too-large", full)));
+        let large = "the file is larger than this server takes: one file may hold 512 MB at the most";
+        assert!(!no_room(413, &said("too-large", large)));
+        // By its name, and by the status that says it of any server.
+        assert!(no_room(507, &said("full", "whatever a later server says")));
+        assert!(no_room(413, &said("full", "")));
+        assert!(no_room(507, b"<html>Insufficient Storage</html>"));
+        // What a proxy answers when the server behind it closed the connection is the network's.
+        for status in [502, 503, 504] {
+            assert!(!no_room(status, b"<html>Bad Gateway</html>"), "{status}");
+            assert!(!no_room(status, b""), "{status}");
+        }
+        assert!(!no_room(413, b"<html>Request Entity Too Large</html>"), "a proxy that takes less than the server");
+        assert!(!no_room(401, &said("not-admitted", "the token is not valid for this home")));
     }
 }

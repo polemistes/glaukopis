@@ -29,6 +29,8 @@ sync-last = Sist synkronisert { $when }
 sync-never = Ikke synkronisert ennå
 sync-offline = Serveren kan ikke nås. Det som skrives her, tas vare på og sendes når det går.
 sync-refused = Synkroniseringen har stoppet på denne enheten
+# Linjen over notatene på en telefon der appen er eldre enn formen på noe av det som synkroniseres: synkroniseringen har stoppet der til appen er oppdatert. Ordene er eierens, og kjernen sier det samme i innstillingene (core-sync-update-needed).
+sync-outdated = Oppdatering trengs for synkronisering.
 sync-now = Synkroniser nå
 sync-computers = Enheter
 sync-this-computer = { $name } (denne enheten)

@@ -109,6 +109,10 @@ pub struct Library {
     missing: elsewhere::Missing,
     /// How many times its files were written in this run (`elsewhere::writes`).
     writes: std::cell::Cell<u64>,
+    /// The files the notebook held, alone or beside the library, when the
+    /// library was opened, less those a note was given since: what the
+    /// sweep of a run judges (`notebook_sweep_of_run`).
+    notebook_before: std::collections::HashSet<String>,
 }
 
 impl Library {
@@ -138,8 +142,13 @@ impl Library {
             damaged: elsewhere::Damaged::default(),
             missing: elsewhere::Missing::default(),
             writes: std::cell::Cell::new(0),
+            notebook_before: std::collections::HashSet::new(),
         };
         library.load()?;
+        // As the record says it now, when the run begins: not read again
+        // with the files (`refresh`), which this run writes into.
+        library.notebook_before =
+            library.files.files().iter().filter(|r| r.notebook.is_some()).map(|r| r.hash.clone()).collect();
         Ok(library)
     }
 

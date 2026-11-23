@@ -5,6 +5,8 @@
 //! it out. The library that removes a file the notebook holds removes it
 //! from its lists alone; the notebook says, once in a run, which files its
 //! notes hold, and those it held alone that no note holds leave the store.
+//! That is said of the files the notebook held when the run began: what a
+//! note is given in the run is left to the next (`notebook_sweep_of_run`).
 
 use std::collections::HashSet;
 
@@ -21,11 +23,27 @@ fn is_path(origin: &str) -> bool {
 }
 
 impl Library {
+    /// A note was given this file in this run, whatever the record said
+    /// before: the sweep of this run judges neither it, nor the file it
+    /// was made from, nor any made from it (`notebook_sweep_of_run`). A
+    /// figure shows a copy of its image, and a note may name either: were
+    /// only the one it names left out, the other would go, by a list read
+    /// before the note was there.
+    fn given_to_a_note(&mut self, hash: &str) {
+        self.notebook_before.remove(hash);
+        let source = self.files.get(hash).and_then(|r| r.made_from.clone());
+        let copies = self.files.files().iter().filter(|r| r.made_from.as_deref() == Some(hash)).map(|r| r.hash.clone());
+        for with in copies.chain(source).collect::<Vec<_>>() {
+            self.notebook_before.remove(&with);
+        }
+    }
+
     /// Enters a file of the store that a note has come to hold: one the
     /// record does not know is the notebook's alone, in no folder; one the
     /// library has is held beside it. Whether the record changed.
     fn enter_held(&mut self, stored: &str, origin: Option<&str>) -> bool {
         let Some(hash) = attachments::hash_of_path(stored) else { return false };
+        self.given_to_a_note(hash);
         let known = self.files.get(hash).map(|r| r.notebook);
         // A path that moved is brought up to date; nothing else of a known one.
         let changed = self.files.record(stored, None, origin, &now());
@@ -103,6 +121,7 @@ impl Library {
             && copy.notebook.is_none()
         {
             copy.notebook = Some(Held::Also);
+            self.notebook_before.remove(&shown.hash);
             self.save_files()?;
             return Ok(self.file_view(&shown.hash));
         }
@@ -122,6 +141,7 @@ impl Library {
     pub fn notebook_hold(&mut self, hashes: &[String]) -> Result<()> {
         let mut changed = false;
         for hash in hashes {
+            self.given_to_a_note(hash);
             if let Ok(file) = self.files.get_mut(hash)
                 && file.notebook.is_none()
             {
@@ -180,7 +200,37 @@ impl Library {
     /// beside it. A file is held where a note holds it, where it is the file
     /// one that a note holds was made from, or where it was made from one: a
     /// figure shows a copy of its image. Gives how many files left the store.
+    ///
+    /// This judges every file, and is the rule. A run of the application
+    /// sweeps by `notebook_sweep_of_run`, which judges fewer.
     pub fn notebook_sweep(&mut self, held: &HashSet<&str>) -> Result<usize> {
+        self.sweep(held, None)
+    }
+
+    /// The sweep as a run of the application makes it: `notebook_sweep`,
+    /// which judges only the files the notebook held when the library was
+    /// opened, and of those none that a note was given since.
+    ///
+    /// `held` is what the notes held when the page read the notebook, and
+    /// the sweep is done some time after: both wait for the library, and
+    /// neither is first by any rule. A file that became the notebook's
+    /// meanwhile is in no such list, whichever way it came: taken out of
+    /// the inbox as the application starts, pasted or dropped into a note
+    /// in its first moments, or written into the record by what another
+    /// device said. Judged by the list, it would leave the store while a
+    /// note holds it, and one taken out of the inbox is nowhere else. So
+    /// what this run made the notebook's is left to the sweep of the next
+    /// run, whose list is read after it.
+    pub fn notebook_sweep_of_run(&mut self, held: &HashSet<&str>) -> Result<usize> {
+        let before = std::mem::take(&mut self.notebook_before);
+        let swept = self.sweep(held, Some(&before));
+        self.notebook_before = before;
+        swept
+    }
+
+    /// What `notebook_sweep` does, of the files in `judged` alone where
+    /// that is given: no other leaves the store or loses its mark.
+    fn sweep(&mut self, held: &HashSet<&str>, judged: Option<&HashSet<String>>) -> Result<usize> {
         let sources: HashSet<&str> = self
             .files
             .files()
@@ -196,9 +246,10 @@ impl Library {
         let mut gone: Vec<FileRecord> = Vec::new();
         let mut marks: Vec<(String, Option<Held>)> = Vec::new();
         for r in self.files.files() {
+            let judged = judged.is_none_or(|judged| judged.contains(&r.hash));
             match (r.notebook, kept(r)) {
-                (Some(Held::Only), false) => gone.push(r.clone()),
-                (Some(Held::Also), false) => marks.push((r.hash.clone(), None)),
+                (Some(Held::Only), false) if judged => gone.push(r.clone()),
+                (Some(Held::Also), false) if judged => marks.push((r.hash.clone(), None)),
                 (None, true) if held.contains(r.hash.as_str()) => marks.push((r.hash.clone(), Some(Held::Also))),
                 _ => {}
             }
@@ -493,6 +544,87 @@ mod tests {
         assert_eq!(lib.notebook_sweep(&none).unwrap(), 3);
         assert_eq!(listed(&lib), ["theirs.pdf", "lent.pdf"]);
         assert!(lib.files.files().iter().all(|f| f.notebook.is_none()));
+    }
+
+    #[test]
+    fn the_sweep_of_a_run_judges_what_the_notebook_held_when_the_run_began_and_nothing_a_note_was_given_since() {
+        let tmp = tempfile::tempdir().unwrap();
+        let dir = tmp.path().join("library");
+        // The run before: two files the notebook holds alone, and one of the library that a note holds too.
+        let (old, again, lent) = {
+            let mut lib = Library::open_at(&dir).unwrap();
+            let taken =
+                store(&lib, &[write(tmp.path(), "old.pdf", b"%PDF o"), write(tmp.path(), "again.pdf", b"%PDF a")]);
+            let ours = lib.notebook_take(&taken).unwrap();
+            let lent = lib.enter_taken(&store(&lib, &[write(tmp.path(), "lent.pdf", b"%PDF l")]), None).unwrap().files;
+            lib.notebook_hold(std::slice::from_ref(&lent[0].hash)).unwrap();
+            (ours[0].hash.clone(), ours[1].hash.clone(), lent[0].hash.clone())
+        };
+
+        // This run. Before the sweep comes to the library: a picture is taken
+        // out of the inbox; a file the notebook held already is given to a
+        // note anew; a file of the library is dropped into a note.
+        let mut lib = Library::open_at(&dir).unwrap();
+        let arrived = lib.notebook_take_image("region.png", &figures::fixtures::PNG).unwrap().hash;
+        lib.notebook_take(&store(&lib, &[write(tmp.path(), "again.pdf", b"%PDF a")])).unwrap();
+        let theirs = lib.enter_taken(&store(&lib, &[write(tmp.path(), "theirs.pdf", b"%PDF t")]), None).unwrap().files;
+        let theirs = theirs[0].hash.clone();
+        lib.notebook_hold(std::slice::from_ref(&theirs)).unwrap();
+
+        // The sweep, by the list the page read before any of that: no note holds anything.
+        let none = HashSet::new();
+        assert_eq!(lib.notebook_sweep_of_run(&none).unwrap(), 1, "the file whose note was deleted before the run");
+        assert!(lib.files.get(&old).is_none(), "its record is gone");
+        assert!(on_disk(&lib, &arrived), "what came in this run is in the store");
+        assert_eq!(mark(&lib, &arrived), Some(Held::Only), "and its record says the notebook holds it");
+        assert!(on_disk(&lib, &again), "what a note was given anew stays, though the notebook held it before");
+        assert_eq!(mark(&lib, &theirs), Some(Held::Also), "a mark set in this run stays");
+        assert_eq!(mark(&lib, &lent), None, "a mark of the run before, of a file no note holds, is taken off");
+        assert_eq!(lib.notebook_sweep_of_run(&none).unwrap(), 0, "nothing more, asked again");
+
+        // The next run reads its list after all of it, and judges it: what no note holds then goes.
+        drop(lib);
+        let mut lib = Library::open_at(&dir).unwrap();
+        let held: HashSet<&str> = [arrived.as_str()].into_iter().collect();
+        assert_eq!(lib.notebook_sweep_of_run(&held).unwrap(), 1, "the file given anew, which no note holds now");
+        assert!(on_disk(&lib, &arrived) && lib.files.get(&again).is_none());
+        assert_eq!(mark(&lib, &theirs), None);
+    }
+
+    #[test]
+    fn a_picture_given_to_a_note_anew_keeps_the_copy_a_figure_shows_of_it_and_a_copy_given_anew_keeps_its_picture() {
+        let tmp = tempfile::tempdir().unwrap();
+        let dir = tmp.path().join("library");
+        let plate = write(tmp.path(), "plate.gif", &gif());
+        // The run before: a picture and the copy a figure shows of it, both the notebook's alone.
+        let (picture, copy) = {
+            let mut lib = Library::open_at(&dir).unwrap();
+            let picture = lib.notebook_take(&store(&lib, std::slice::from_ref(&plate))).unwrap()[0].hash.clone();
+            let copy = lib.notebook_shown(&picture).unwrap().unwrap().hash;
+            assert_ne!(picture, copy);
+            (picture, copy)
+        };
+        let none = HashSet::new();
+
+        // Their note was deleted. In this run, before the sweep comes to the
+        // library, a note is given the picture anew: its figure shows the copy.
+        let mut lib = Library::open_at(&dir).unwrap();
+        lib.notebook_take(&store(&lib, std::slice::from_ref(&plate))).unwrap();
+        assert_eq!(lib.notebook_shown(&picture).unwrap().unwrap().hash, copy);
+        assert_eq!(lib.notebook_sweep_of_run(&none).unwrap(), 0, "by a list read before the note was there");
+        assert!(on_disk(&lib, &picture) && on_disk(&lib, &copy), "the picture and the copy its figure shows");
+        drop(lib);
+
+        // And the other way: a note is given the copy, and the picture it was made from stays.
+        let mut lib = Library::open_at(&dir).unwrap();
+        lib.notebook_hold(std::slice::from_ref(&copy)).unwrap();
+        assert_eq!(lib.notebook_sweep_of_run(&none).unwrap(), 0);
+        assert!(on_disk(&lib, &picture) && on_disk(&lib, &copy));
+        drop(lib);
+
+        // Given to no note in a run, both go.
+        let mut lib = Library::open_at(&dir).unwrap();
+        assert_eq!(lib.notebook_sweep_of_run(&none).unwrap(), 2);
     }
 
     #[test]
