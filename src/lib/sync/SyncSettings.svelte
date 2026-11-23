@@ -1,10 +1,16 @@
 <script lang="ts">
   /**
    * Synchronization in the settings (record 0120): turned on once for this
-   * computer, by starting on a server or by joining with a code made on
-   * another computer; and, while it is on, how it stands, the computers,
-   * a code for one more, and leaving. What the server cannot be asked is
-   * said where it was asked.
+   * device, by starting on a server or by joining with a code made on
+   * another device; and, while it is on, how it stands, the devices, a code
+   * for one more, and leaving. What the server cannot be asked is said where
+   * it was asked.
+   *
+   * The one section for a computer and for a phone (record 0122): `takes`
+   * says what the device takes of what is synchronized, as the engine names
+   * it. A phone takes the notes (and the references of the library without
+   * their files), and says so in its own words; it is made to fit a narrow
+   * page, from 320 pixels.
    */
   import { onMount, untrack } from 'svelte';
   import Check from '@lucide/svelte/icons/check';
@@ -12,7 +18,7 @@
   import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
   import { isBackendError } from '$lib/api/backend';
   import { sharingServer, type ServerInfo } from '$lib/api/sharing';
-  import { syncComputer, type SyncDevice } from '$lib/api/sync';
+  import { syncDevice, type SyncDevice } from '$lib/api/sync';
   import { languages, t } from '$lib/i18n';
   import { settings } from '$lib/state/settings.svelte';
   import Button from '$lib/ui/Button.svelte';
@@ -25,6 +31,8 @@
   import { ago } from '$lib/util/time';
   import { apart, PLACE } from '$lib/util/words';
   import { sync } from './sync.svelte';
+
+  let { takes = 'everything' }: { takes?: 'everything' | 'notes' } = $props();
 
   const status = $derived(sync.status);
 
@@ -45,13 +53,13 @@
 
   onMount(() => {
     void sync.follow();
-    // The computers are asked of the server each time the section is shown.
+    // The devices are asked of the server each time the section is shown.
     sync.home = null;
     sync.homeProblem = null;
     // A code that can no longer be used is not shown again.
     if (sync.code && sync.code.expires * 1000 <= Date.now()) sync.code = null;
-    // The name the system gives this computer is offered; the writer may change it before it is sent.
-    syncComputer()
+    // The name the system gives this device is offered; the writer may change it before it is sent.
+    syncDevice()
       .then((given) => {
         if (!name) name = given;
       })
@@ -109,7 +117,7 @@
   );
   const refused = $derived(status?.state === 'refused');
 
-  // The computers, while it is on and they are not yet known: asked once
+  // The devices, while it is on and they are not yet known: asked once
   // more where they could not be told. It depends on whether it is on and
   // on what is known of them; the asking is read untracked.
   $effect(() => {
@@ -155,7 +163,7 @@
         })
       : '',
   );
-  // The name of the choice the other computer makes is in italics, where the language puts it.
+  // The name of the choice the other device makes is in italics, where the language puts it.
   const [beforeJoin, afterJoin] = $derived(
     apart(t('sync-code-hint', { join: PLACE, until: until })),
   );
@@ -205,11 +213,18 @@
   }
 
   async function stop() {
-    // Whether this is the only computer is known where the server could be asked.
+    // Whether this is the only device is known where the server could be asked;
+    // where it could not, the question is the usual one. The last device that
+    // takes the notes only, a phone, takes off the server the projects and the
+    // files of the library it never held: that is said before it is asked.
     const alone = !!sync.home && sync.home.devices.length <= 1;
     const ok = await confirm({
       title: t('sync-stop-title'),
-      message: alone ? t('sync-stop-message-alone') : t('sync-stop-message'),
+      message: !alone
+        ? t('sync-stop-message')
+        : takes === 'notes'
+          ? t('sync-stop-message-alone-notes')
+          : t('sync-stop-message-alone'),
       confirm: t('sync-stop-confirm'),
       danger: true,
     });
@@ -229,12 +244,14 @@
   }
 </script>
 
-<section class="sync" data-synchronization={status?.state ?? ''}>
+<section class="sync" data-synchronization={status?.state ?? ''} data-sync-takes={takes}>
   <h2>{t('sync-title')}</h2>
   {#if !status}
     <div class="waiting"><Spinner size={16} /></div>
   {:else if !status.on}
-    <p class="about">{t('sync-about')}</p>
+    <p class="about" data-sync-about>
+      {takes === 'notes' ? t('sync-about-notes') : t('sync-about')}
+    </p>
     <form
       class="setup"
       onsubmit={(e) => {
@@ -248,8 +265,11 @@
           label={t('sync-server')}
           name="sync-server"
           placeholder="glaukopis.example.org"
+          inputmode="url"
           spellcheck="false"
           autocapitalize="off"
+          autocorrect="off"
+          autocomplete="off"
           error={serverProblem}
           oninput={() => {
             found = null;
@@ -266,6 +286,7 @@
           label={t('sync-computer-name')}
           name="sync-name"
           spellcheck="false"
+          autocomplete="off"
         />
       </div>
       <div class="how">
@@ -301,6 +322,8 @@
               placeholder="XXXX-XXXX-XXXX"
               spellcheck="false"
               autocapitalize="characters"
+              autocorrect="off"
+              autocomplete="off"
               error={codeProblem}
               oninput={() => (codeProblem = null)}
             />
@@ -440,8 +463,12 @@
 {/if}
 
 <style>
-  /* A section of the settings, as the others there are drawn. */
+  /* A section of the settings, as the others there are drawn. It is the
+     container of what is made to fit below, which asks how wide the section
+     is, not the window: the same section stands in the settings of a
+     computer and on a phone's page. */
   .sync {
+    container: sync / inline-size;
     display: flex;
     flex-direction: column;
     gap: 14px;
@@ -523,6 +550,7 @@
     color: var(--ink-3);
     font-size: var(--text-sm);
     line-height: 1.5;
+    overflow-wrap: anywhere;
   }
   /* What the core says may be several sentences, a line each. */
   .problem {
@@ -565,14 +593,45 @@
   }
   .code {
     flex: 1;
+    min-width: 0;
     font-family: var(--font-mono);
     font-size: 19px;
     font-weight: 600;
     letter-spacing: 0.06em;
+    overflow-wrap: anywhere;
     user-select: all;
   }
   .waiting {
     display: flex;
     padding: 6px 0;
+  }
+
+  /* Where the section is narrower than 520 pixels, as on a phone: the
+     fields one under another, the name of a device over its buttons, and
+     what is pressed at least 44 pixels high and wide, for a finger. The
+     fields and the buttons of ui/ read their height from --control-h; the
+     small buttons and the segmented control have a height of their own,
+     which a least height here overrides. */
+  @container sync (width < 520px) {
+    .sync > * {
+      --control-h: 44px;
+    }
+    .fields {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .sync :global(.button) {
+      min-width: 44px;
+      min-height: 44px;
+    }
+    .sync :global(.segmented button) {
+      min-height: 44px;
+    }
+    li {
+      flex-wrap: wrap;
+      row-gap: 2px;
+    }
+    li .what {
+      flex: 1 1 100%;
+    }
   }
 </style>
