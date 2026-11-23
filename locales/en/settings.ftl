@@ -8,7 +8,7 @@ settings-error-fonts = The fonts of this computer could not be listed
 settings-error-templates = The document types could not be listed
 # A damaged file of settings was renamed and left beside where it was; $path is where it is now.
 settings-set-aside = The settings could not be read, and are set aside as { $path }; the defaults are used
-settings-set-aside-person = The settings could not be read, and are set aside as { $path }; the defaults are used, and this computer is a new person in the history of projects
+settings-set-aside-person = The settings could not be read, and are set aside as { $path }; the defaults are used, and this device is a new person in the history of projects
 
 ## Appearance
 

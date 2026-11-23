@@ -7,7 +7,7 @@ settings-error-save = Innstillingene kunne ikke lagres
 settings-error-fonts = Skriftene på denne datamaskinen kunne ikke listes opp
 settings-error-templates = Dokumenttypene kunne ikke listes opp
 settings-set-aside = Innstillingene kunne ikke leses, og er lagt til side som { $path }; standardinnstillingene brukes
-settings-set-aside-person = Innstillingene kunne ikke leses, og er lagt til side som { $path }; standardinnstillingene brukes, og denne datamaskinen er en ny person i historikken til prosjektene
+settings-set-aside-person = Innstillingene kunne ikke leses, og er lagt til side som { $path }; standardinnstillingene brukes, og denne enheten er en ny person i historikken til prosjektene
 
 ## Utseende
 

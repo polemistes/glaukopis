@@ -41,20 +41,20 @@ core-sharing-file-too-large = The file is larger than this server takes: one fil
 core-sharing-project-full = There is not room for the file: the files of one project may hold { $most } together at the most on this server.
 
 ## What the server refuses of the synchronization of a writer's own
-## computers, which it keeps together as what it calls a home.
+## devices, which it keeps together as what it calls a home.
 
-core-sharing-no-home = The server no longer keeps what these computers synchronize.
+core-sharing-no-home = The server no longer keeps what these devices synchronize.
 # The texts of a project, the notebook or the library use something this version does not know.
-core-sharing-later = Something was written on another computer by a later version of Glaukopis. Bring this one up to date to synchronize it.
-core-sharing-home-not-admitted = The server no longer lets this computer in: it may have been removed from those that are synchronized.
-core-sharing-home-full = The server synchronizes the computers of as many writers as it is set to.
-core-sharing-many-computers = Sixteen computers are synchronized already, which is the most; remove one first.
+core-sharing-later = Something was written on another device by a later version of Glaukopis. Bring this one up to date to synchronize it.
+core-sharing-home-not-admitted = The server no longer lets this device in: it may have been removed from those that are synchronized.
+core-sharing-home-full = The server synchronizes the devices of as many writers as it is set to.
+core-sharing-many-computers = Sixteen devices are synchronized already, which is the most; remove one first.
 core-sharing-many-codes = There are five open codes already; withdraw one.
-core-sharing-no-computer = There is no such computer among those that are synchronized.
-core-sharing-no-computer-name = The computer has no name.
+core-sharing-no-computer = There is no such device among those that are synchronized.
+core-sharing-no-computer-name = The device has no name.
 core-sharing-bad-kind = The kind of a document is one to sixteen small letters.
 core-sharing-bad-document = The id of the document is not one the server can use.
-core-sharing-many-documents = The server keeps as many documents for these computers as it may.
+core-sharing-many-documents = The server keeps as many documents for these devices as it may.
 core-sharing-not-an-exchange = The server could not read what was sent.
 core-sharing-unreadable-change = A change that was sent could not be read.
 core-sharing-document-too-large = A project, the notebook or the library would be larger than this server keeps.

@@ -57,7 +57,7 @@ notebook-arrived-many = { $count ->
 notebook-org-first-box = Usortert
 
 notebook-file-open-named = Åpne { $name }
-notebook-file-not-here = Filen er ikke på denne datamaskinen
+notebook-file-not-here = Filen er ikke på denne enheten
 
 notebook-files-not-taken = Noen filer kunne ikke tas inn
 

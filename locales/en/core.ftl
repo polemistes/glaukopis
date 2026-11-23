@@ -57,7 +57,7 @@ network-wait = { $host } asks us to wait before asking again
 network-status = { $host } answered with an error ({ $status })
 # $most is in megabytes.
 network-too-large = { $host } answered with more than Glaukopis takes ({ $most } MB)
-network-tls = a secure connection to { $host } could not be made: its certificate may not be trusted on this computer, or something between them, such as a proxy or a firewall, is in the way
+network-tls = a secure connection to { $host } could not be made: its certificate may not be trusted on this device, or something between them, such as a proxy or a firewall, is in the way
 network-redirects = { $host } sent the question on from one address to another too many times
 network-stalled = the answer of { $host } stopped coming
 network-not-understood = { $host } answered in a way that could not be understood

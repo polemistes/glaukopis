@@ -168,6 +168,12 @@ language would use, not a transliteration of the English.
 - **settings** — the application's settings.
 - **data directory** — the folder on the computer where Glaukopis keeps
   the writer's things.
+- **device** — one of the writer's computers or phones that are
+  synchronized with each other (the owner's word, 2026-11-22). The words of
+  the synchronization say *device*, never *computer*, since a phone is one;
+  the one sentence that says what is the same on each (*the same on each of
+  your computers*) is of computers alone. Bokmål *enhet* (Bokmål has no
+  glossary of its own: it is written with this one).
 
 ## Names that are not translated
 
