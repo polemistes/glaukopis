@@ -16,7 +16,6 @@ import { library } from '$lib/state/library.svelte';
 import { sync } from '$lib/sync/sync.svelte';
 import { toasts } from '$lib/ui/toast.svelte';
 import { setPhoneHooks } from './hooks';
-import { takeInbox } from './inbox';
 import PhonePage from './PhonePage.svelte';
 import { begin } from './starting';
 
@@ -46,6 +45,6 @@ export async function mountPhone(target: HTMLElement) {
   onNotices(takeNotices).catch((error) =>
     console.warn('What the core has to tell is not heard', error),
   );
-  void takeInbox();
+  // The inbox is taken in by the page, with what the Android part asked of it (`asked.ts`).
   return page;
 }
