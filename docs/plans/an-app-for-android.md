@@ -452,6 +452,240 @@ Nothing here stops the building. Two things are the owner's to say:
 1. **The words of the screen** that says the web view is too old or missing, in English and Bokmål, in the table above. They are built as written until said otherwise.
 2. **A home with only phones in it never grows smaller on its server**: a phone takes nothing off the server, so a file that no note holds any more lies there until a computer of the home makes a round. That is the rule as agreed, and the careful one. Should a phone be let take such a file off, it is one rule changed in `files::bring`, with a test.
 
+## Stage 2, in detail
+
+Written on 2026-11-23, after the code it touches was read. Where it says a file, a name or a shape, that is what is built. A builder who finds the code otherwise than it is said here stops and says so, and does not choose. Writing it corrected the plan above in five places: which parts of the notebook's interface a narrow page is made of; what the phone's commands are; that a newer version is told from stage 4 and not in the settings of this stage; the rows of this stage in *Who builds what*; and what the fifth finding of *For stage 2* says is caught.
+
+Five parts.
+
+| Part | Who | Where |
+| --- | --- | --- |
+| A. What the notes hold, kept: when a device sweeps, what is never taken from the notes, a file of the library lost; and what the engine tells the phone's page | the most capable model, as an agent in a worktree. Its diff is read once more by the most capable model, as a second agent that is given the diff and this section and not the builder's account, before it is merged | `crates/core/src/notebook.rs`, `crates/core/src/library/`, `crates/core/src/sync/`, `crates/server/tests/`, `src-tauri/src/commands/notebook.rs`, `src-tauri/src/state.rs`, `src/lib/api/notebook.ts`, `src/lib/notebook/open.svelte.ts` |
+| B. The phone's commands, Android's own, the meeting points, the running app | the main thread | `src-tauri/`, `src-phone/`, `crates/core/src/sync/mod.rs`, `crates/core/src/i18n.rs`, `src/main.ts`, `e2e/phone-role.mjs`, `e2e/android/` |
+| C. The page: its frame, the notes, finding, the filter | Opus, as an agent in a worktree | `src/lib/phone/`, `src/lib/ui/`, `src/app.css`, `e2e/phone-notes.mjs` |
+| D. A note | Opus, as an agent in a worktree | `src/lib/phone/`, `src/lib/notebook/TagsField.svelte`, `e2e/phone-note.mjs` |
+| E. The settings of the phone, and *device* for *computer* | Sonnet, as an agent in a worktree | `src/lib/phone/SettingsPlace.svelte`, `src/lib/sync/`, `locales/`, `docs/guide.md`, `e2e/phone-sync.mjs`, `e2e/synchronization.mjs` |
+
+A writer at a computer sees one thing of this stage: the words of the synchronization say *device* where they said *computer*. Nothing else of the application changes to the eye. `contract.generated.ts` changes by one field (`waiting` of the status).
+
+### Where the parts meet
+
+Before any agent begins, the main thread makes one commit on main, **the meeting points**, and every agent starts from it. It holds, for each thing one part uses of another's, a file at its path with the shape said here and a body that does the least; the part that owns the path fills it in, and no other part touches it. It also holds every word of this stage (the section *Words*), so that no agent writes into a file of words another writes into, and the test of what is shown under a pointer with the shared files brought to pass it.
+
+| What | Where | Shape | Filled in by | Used by |
+| --- | --- | --- | --- | --- |
+| The places and the page's history | `src/lib/phone/places.svelte.ts` | `type Place = { at: 'notes' } \| { at: 'note'; note: string; fresh?: boolean } \| { at: 'settings' }`; `places.current: Place` (read, reactive); `places.begin()`; `places.go(place)`; `places.back()`; `places.step(close: () => void): () => void` | C | C, D, E |
+| A note | `src/lib/phone/NoteView.svelte` | props `{ notebook: Notebook; id: string; fresh?: boolean }`; its root has `data-phone-note={id}` | D | C |
+| The settings | `src/lib/phone/SettingsPlace.svelte` | no props; its root has `data-phone-settings` | E | C |
+| The row at the top of a place | `src/lib/phone/TopBar.svelte` | props `{ title?: string; back?: boolean; children?: Snippet }`, the snippet standing at its right end; `data-phone-bar`, and the button `data-phone-back`, which calls `places.back()` | C | C, D, E |
+| A sheet from the bottom of the screen | `src/lib/phone/Sheet.svelte` | props `{ open: boolean; title?: string; onclose: () => void; children: Snippet }`; `data-phone-sheet` | C | C, D |
+| The notebook of the window | `theNotebook` of `src/lib/notebook/open.svelte.ts` | two fields more, both `true` unless set before `open()`: `readable` (whether the readable copy is written) and `sweeps` (whether the sweep is asked for) | A | C sets both `false` |
+| The status | `SyncStatus` of `src/lib/api/sync.ts` | `waiting?: boolean` in the meeting points; A makes it `waiting: boolean` with the Rust that sends it | A | C |
+| The device's name, and the app in front | `src/lib/api/sync.ts` | `syncDevice = () => call<string>('sync_device')`; `syncFront = (front: boolean) => call<void>('sync_front', { front })` | the meeting points; the Rust is B's | E; C |
+| The system's language as the page knows it | `languagesInfo` of `src/lib/api/system.ts` | `languagesInfo = (system?: string) => call<LanguagesInfo>('languages', { system: system ?? null })` | the meeting points; the Rust is B's | C |
+| The ground behind the system's bars | `window.glaukopisAndroid` | `ground(colour: string, dark: boolean): void`, `colour` as `#rrggbb`; there on Android only | B (Kotlin) | C |
+| What lies over the window | `src/lib/ui/over.ts` | `export const over: { opened: ((close: () => void) => () => void) \| null } = { opened: null }` | the meeting points; `Dialog.svelte` is taught it by C | C |
+| A picture tried again | `pictures.again()` of `src/lib/figures/pictures.svelte.ts` | `again(): Promise<void>`: what `#retry` does, to be asked from outside | C | C |
+| The hooks of the scripts | `window.__glaukopisPhone` | `{ box(name: string): string }` by C (makes a box and gives its id), and by D on the same object `picture(name: string, content64: string): Promise<void>` (puts a picture into the note in view, as a paste does). Set through `testHook` of `shell/testing.ts`; D adds its function with `Object.assign` where the object is there | C, D | the scripts |
+
+What the three page parts hold to alike:
+
+- **By finger.** Everything that is pressed is at least 44 pixels high and wide. `IconButton` is used in its usual size, never `sm`. Nothing is reached only by a long press, the right button, a double click or the pointer resting on a thing, and nothing of the three is built at all. A tooltip is not counted on: a finger never sees one.
+- **Nothing is shown under a pointer but where there is one.** Every rule that says `:hover`, in every file the phone's page draws, stands inside `@media (hover: hover)`. `src/lib/phone/hover.test.ts`, made with the meeting points, reads the style of every `.svelte` file under `src/lib/phone/` and of the shared files it names, and fails on a `:hover` outside such a block. A part that comes to draw a shared file the test does not name adds it there in its own commit and makes it pass.
+- **Nothing that holds words has a height written in pixels**: a least height, and the words decide the rest. Android makes the letters larger where the system is set so, and a row of a fixed height would cut them.
+- **One column, from 320 pixels wide.** Nothing is scrolled sideways, and nothing lies outside the window at 320.
+- **The words** are those of the notebook, the settings, the synchronization and the editor wherever one of them says it already (`notebook-new-note`, `notebook-search`, `common-delete`, `settings-theme`, …). The four that are the phone's own are in `phone.ftl`. No part adds a message: one that is missing is asked of the main thread.
+- **What is not loaded.** The phone's page imports no component of the projects, the diagram, the typesetting, the library's pane or the application's settings window, and neither `router.svelte.ts`, `projects.svelte.ts` nor `changes.svelte.ts`: their commands are not the phone's.
+- **For the scripts**, each thing a script presses or reads has an attribute `data-phone-…`, named in the part's account of itself.
+
+### A. What the notes hold, kept
+
+Read before building: `crates/core/src/library/notebook.rs` (the sweep) and `mod.rs` (`load`, `load_files`, `remove_files`, `take_damaged`); `crates/core/src/notebook.rs` (`held`); `crates/core/src/sync/library.rs` (`Records`, `kept_for_notes`, `take_back`, `put_back`), `mirror.rs`, `engine.rs`, `files.rs`, `kept.rs`; `src-tauri/src/commands/notebook.rs` and `state.rs`; `src/lib/notebook/open.svelte.ts`, `model/notebook.svelte.ts` (`summary`, `applyFromWindow`) and `src/lib/project/model/saving.svelte.ts`; the five findings of *For stage 2*; the tests of `crates/server/tests/phone.rs` and `synchronized_library.rs`.
+
+**What is at stake.** A file a note holds lies in the library's store, and its record says so (`only`, `also`). The sweep takes out what the notebook held alone and no note holds, and takes the mark off what the library has too. A sweep judged against less of the notebook than there is takes out the file of a note it does not know, and the home is told that the record went. A device whose notes hold the file keeps it and tells it again (`kept_for_notes`), by what its page last said the notes hold (`Notebook::held`). Two things were weak in that: when a device may sweep, and how true `held` is. And a mark taken off by mistake left the file open to be deleted: the library that removes a file with no mark deletes it, and a holder whose record lost the mark first deleted it too. A phone raises the stakes of all three: it starts many times a day, each start a first reading of the notebook beside a round under way, and the pictures taken on it are often on no other device yet.
+
+**Decided.**
+
+1. **A phone does not sweep.** A sweep on a phone, started many times a day, would be answered each time by a computer that holds the notebook without having it open: such a computer knows what its notes hold only as its page last said, keeps the file, and tells it again; the picture then goes off the server and comes back at every start of the app, over the phone's network. To stop that, the core would have to read from the notebook's bytes which files the notes hold, and that is a second reading of the notebook's document, which this plan does not make. So `notebook_sweep` is not among the phone's commands, and the phone's page does not ask for it (`theNotebook.sweeps`). What it costs: the files of notes that were deleted, or that a computer swept, stay on the phone, where they take room and are seen nowhere. Nothing is lost by it.
+2. **A device whose notebook was refused does not sweep.** The engine keeps whether the last exchange of the notebook was refused (a later form, too large, not readable here: whatever makes `round` say `core-sync-problem-notebook`), in `sync/notebook-refused.json`. Where that was so when the run began, or is so when the sweep is asked for, nothing is swept in the run. Both are asked: a refusal that has just ended has brought the notes to the disk, and the page that asks may have read the notebook before they came.
+3. **Such a device goes on mirroring the records of the notes' files**, both ways, as it does today. Leaving them out of the mirror would make it forget what it agreed on with the home, and it would tell all of them as its own once the refusal ended; that is the riskier change. What follows is borne: the records of notes it cannot read arrive, and on a phone their files with them; the records of files that its own unsent notes hold are told, and a computer that sweeps one of those is answered by the next rule.
+4. **What the notes here hold is never taken from this device by what another device said.** In `Records::write`, by `held`: where a record is said to be gone and the notes here hold the file, the file is left to the notebook whatever its mark says (it is given the mark first, as `notebook_hold` gives it, and the library's own rule then keeps it), and it is told again, as now. Where the mark alone is said to be gone and the notes here hold the file, the mark stays as it is here and is told again.
+5. **What the notes hold is said when it changes**, and not only when the whole notebook is saved, so that `held` is true while a page has the notebook open: a phone's always, since its page is the notebook. That is the second finding, answered for every device.
+6. **The page hears what a round writes while it reads the notebook.** It listens before it reads, and applies what it heard meanwhile once it has read. Until now a change the engine wrote between the reading and the listening was in no page until the next start; a phone reads its notebook at every start, with the first round under way.
+7. **A file of the library that was not on the disk when the library was read is taken as lost, not as emptied**, where the device and its home had agreed on something of it. Until now a lost `library.bib`, `collections.json` or `files.json` read as an empty one, and the round told every reference, collection or record as taken out, on a computer as on a phone: a lost record of the files was caught only where the store held files it lacked, which a phone whose notes hold no file does not. Now it is damage, and the store meets its map as for the first time, where what the home says stands and nothing is taken out of either.
+
+**What is built, file by file.**
+
+- `crates/core/src/notebook.rs`: `Notebook::say_held(&self, files: &[String]) -> Result<()>` writes `notebook.json` with these files, how many notes and when it was saved staying as they were; where there is none yet, one is written with no notes counted. Under the same hold as `save_state`.
+- `crates/core/src/library/mod.rs`: what was not on the disk when it was read is remembered beside what was damaged (`load` for `library.bib`, and the collections and the record of the files where they are read), and handed over once, as `take_damaged` hands over. A library emptied by the writer must go on reading as emptied: the builder sees, with a test, that each of the three files is written when its last thing is taken out, and not removed.
+- `crates/core/src/sync/library.rs`: rule 4, in `Records::write`.
+- `crates/core/src/sync/engine.rs`:
+  - `round` keeps `notebook-refused` (`Kept::note`, a `bool`): true where `notebook_round` gave an error that is not of the server, false where it gave none; left as it is where the round ended before or in it for the server's sake. It is written only where it is another than it was (`Round` remembers it).
+  - `library_round`: rule 7, before it is worked out whether the round is quiet. A file not there when read, of `references`, `collections`, or `files` and `file-folders`, whose `sync/base/` holds names, is damaged, with the warning there is.
+  - `Status` gets `waiting: bool`: whether the notebook or the library here holds what the server was not sent, as far as the disk says without asking it. It is worked out when a round ends: where the round could not reach the server, by the two looks below; false where it ended in any other way; left as it is while a round is under way, so that the page's line does not go and come with every try. The two looks: the notebook's files lie otherwise than at its last exchange and the document here holds something beyond what the server was last seen to have (`whole::beyond`, read only where the files lie otherwise); or the library's files lie otherwise than when it was last brought to be the same (`LibraryLies`), a library that holds nothing and was never exchanged counting as nothing. Of the projects it says nothing: the phone's page shows it, and a phone has none.
+  - `Sync::front(&self, front: bool)`: whether the app is in front. Either way a round is made at once. While it is not in front the thread asks nothing at regular times: it waits without the half minute, and is woken as ever by what is written here, by `now` and by `end`. `Wake` gets the field, and how long the thread waits at the most is a function of its own beside it, tested beside the code. A computer never calls it and is always in front.
+- `crates/core/src/sync/mod.rs`: `pub fn notebook_refused(data: &DataDir) -> bool`, what the engine kept, false where nothing is kept or the device is in no home.
+- `src-tauri/src/state.rs`: `AppState` gets `notebook_refused: bool`, read in `AppState::open`.
+- `src-tauri/src/commands/notebook.rs`: `notebook_sweep` does nothing, and says so in the log, where the notebook was refused when the run began or is now. `notebook_say_held(state, files: Vec<String>) -> CommandResult<()>`, new, calls `say_held`; it is registered in `application.rs` (B registers it for the phone).
+- `src/lib/api/notebook.ts`: `notebookSayHeld = (files: string[]) => call<void>('notebook_say_held', { files })`. `src/lib/api/sync.ts`: `waiting: boolean`.
+- `src/lib/notebook/open.svelte.ts`, in `#read`, in this order: it listens (`onNotebookUpdate`), keeping what it hears; reads the notebook from the disk and loads it; applies what it heard, and from then on applies at once; asks for the sweep where `sweeps`, and waits for the answer; and only then begins to say what the notes hold: a second after any change to the document, whoever made it, `summary().files` is worked out, and where it is another list than was last said or saved, `notebookSayHeld` is called with it. What the notes held when the notebook was read is not said: the sweep judges by what was said before as well, so that a page that read less than there is takes nothing a saved note holds. The readable copy is written only where `readable`.
+
+**What holds it.**
+
+Beside the code:
+
+- `notebook.rs`: what is said is read again by `held`; the count of the notes and the time stay.
+- `library/notebook.rs` and `mod.rs`: a file not there when read is said once; a library emptied by the writer is not.
+- `sync/library.rs`, with the two devices its tests have: a file the notes hold, which the library has too, is kept on the device that holds its note when the other sweeps the mark off and then removes the file from its library: the file is on the first one's disk, held by the notes alone, and the other has its record again after they meet twice. And: the mark alone taken off elsewhere stays on the device whose notes hold the file, and is on the other again.
+- `engine.rs`: how long the thread waits, in front and not.
+- `open.test.ts`: a change heard while the notebook is read is in the notebook after; the sweep is not asked for where `sweeps` is false; nothing is said of what the notes hold before the sweep has answered; a picture put into a note is said within the second, and a second change that leaves the list as it was is not said again; no readable copy where `readable` is false.
+
+Against the real server, in `crates/server/tests/phone.rs`:
+
+10. `a_file_a_phones_note_holds_is_kept_when_a_computer_sweeps_it_with_less_of_the_notebook`. A picture taken on the phone into a note; the phone says what its notes hold; both settle. The computer sweeps with nothing held (`notebook_sweep`), as one that read less of the notebook than there is. After the rounds of both, the phone holds the picture, the computer holds it again, byte for byte, and the server holds it.
+11. `a_device_whose_notebook_is_refused_says_so_and_says_it_no_more_when_it_is_taken_again`. As the second test of stage 1 makes a refusal: after the phone's round `notebook_refused` is true; the form put back and a round made, it is false.
+12. `a_phone_that_loses_the_record_of_its_files_tells_nothing_as_taken_out`. A computer with two references, a collection and a file of the library; a phone joins; both settle. The phone's `library.bib`, `collections.json` and `files.json` are deleted, its library read anew, and a picture taken into a note there before its round, so that the record of the files is on the disk again with one file in it. After the rounds of both, the computer holds its references, its collection and its file as before, byte for byte, and the phone has the references, the collection and the records again, and its picture.
+13. `a_phone_says_that_what_was_written_waits_while_the_server_is_not_reached`. A phone in a home, settled; the server is not reached; a round: `offline`, and `waiting` false. A note written: after the next round, `waiting` true. The server reached again: after the round, `idle`, and `waiting` false.
+
+In `synchronized_library.rs`, one test: a computer that loses `library.bib` alone, and reads its library anew, takes no reference from the other, and has its own again after they meet.
+
+The second reading goes through the seven rules against the diff, one by one, and through every place where a file leaves a disk or the server: that none was added, and that the two in `Records::write` and the sweep take less than they did, never more.
+
+**Not of what can be lost, and built with it** because it is in the same files: `waiting`, `front`. The second reading may pass over them.
+
+### B. The phone's commands, Android's own, and the running app
+
+**Tried first, on the new emulator with the app as it is**, before anything is built on what it answers. Each is a few lines through the door of the web view; what is found is told, and the plan corrected where it is otherwise.
+
+1. **Back and the page's history.** In the page: `history.pushState({}, '')` twice, a listener for `popstate`. Back pressed (`input keyevent 4`): the app stays, and `popstate` came; twice more: the second leaves the app. Tauri's own part for Android goes back in the web view's history where it has one (`AppPlugin.kt`: `canGoBack`, `goBack`), and leaves the app where it has none; read in its source, not yet tried. Should a step made by `pushState` not count, `places` listens to Tauri's event `back-button` instead, the capability is given what that asks, and C is told before it begins.
+2. **In front and not.** Home pressed: `document.visibilityState` is `hidden` and `visibilitychange` came; the app brought back: `visible`. Should the web view not say it, the Android part says it to the page, and C is told how before it begins.
+3. **The size of the letters.** With the system's letters at 1.3 (`settings put system font_scale 1.3`): whether the page's letters grow. Where they do not, `MainActivity.onWebViewCreate` sets `settings.textZoom` from `resources.configuration.fontScale`.
+
+**The meeting points**, as the section before says: the files with their shapes, the words, and the test of `:hover` with the shared files brought to pass it. For that test: `src/lib/phone/hover.ts` gives the places where a style says `:hover` outside `@media (hover: hover)`; the test asks it of every `.svelte` under `src/lib/phone/`, and of `ui/Button.svelte`, `ui/IconButton.svelte`, `ui/Segmented.svelte`, `ui/TextField.svelte`, `ui/Toaster.svelte`, `ui/Dialog.svelte`, `ui/ConfirmHost.svelte`, `ui/EmptyState.svelte`, `ui/Spinner.svelte`, `notebook/TagsField.svelte`, `notebook/HeldFile.svelte`, `files/Thumb.svelte`, `sync/SyncSettings.svelte`, `src/app.css` and `src/placing.css`. The main thread puts each such rule of those files inside the block, as `IconButton.svelte` has it; where `:hover` is one of several selectors of a rule, the rule is parted in two. The scrollbar's (`::-webkit-scrollbar-thumb:hover`) is passed over by the test, by name. A computer sees no change: `e2e/note-window.mjs` holds it to having a pointer.
+
+**The phone's role** (`src-tauri/src/phone.rs`), once A is merged.
+
+- **The commands**, these and no others:
+  - of the system: `system_info`, `languages`, `language_set`, `log_page`, `file_read`, `settings_load`, `settings_set`; `notices_take`; `clipboard_read`;
+  - of the notebook: `notebook_load`, `notebook_append`, `notebook_save_state`, `notebook_take_image`, `notebook_file`, `notebook_hold`, `notebook_say_held`, `notebook_inbox_waiting`, `notebook_inbox_take`;
+  - of the files a note shows: `file_path`, `file_small`;
+  - of the references, for the line that says a source: `library_list`, `library_refresh`;
+  - of the server, looked at before a home is started or joined: `sharing_server`;
+  - of the synchronization: `sync_status`, `sync_device`, `sync_start`, `sync_join`, `sync_home`, `sync_code`, `sync_rename`, `sync_remove`, `sync_stop`, `sync_now`, `sync_front`.
+- **Those that leave**: `fonts_list`, and the six of the window of a note. `NoteWindowState` is managed no more, and `commands/notewindow.rs` goes behind `cfg(desktop)` in `commands/mod.rs`.
+- **Not the phone's**, and tried as refused by the script: `notebook_sweep` (rule 1 of part A), `notebook_readable_write` (nobody reads a copy in the app's own folder), `notebook_take_files` (stage 3), `notebook_to_library`, the commands of Firefox, of notes brought in, of the projects.
+- **The inbox is taken in on the phone**, by the page, when it starts and when the app comes to the front (part C). What was sent from the page of a note in the trial and in stage 1 lies there and becomes notes. No thread looks at the inbox on a phone (`look_at_the_inbox` is the application's): nothing writes into it while the app runs until stage 3, which says how the page is told.
+- A test in `phone.rs` holds the list: the names registered, read from the source of the file as the test of the capabilities reads its files, are these and no others.
+
+**`sync_computer` becomes `sync_device`** (`commands/sync.rs`, `application.rs`, `phone.rs`), and `glaukopis_core::sync::computer` becomes `device`. On Android it gives what the system calls the model (`ro.product.model`, read with `libc::__system_property_get`, as the `sys-locale` crate reads the language there), since `gethostname` says `localhost` on every phone; nothing where the system says none. It is offered, and the writer may change it before it is sent anywhere.
+
+**`sync_front(sync, front: bool)`**, new, in `commands/sync.rs`, calls `Sync::front`; registered for the phone alone.
+
+**`languages(system: Option<String>)`** (`commands/system.rs`). The system's language is what `GLAUKOPIS_LANGUAGE` says, where it is set (the scripts); else what the page says, where it says one; else what the core finds. `i18n::system_tag` gets the argument, or a second function beside it. A phone's page says `navigator.language`: the web view knows the language Android is set to, and the core reads it from a property of the system that an app is not everywhere let read. The application's page says nothing and is as it was.
+
+**`src/main.ts`** mounts `$lib/phone/mount` (`mountPhone(target)`) where `isPhone()`, and the page of a note only where `isNoteWindow()`.
+
+**Android's own** (`src-phone/gen/android/`).
+
+- `MainActivity.onWebViewCreate`: the object `glaukopisAndroid` is given to the page (`addJavascriptInterface`), with one function, `ground(colour, dark)`, marked `@JavascriptInterface`. On the thread of the interface it gives what holds the page (`android.R.id.content`, which `keepClear` pads) that colour as its ground, so that it stands behind the system's bars, and has the bars' signs dark on a light ground or light on a dark one (`WindowInsetsControllerCompat`). The page is the app's own, read from the app's file, and the function takes a colour and nothing else. Should the bars not follow on the emulator, the choice of light or dark is taken out of the phone's settings, which then follow the system alone, and the owner is told.
+- The size of the letters, where the third trial asks for it.
+- Nothing of the manifest changes.
+
+**The scripts of this part** are in *The scripts*: `e2e/phone-role.mjs`, made anew, and those of `e2e/android/`.
+
+### C. The page: its frame, the notes, finding, the filter
+
+Read before building: `src/lib/notebook/window/mount.ts` and `NoteWindow.svelte` (what the phone shows today, and how a page of its own starts); `src/App.svelte` from `begin` to `takeNotices` (the language, the look, the notices: the pattern, not the code); `src/lib/notebook/NotebookView.svelte`, `NoteList.svelte`, `page.svelte.ts`, `page-view.svelte.ts`, `arriving.svelte.ts`, `inbox.ts`, `sources.ts`; `src/lib/sync/sync.svelte.ts`; `src/lib/ui/Dialog.svelte`, `IconButton.svelte`.
+
+**What is used as it is, and what is made anew.**
+
+| Of the notebook's interface | On the phone | Why |
+| --- | --- | --- |
+| The model (`model/`), `open.svelte.ts`, `holder.ts`, `inbox.ts`, `taking.ts`, `sources.ts`, `filters.ts` | as they are | They know nothing of the page. |
+| `page.svelte.ts` (`rowOf`, `dayOf`, `chipsOf`, `takenFrom`, `saveSource`, `givesAnything`, `boxName`, `boxInView`, `tagsInView`, `toggledTag`, `offeredTags`) and `page-view.svelte.ts` (the box in view and the tags that are on, kept on the device) | as they are | The logic of the page apart from its markup. |
+| `TagsField.svelte` | as it is, made to take a finger and a phone's keyboard (part D) | It is a field and its chips. |
+| `NoteList.svelte` | made anew: `NoteRows.svelte` | It selects by the mouse and the keys, is dragged from, and opens its menu by the right button; on a phone a row is pressed and its note opens, and a row says more. |
+| `NoteEditor.svelte` | made anew: `NoteView.svelte` (part D) | It brings the tools of writing of the application, Divide, and what became of a note with its ways into the projects. |
+| `SourceDialog.svelte` | made anew: `SourceSheet.svelte` (part D) | It brings the form of a new reference, the picker of the editor, the reading of text and the way into the library. |
+| `arriving.svelte.ts` | made anew: `inbox.ts` of the phone | It says what arrived with a way through the application's router. |
+| `NotebookView.svelte`, `BoxColumn.svelte`, `FilterPopover.svelte`, `NoteCard.svelte`, the surface | not used | Three columns for a wide window; the card is the document pane's. |
+
+**`mount.ts`**: `mountPhone(target)`. Before anything is drawn (`starting.ts`, `begin()`):
+
+1. `document.documentElement.dataset.phone = ''`, and `./phone.css` is imported: under `:root[data-phone]` it gives the measures of a finger (`--control-h: 44px`, and the variables below).
+2. The settings (`settings.load()`) and the languages (`languagesInfo(navigator.language)`) together; then the words of the language of the interface (the one chosen in the settings, else `languages.interfaceDefault`), loaded before the page is drawn, as the application does it. Spelling is off in this page's copy of the settings, not written: the phone's keyboard has its own.
+3. `files.loaded = true`, as the page of a note sets it: nothing lists the library's files here. The pictures are read from the library's store, as they are unless told otherwise.
+4. `theNotebook.readable = false; theNotebook.sweeps = false`.
+5. `places.begin()`.
+
+Then `PhonePage` is mounted, and after it, none of it waited for: the notebook is opened (`theNotebook.open()`), the references read (`library.load()`), the status followed (`sync.follow()`), what the core has to tell taken (`noticesTake`, and again at `onNotices`, each a message that stays until it is dismissed), and what waits in the inbox taken in.
+
+**`PhonePage.svelte`**, the frame: the place `places.current` names, and nothing else of it kept alive: `NotesPlace`, `NoteView` (keyed by the note, with `notebook` once it is read) or `SettingsPlace`; `Toaster` and `ConfirmHost`. It holds what must go on whatever place is shown:
+
+- **The language**, as the effect of `App.svelte` has it: the tag chosen or the system's; `document.documentElement.lang`; `languageSet(tag)`, so that the core speaks it; the words loaded, and a failure said (`settings-language-error-load`).
+- **The look**: `document.documentElement.dataset.theme = settings.theme`, kept as it changes (the system's until one is chosen; `own`, should a file say it, applied as the page of a note applies it), the words the stylesheet shows (`--words-picture-absent`, `--words-picture-caption`), and after each change `window.glaukopisAndroid?.ground(colour, dark)`, with the ground of the page as the browser works it out (`getComputedStyle` of the root, as `#rrggbb`) and whether the theme in effect is the dark one.
+- **In front and not** (`visibilitychange`, and `pagehide` as leaving): leaving, the notebook's changes not yet written are written (`flush`), the settings (`settings.flush()`), then the whole notebook (`snapshot()`), then `syncFront(false)`. Android may end the app at any moment after: what is written must be on the disk before the engine is told. Coming back: `syncFront(true)`, what waits in the inbox taken in, and the pictures that were not here tried again.
+- **What changes on disk** (`following.ts`, with `onChanged` of `api/changes.ts`, a tenth of a second after the last of a run): `library` has the references read again where they were read; `files` has the pictures that were not here tried again (`pictures.again()`). The other areas are passed over.
+- **On a computer** the window is shown once the page is drawn (`getCurrentWindow().show()`, a refusal passed over: on Android there is nothing to show).
+
+**`places.svelte.ts`**: the three places, and the page's history.
+
+- `begin()` puts the place *notes* into the entry of the history that is there (`history.replaceState`) and listens for `popstate`. `go(place)` is a step (`history.pushState`); `back()` is `history.back()`, and does nothing at the notes, where the system's Back leaves the app. The place shown is what the entry of the history says; an entry that says none is the notes.
+- **What lies over a place is a step too**: `step(close)` makes one, and gives back what the thing calls when it has closed. Back, with such a step on top, calls `close` and leaves the place as it is. A thing that closes by itself, by its own button, calls what it was given, and its step is taken out of the history. `Sheet.svelte` makes its step while it is open. `Dialog.svelte` is taught the same through `ui/over.ts`: where `over.opened` is set and the dialog can be dismissed, it tells it of its closing when it opens, and calls what it gets back when it closes; `places.begin()` sets `over.opened = places.step`. So the question before *Stop synchronizing* and the renaming of a device are closed by Back, on a phone, and a computer, where nobody listens, is as it was.
+- **One at a time.** `history.back()` arrives later, as a `popstate`. Every change of the history the page asks for waits until the one before it has arrived, in a line: a sheet that closes itself and a place gone to right after would otherwise take the wrong step out. This is the part of the page most easily got wrong, and `places.test.ts` holds it: go and back; Back at a sheet closes the sheet and the place stays; a sheet closed by itself leaves one step fewer; a sheet closed and a place gone to at once ends at that place, with Back leading to where one was; two sheets, one over the other; an entry with no place is the notes.
+- The place is not kept from one start to the next: the app starts at the notes.
+
+**`NotesPlace.svelte`**, from the top:
+
+- **The row**: the field that finds (`notebook-search`, with its × while something is written, `notebook-search-clear`), the filter's button (`notebook-filters`, shown as on while a box is in view or a tag is on), the settings' button (`settings-title`, which goes to the place).
+- **The line** (`Line.svelte`, `line.ts`): there only where something waits or is wrong, by the status (`sync.status`): `sync-refused` where the state is `refused`; else `phone-waiting` where it is `offline` and `waiting`; else `phone-problem` where a problem is said and the state is not `offline`; else nothing, and so nothing where the device is in no home and nothing where the server is merely not reached. It is a button over the whole width, which goes to the settings, where the section of the synchronization says the rest. `line.ts` is the rule alone, with its test.
+- **The notes** (`NoteRows.svelte`): `notebook.find(query, { box, tags })`, newest first, with the box in view and the tags that are on from `pageView`. Each row: the dot of a note not looked at (`notebook-unseen`); its name or how it begins (`rowOf`), else `notebook-empty-note`; under it the day, and its source in a line (`sourceLabel` of the first of `chipsOf`, where it has one); under that its tags, in one line that is cut; at the right its first picture, small (`Thumb`). A row pressed goes to the note. Only the rows in view are drawn, as `NoteList` does it, and their one height is measured from a row that is drawn, not written as a number. `rows.ts` holds what a row says beyond `rowOf`, with its test.
+- **Where there is nothing**: `notebook-empty` with its text, in an empty notebook; `notebook-nothing-found` where nothing is found; `notebook-unreadable` with what the reading said, where the notebook could not be read (a later form says `notebook-later`).
+- ***New note*** (`notebook-new-note`), a round button at the foot, at the right, over the list: a note in the box in view, or where all notes are shown in the box that receives (`notebook.receiving`), with the tags that are on; between two `checkpoint()`s; then `places.go({ at: 'note', note, fresh: true })`.
+
+**`FilterSheet.svelte`**, opened by the filter's button, from the bottom of the screen: under `notebook-boxes`, *All notes* (`notebook-all-notes`) and each box by its name (`boxName`), the one in view marked, pressed to be shown (`pageView.setBox`); under `notebook-tags`, each tag with how many notes have it, pressed on and off (`pageView.setTags(toggledTag(…))`); *Done* (`common-done`) at its foot. Of the computer's other filters (what a note holds, the days, where it came from, not looked at, used) none is here.
+
+**`Sheet.svelte`**: over the place, from the bottom, as wide as the window and no higher than four fifths of it, what it holds scrolled within it; a dimmed ground over the rest, which closes it when pressed; its title at its head with × (`common-close`). A step of the history while it is open.
+
+**`inbox.ts`**: where `notebookInboxWaiting()` says something waits, the notebook is opened first, then `notebookInboxTake()`, then `notesOfInbox(notebook, items)` and `notebook.flush()`: one taking at a time, as `arriving.svelte.ts` has it. Nothing is said: the notes stand at the top of the list, not looked at.
+
+**Made to fit, in shared files** (the application as it was):
+
+- `ui/Button.svelte`, `ui/TextField.svelte`, `ui/Segmented.svelte`: the heights of their sizes are read from variables that are, where nothing sets them, what the heights are today (`--control-h-sm`, `--control-h-lg`, `--segmented-h`, `--segmented-h-sm` beside `--control-h`). `phone.css` sets them: 44 pixels, the small ones 40, each as a least height.
+- `ui/Dialog.svelte`: `over`, as said.
+- `figures/pictures.svelte.ts`: `again()`.
+
+**What it is checked by**: `pnpm check`, `pnpm test`; the tests named (`places.test.ts`, `line.test.ts`, `rows.test.ts`, `inbox.test.ts`, `hover.test.ts`, and `starting.test.ts` for the language chosen and the system's); `e2e/phone-notes.mjs`, written and not run. Its paragraphs for the guide, in the guide's voice, in `docs/plans/phone-guide/notes.md`.
+
+### D. A note
+
+Read before building: `src/lib/notebook/NoteEditor.svelte` and `SourceDialog.svelte` (what a note's view does on a computer: the pattern); `window/NoteWindow.svelte` (the row of tools that held under a phone's keyboard in the trial); `TagsField.svelte`; `page.svelte.ts` (the sources); `holder.ts`; `src/lib/editor/RichText.svelte` (its props) and `commands.ts` (`toggle`, `markActive`, `kindOf`, `setKind`, `insertFigure`); `src/lib/state/library.svelte.ts` (`search`, `sortEntries`).
+
+**`NoteView.svelte`**, from the top:
+
+- **The row** (`TopBar`, with Back): at its right end *More* (`phone-more`), which opens a sheet with *Redo* (`notebook-redo`, there to be pressed while there is something to redo) and *Delete* (`common-delete`).
+- **What is scrolled**: the name, in one line (`notebook-name`; `notebook.setName` as it is written, as `NoteEditor` keeps the field); the tags (`TagsField`, each change between two `checkpoint()`s); the box, a button that says its name (`boxName`) and opens the sheet of the boxes; the text; under the text the sources of what the note holds (`notebook-sources`, the chips of `chipsOf`, each opening the sheet of its source), where it holds anything taken in.
+- **The text**: `RichText` with `kind="body"`, the note's fragment, `placeholder={t('notebook-write')}`, and the holder of the notebook with citing off: `{ ...holderOfNotebook(notebook), cites: false }`, made once for a notebook. A note just made (`fresh`) takes the cursor at its end. The whole of what is left under the name takes the finger, not the lines written alone, as `NoteWindow.svelte` does it under a coarse pointer; here always.
+- **The row of tools** (`ToolRow.svelte`), at the foot of the view and so over the keyboard, since the Android part makes the page as high as the keyboard leaves: *Bold*, *Italic*, *List*, *To do*, *Undo* (`editor-bold`, `editor-italic`, `editor-list`, `editor-todo`, `common-undo`), five buttons of 44 pixels with room left for the two of stage 3 (a picture, a photograph) before *Undo* at 320. Each keeps the cursor in the text and the keyboard up, by refusing the press its usual effect (`onmousedown` with `preventDefault`, which is what held in the trial), and acts on the editor as the row of `NoteWindow.svelte` does: `toggle('strong')`, `toggle('em')`, the kind of the paragraph set to `item` or `todo`, or back to `text` where it is that already. A mark or a kind that is on shows so. The first four are there to be pressed only while the text has the cursor; *Undo* (`notebook.undo()`) while there is something to undo. `tools.ts` holds the commands and what is on, with its test.
+- **Looked at**: a note shown is looked at (`notebook.lookedAt`).
+- **Gone**: where the note is there no more, deleted here or on another device, the view goes back.
+
+***Delete***: between two `checkpoint()`s, `notebook.deleteNotes([id])`; back to the notes; and the line that says it (`notebook-deleted` with one), for seven seconds, with *Undo*, which is `notebook.undo()`.
+
+**The sheet of the boxes** (`BoxSheet.svelte`, titled `notebook-move-to`): each box, the note's own marked; pressed, the note is moved there (`notebook.moveToBox`, between two `checkpoint()`s) and the sheet closes. At its foot a field (`notebook-box-name`) with *New box* (`notebook-box-new`): `notebook.addBox(name)`, and the note moved into it. Boxes are not renamed, put in order or deleted here.
+
+**`SourceSheet.svelte`**, props `{ notebook: Notebook; note: string; source: Source | null; onclose: () => void }`, as `SourceDialog` takes them. It does what the window of a source does on a computer, with these four things left out: *Make a reference*, *Read the text*, the way into the library, and what became of the note.
+
+- What it is (`Segmented`: `notebook-source-web`, `notebook-source-reference`, `notebook-source-other`), and its fields: a page's address and title; words; for a reference, a field that finds (`common-search`) over the references of the library, each a row of its authors and year over its title, sixty at the most (`search` and `sortEntries` of `state/library.svelte.ts`), pressed to be chosen, and its place (`LOCATOR_LABELS` and the field, as on a computer). A file says what it says of itself, and is not changed.
+- *Apply* (`common-apply`) saves by `saveSource`, in one step of undo, as on a computer, and closes.
+- The passages taken from it in the note (`notebook-source-passages`), each as it reads now, with *My own words*, and *Bring back* where it was changed, each a step of undo of its own.
+
+**`TagsField.svelte`**, the application's as it was but for: a comma typed adds the tag also where the keyboard says no key (the field's `input` is looked at, since a phone's keyboard composes and sends no comma as a key); and under a coarse pointer the × of a chip, and each tag offered, is 44 pixels to the finger. Its own test goes on passing and gets the comma.
+
+**The hook** `picture(name, content64)`: the picture is taken in through the holder (`pictureFromBlob`) and put where the cursor is, or at the end (`insertFigure`). Stage 3 puts *Photograph* and *Picture or file* on the same function.
+
+**What it is checked by**: `pnpm check`, `pnpm test`; `tools.test.ts`; `NoteView.svelte.test.ts` (the name written is the note's; a tag added and taken away; the box changed, and a new box; *Delete* and *Undo*; a note gone goes back; *Redo* after *Undo*); `SourceSheet.svelte.test.ts` (a page given to what had no source; a reference chosen with its place; *My own words* takes the chip away); `TagsField.svelte.test.ts`; `e2e/phone-note.mjs`, written and not run. Its paragraphs for the guide in `docs/plans/phone-guide/note.md`.
+
 ## Who builds what
 
 The way that held on 2026-11-13 and 2026-11-16: the main thread reads the code, settles every choice and writes one part of the plan for each agent (the decisions, the files, the names and properties where two parts meet, what to verify); each agent builds in a worktree of its own; the main thread reads every diff, merges, builds once and runs the application.
