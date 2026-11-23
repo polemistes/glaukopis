@@ -432,6 +432,35 @@ async fn a_file_that_cannot_be_fetched_is_said_of_the_file_and_what_is_to_be_sen
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_phone_that_is_not_in_front_asks_nothing_at_regular_times_for_a_file_that_a_proxy_cuts_off() {
+    with_server_set(
+        |_| {},
+        |direct| {
+            let cut = |asked: &str, _: u64| asked.starts_with("PUT /api/homes/") && asked.contains("/files/");
+            let proxied = tokio::runtime::Handle::current().block_on(through(&direct, cut));
+            let (computer, phone) = (Device::computer(), Device::phone());
+            assert!(computer.sync.start(&direct, "The desk", None).unwrap().on);
+            computer.round();
+            join(&phone, &computer, &proxied, "The phone");
+            phone.round();
+            assert!(!phone.sync.rests(), "in front, it asks every half minute");
+
+            // A picture is taken, and the app goes behind the others: the round it makes then fails for that file.
+            phone.take_picture("photograph", &PNG);
+            phone.sync.front(false);
+            let status = phone.once();
+            assert_eq!(status.state, State::Idle, "the server is reached: {:?}", status.problem);
+            assert!(status.problem.is_some_and(|problem| problem.contains("could not be sent")));
+            // As before such a file was told from a server not reached: behind the others, nothing more is asked.
+            assert!(phone.sync.rests(), "it waits until it is woken");
+            phone.sync.front(true);
+            assert!(!phone.sync.rests());
+        },
+    )
+    .await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn a_network_that_is_away_when_a_file_fails_ends_the_round_as_a_server_not_reached() {
     with_server_set(
         |_| {},

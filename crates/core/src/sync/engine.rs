@@ -823,6 +823,13 @@ impl Sync {
         held(&self.wake).now
     }
 
+    /// Whether the thread asks the server nothing at regular times now, and
+    /// waits until it is woken: the app is not in front, and no file was
+    /// left that is tried again in the half minute (`Wake::at_most`).
+    pub fn rests(&self) -> bool {
+        held(&self.wake).at_most().is_none()
+    }
+
     /// Ends the thread.
     pub fn end(&self) {
         held(&self.wake).end = true;
@@ -1573,8 +1580,10 @@ impl Sync {
             let done = files::bring(home, &self.library, doc, told, &note, &own, takes)?;
             problems.extend(done.problems);
             *files_settled = !done.again;
-            // A file left to be tried again is tried within the half minute, in front or not (`Wake::at_most`).
-            held(&self.wake).left = done.again;
+            // A file left to be tried again for its own sake is tried within
+            // the half minute, in front or not (`Wake::at_most`); one that
+            // failed as the network fails is not (`files::Done::left`).
+            held(&self.wake).left = done.left;
         }
         // That the home has not room for every file is one of the problems
         // of every round for as long as it is so, whether the files were

@@ -147,6 +147,14 @@ pub struct Done {
     pub problems: Vec<String>,
     /// Whether something is to be tried again at the next round.
     pub again: bool,
+    /// Whether a file was left that is to be tried again within the half
+    /// minute also where the app is not in front (`Wake::at_most`): one
+    /// that could not be sent, fetched or taken off the server for its own
+    /// sake. Not one that failed as the network fails: before such a file
+    /// was told from a server not reached, it ended the round, and a phone
+    /// that is not in front asked nothing more; it still asks nothing, and
+    /// tries the file when it comes to the front or is written in.
+    pub left: bool,
 }
 
 /// A file a record names, as the library's document says it.
@@ -276,6 +284,7 @@ pub fn bring(
                     Err(error) => {
                         tracing::warn!(%error, hash, "a file no record names could not be taken off the server");
                         done.again = true;
+                        done.left = true;
                     }
                 }
             }
@@ -432,6 +441,7 @@ pub fn bring(
                 tracing::warn!(%error, hash = file.hash, ?way, "a file could not be sent or fetched");
                 say(failed(file, error.to_string()));
                 done.again = true;
+                done.left = true;
             }
         }
     }
