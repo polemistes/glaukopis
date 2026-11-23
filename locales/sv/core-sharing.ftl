@@ -40,6 +40,27 @@ core-sharing-not-as-named = Det som skickades är inte det som dess namn säger:
 core-sharing-file-too-large = Filen är större än vad den här servern tar emot: en fil får rymma högst { $most }.
 core-sharing-project-full = Det finns inte plats för filen: ett projekts filer får tillsammans rymma högst { $most } på den här servern.
 
+## What the server refuses of the synchronization of a writer's own
+## devices, which it keeps together as what it calls a home.
+
+core-sharing-no-home = Servern har inte längre det som de här enheterna synkroniserar.
+# The texts of a project, the notebook or the library use something this version does not know.
+core-sharing-later = Något skrevs på en annan enhet av en senare version av Glaukopis. Uppdatera den här för att synkronisera det.
+core-sharing-home-not-admitted = Servern släpper inte längre in den här enheten: den kan ha tagits bort från dem som synkroniseras.
+core-sharing-home-full = Servern synkroniserar enheterna för så många skribenter som den är inställd på.
+core-sharing-many-computers = Sexton enheter synkroniseras redan, vilket är det mesta; ta bort en först.
+core-sharing-many-codes = Det finns redan fem öppna koder; återkalla en.
+core-sharing-no-computer = Det finns ingen sådan enhet bland dem som synkroniseras.
+core-sharing-no-computer-name = Enheten har inget namn.
+core-sharing-bad-kind = Vilket slags dokument det är skrivs med en till sexton små bokstäver.
+core-sharing-bad-document = Dokumentets id är inte ett som servern kan använda.
+core-sharing-many-documents = Servern har så många dokument för de här enheterna som den får ha.
+core-sharing-not-an-exchange = Servern kunde inte läsa det som skickades.
+core-sharing-unreadable-change = En ändring som skickades kunde inte läsas.
+core-sharing-document-too-large = Ett projekt, anteckningsboken eller biblioteket skulle bli större än vad den här servern förvarar.
+# The most is in the server's words: "10 GB".
+core-sharing-home-files-full = Det finns inte plats för filen: de filer som synkroniseras får tillsammans rymma högst { $most } på den här servern.
+
 ## The pictures of the figures, which are sent and fetched one by one.
 
 core-sharing-picture-too-large = { $host } tar inte emot en så stor bild som den här.

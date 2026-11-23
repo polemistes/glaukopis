@@ -38,9 +38,9 @@ editor-numbering = 番号付け
 editor-numbering-none = 番号なし
 editor-numbering-counted = 最初に指定した番号から数える
 editor-numbering-given = 指定した番号だけ
-editor-line-numbers-every-layout = レイアウトどおり：{ $every }行ごと
+editor-line-numbers-every-layout = 見た目のとおり：{ $every }行ごと
 editor-line-numbers-side = 番号の位置
-editor-side-layout = レイアウトどおり（{ $side }）
+editor-side-layout = 見た目のとおり（{ $side }）
 editor-side-left = 左
 editor-side-right = 右
 # テキストの余白の番号の上に出る。押すと、その番号の入力欄が開く。
@@ -73,7 +73,7 @@ editor-gloss-hint = 見出し語の意味
 editor-code = コード
 editor-code-hint = コード、または一字一字そのまま保つものの行
 editor-break = 区切り
-editor-break-hint = 部分と部分のあいだの間。レイアウトが定める記号で示す
+editor-break-hint = 部分と部分のあいだの間。見た目が定める記号で示す
 editor-draft = 下書きメモ
 editor-draft-hint = 自分用。どの文書にも入りません
 editor-foreign = 外国語
@@ -165,7 +165,7 @@ editor-pointer = 相互参照…
 editor-refmark-title = 文中番号
 editor-refmark-label = ラベル
 editor-refmark-placeholder = 3:16、327a、1094a1
-editor-refmark-dialog-hint = この番号は語の一部ではありません。スペルチェック、検索、語数の計算では飛ばされます。行の中で上付きにするか、余白に置くかはレイアウトが決めます。
+editor-refmark-dialog-hint = この番号は語の一部ではありません。スペルチェック、検索、語数の計算では飛ばされます。行の中で上付きにするか、余白に置くかは見た目が決めます。
 # 名前なしで貼り付けた画像が、画像庫で何と呼ばれるか。
 editor-pasted-picture = 画像
 
@@ -238,7 +238,7 @@ editor-locator-sub-verbo = 項目（s.v.）
 # 番号は注の番号。独自の場所に置かれる注では文字になる。
 editor-note-numbered = 注{ $number }
 editor-note-place = 注の位置
-editor-note-place-format = レイアウトが定める位置
+editor-note-place-format = 見た目が定める位置
 editor-note-place-foot = ページの下
 editor-note-place-end = テキストの末尾
 editor-note-placeholder = 注の本文
@@ -248,6 +248,11 @@ editor-words-kind = 語句の種類
 editor-words-kind-now = 語句の種類：{ $kind }
 editor-marks = 文字飾り
 editor-marks-shown = 編集記号
+editor-breaks = 改行と空白
+# The heading over the two choices of what the Enter key makes in a text: a break between paragraphs, or a break of the line within the paragraph.
+editor-enter-key = Enterキー
+editor-enter-paragraph = 段落区切り
+editor-enter-line = 段落内改行
 editor-image = 画像
 editor-inline-number = 文中番号…
 

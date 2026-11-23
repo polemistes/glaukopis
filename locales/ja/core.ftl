@@ -57,7 +57,7 @@ network-wait = { $host }から、しばらく待ってから再度問い合わ�
 network-status = { $host }がエラーを返しました（{ $status }）
 # $most はメガバイト数。
 network-too-large = { $host }の応答が、Glaukopisが受け取れる量（{ $most } MB）を超えました
-network-tls = { $host }と安全な接続を確立できませんでした。その証明書がこのコンピューターで信頼されていないか、プロキシやファイアウォールなど、間にあるものが妨げている可能性があります
+network-tls = { $host }と安全な接続を確立できませんでした。その証明書がこのデバイスで信頼されていないか、プロキシやファイアウォールなど、間にあるものが妨げている可能性があります
 network-redirects = { $host }が、問い合わせをアドレスからアドレスへ転送した回数が多すぎます
 network-stalled = { $host }からの応答が途中で止まりました
 network-not-understood = { $host }の応答を理解できませんでした

@@ -106,8 +106,8 @@ home-deleted-projects = { $count ->
 home-menu-rename = Renommer…
 home-menu-duplicate = Dupliquer…
 home-menu-history = Versions antérieures…
-home-menu-save-file = Enregistrer comme fichier…
-home-menu-save-org = Enregistrer en Org…
+home-menu-save-file = Exporter comme fichier…
+home-menu-save-org = Exporter en Org…
 
 ## Naming a project
 
@@ -158,14 +158,14 @@ home-history-open-failed = Cette version n’a pas pu être ouverte
 
 ## A project as one file
 
-home-file-open = Ouvrir un fichier de projet…
-home-file-open-title = Ouvrir un fichier de projet
+home-file-open = Importer un fichier de projet…
+home-file-open-title = Importer un fichier de projet
 # The kind of file, in the dialog that asks for one.
 home-file-filter = Projet Glaukopis
-home-file-save-title = Enregistrer le projet comme fichier
-home-file-saved = « { $name } » a été enregistré comme fichier
-home-file-save-failed = Le projet n’a pas pu être enregistré comme fichier
-home-file-open-failed = Le fichier de projet n’a pas pu être ouvert
+home-file-save-title = Exporter le projet comme fichier
+home-file-saved = « { $name } » a été exporté comme fichier
+home-file-save-failed = Le projet n’a pas pu être exporté comme fichier
+home-file-open-failed = Le fichier de projet n’a pas pu être importé
 home-file-opened = « { $name } » a été fait à partir du fichier
 home-file-opened-added = « { $name } » a été fait à partir du fichier. { $count ->
     [one] Une œuvre a été ajoutée
@@ -203,14 +203,14 @@ home-file-make = Créer le projet
 
 ## A project as Org: its readable copy in a folder, and a new project made of an Org file
 
-home-org-open = Ouvrir un fichier Org…
-home-org-open-title = Ouvrir un fichier Org
+home-org-open = Importer un fichier Org…
+home-org-open-title = Importer un fichier Org
 # The kind of file, in the dialog that asks for one.
 home-org-filter = Fichier Org
-home-org-open-failed = Le fichier Org n’a pas pu être ouvert
-home-org-save-title = Choisir le dossier où enregistrer le projet en Org
-home-org-saved = « { $name } » a été enregistré en Org
-home-org-save-failed = Le projet n’a pas pu être enregistré en Org
+home-org-open-failed = Le fichier Org n’a pas pu être importé
+home-org-save-title = Choisir le dossier où exporter le projet en Org
+home-org-saved = « { $name } » a été exporté en Org
+home-org-save-failed = Le projet n’a pas pu être exporté en Org
 
 ## Changes of the home undone and done again
 home-redo = Rétablir
@@ -262,17 +262,17 @@ home-delete-many-confirm = Supprimer les projets
 home-share = Partager…
 
 ## Mind maps of other programs: Freeplane, FreeMind and XMind opened as projects, and projects saved as them and as OPML (agent "mindmaps")
-home-mindmap-open = Ouvrir une carte mentale…
-home-mindmap-open-title = Ouvrir une carte mentale
+home-mindmap-open = Importer une carte mentale…
+home-mindmap-open-title = Importer une carte mentale
 home-mindmap-filter = Carte mentale (Freeplane, FreeMind, XMind)
-home-mindmap-open-failed = La carte mentale n’a pas pu être ouverte
-home-menu-save-mindmap = Enregistrer comme carte mentale…
-home-mindmap-save-title = Enregistrer le projet comme carte mentale
+home-mindmap-open-failed = La carte mentale n’a pas pu être importée
+home-menu-save-mindmap = Exporter comme carte mentale…
+home-mindmap-save-title = Exporter le projet comme carte mentale
 home-mindmap-filter-freeplane = Freeplane et FreeMind
 home-mindmap-filter-xmind = XMind
 home-mindmap-filter-opml = OPML
-home-mindmap-saved = « { $name } » a été enregistré comme carte mentale
-home-mindmap-save-failed = Le projet n’a pas pu être enregistré comme carte mentale
+home-mindmap-saved = « { $name } » a été exporté comme carte mentale
+home-mindmap-save-failed = Le projet n’a pas pu être exporté comme carte mentale
 home-mindmap-not-a-map = « { $name } » n’est pas une carte mentale de Freeplane, FreeMind ou XMind.
 # Said over the lines below, after a mind map was opened.
 home-mindmap-left-out = Une partie de ce que contient la carte mentale n’a pas sa place dans un projet, et a été laissée de côté :

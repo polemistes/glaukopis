@@ -12,10 +12,12 @@ look-scope-document = Tout le document : { $name }
 # Only one element under the document, by its name.
 look-scope-only = Seulement « { $name } »
 
-# Under a setting the document sets otherwise than its layout.
-look-changed-here = Modifié ici
+# Under a setting the document sets otherwise than its type.
+look-changed-here = Modifié dans ce document
 # A change made on an element over this one, as a book over its chapters.
 look-changed-in = Modifié dans « { $name } »
+# Takes a change away.
+look-reset = Réinitialiser
 
 look-search = Trouver un réglage : police, marges, numéros de page…
 look-search-nothing = Aucun réglage ne contient ces mots.
@@ -44,6 +46,11 @@ look-at-bibliography = Bibliographie
 ## list in the order they are printed, and what is required. What is changed
 ## there is kept as the document's own changes over what it is.
 
+look-parts-add = Ajouter
+# Under the parts the type suggests: a menu of the other kinds there are.
+look-parts-another = Une autre partie…
+# Beside a part, while a document type of the writer's own is edited: takes it out of the parts the type suggests.
+look-parts-take-out = Retirer de « { $name } »
 # On the second element of a kind a document has one of.
 look-contents-kinds-doubled = Seul le premier est utilisé
 look-contents-limit-words = Mots du texte, au plus
@@ -52,8 +59,12 @@ look-contents-limit-keywords = Mots-clés, au plus
 # What the limits count, as what the document is says it.
 look-contents-requirements-note = Ce que comptent les limites : { $note }
 
-# The first choice where an element over this one has chosen: the element, and what it chose.
-look-from-with = De « { $name } » ({ $what })
+# The look or the reference style a document has where its type brings none: the one from the settings, by its name.
+look-your-default = { $name }, votre choix habituel
+# The first choice of a look or a reference style: what the document type brings, by its name, and the type by its name.
+look-from-type = { $name }, de « { $type } »
+# The first choice where an element over this one has chosen: what it chose, and the element.
+look-from-with = { $what }, de « { $name } »
 look-style = Style de référence
 look-style-change = Modifier ce style de référence…
 
@@ -72,7 +83,7 @@ look-hide = Masquer l’aspect
 ## Fewer words, stage 3: the parts and the headings of Look in plain words.
 
 look-section-line-numbers = Numéros de ligne
-look-section-type-parts = Parties du type de document
+look-section-type-parts = Parties
 look-at-quotations-warning = Citations
 look-at-paragraph-kinds = Types de paragraphes
 look-at-words-kinds = Types de mots
@@ -83,3 +94,34 @@ look-kind-key = Touche
 look-kind-key-none = Aucune
 # A digit another kind has: choosing it here leaves that kind without.
 look-kind-key-taken = { $keys }, actuellement { $kind }
+
+## One form (the plan of 2026-11-22, stage 2): the top of Look says what the
+## document sets otherwise than its type, and the last part is the document type.
+
+# How many changes the document has over its type, at the top of Look.
+look-changes-here = { $count ->
+    [one] { $count } modification dans ce document
+    [many] { $count } modifications dans ce document
+   *[other] { $count } modifications dans ce document
+  }
+# Puts what the document sets otherwise into its type, a type of the writer's own, by its name.
+look-save-to = Enregistrer dans « { $name } »
+# Makes a document type of the writer's own of the type in use and what the document sets otherwise.
+look-save-as = Enregistrer comme type de document…
+look-save = Enregistrer
+look-type-name = Nom du type de document
+# While a type of the writer's own is edited in Look: every change goes into it.
+look-editing = Modification du type de document « { $name } »
+look-done = Terminé
+look-section-document-type = Type de document
+# Where the look of the document is taken from: the type, the writer's default, or another document type's look.
+look-taken-from = Aspect repris de
+# Over the list of what the document sets otherwise than its type.
+look-changed-list = Modifié dans ce document
+
+# What a document type of the writer's own is beside its look and its parts, under Document type in Look.
+look-type-field-name = Nom
+look-type-description = Description
+look-type-passage-kinds = Types de paragraphes et de mots proposés d’abord
+look-type-exported-as = Exporté en
+look-type-delete = Supprimer ce type de document…

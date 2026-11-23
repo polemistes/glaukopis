@@ -37,13 +37,13 @@ figures-stands-where = Kvar { $kind ->
         [table] tabellen
        *[equation] likninga
     } står
-figures-side-format = Som oppsettet
+figures-side-format = Frå Utsjånad
 figures-side-left = Venstre
 figures-side-middle = Midten
 figures-side-right = Høgre
 # What the layout of the document says of where things of a kind stand. The
 # flow is none for equations, and for what stands in the middle.
-figures-usual = Oppsettet har { $kind ->
+figures-usual = Utsjånad har { $kind ->
         [figure] figurar
         [table] tabellar
        *[equation] likningar
@@ -62,7 +62,7 @@ figures-flows-where = Om teksten flyt rundt { $kind ->
         [table] tabellen
        *[equation] likninga
     }
-figures-flow-format = Som oppsettet
+figures-flow-format = Frå Utsjånad
 figures-flow-around = Flyt rundt
 figures-flow-apart = Står for seg
 figures-flow-at-side = Teksten flyt rundt det som står ved ei side.
@@ -135,11 +135,11 @@ figures-targets-figure-unsaid = Ein figur utan bilettekst
 figures-targets-table-unsaid = Ein tabell utan tabelltekst
 figures-targets-no-match = Ingenting i dokumentet svarer til desse orda.
 figures-targets-none = Det er ingenting å vise til enno: ingen figur, ingen tabell, inga nummerert likning, ingen del med namn.
-figures-targets-hint = Ein kryssreferanse følgjer det den viser til: nummeret, og det oppsettet kallar det.
+figures-targets-hint = Ein kryssreferanse følgjer det den viser til: nummeret, og det Utsjånad kallar det.
 
 ## Shown by the stylesheet, where the page has no element for the words.
 
-figures-picture-absent = Biletet finst ikkje på denne datamaskina
+figures-picture-absent = Biletet finst ikkje på denne eininga
 # A picture that is on this computer and could not be read: the reason is what the reading said.
 figures-picture-unread = Biletet kunne ikkje lesast: { $reason }
 figures-caption-placeholder = Bilettekst

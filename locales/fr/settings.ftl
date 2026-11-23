@@ -5,10 +5,10 @@ settings-error-system = Quelque chose de l’application n’a pas pu être lu
 settings-error-read = Les réglages n’ont pas pu être lus
 settings-error-save = Les réglages n’ont pas pu être enregistrés
 settings-error-fonts = Les polices de cet ordinateur n’ont pas pu être énumérées
-settings-error-templates = Les modèles n’ont pas pu être énumérés
+settings-error-templates = Les types de document n’ont pas pu être énumérés
 # A damaged file of settings was renamed and left beside where it was; $path is where it is now.
 settings-set-aside = Les réglages n’ont pas pu être lus, et sont mis de côté sous le nom { $path } ; les réglages par défaut sont utilisés
-settings-set-aside-person = Les réglages n’ont pas pu être lus, et sont mis de côté sous le nom { $path } ; les réglages par défaut sont utilisés, et cet ordinateur est une nouvelle personne dans l’historique des projets
+settings-set-aside-person = Les réglages n’ont pas pu être lus, et sont mis de côté sous le nom { $path } ; les réglages par défaut sont utilisés, et cet appareil est une nouvelle personne dans l’historique des projets
 
 ## Appearance
 
@@ -133,7 +133,7 @@ settings-default-type = Type de document par défaut
 settings-default-look = Aspect par défaut
 settings-default-style = Style de citation par défaut
 # The first choice of each of the three defaults: none, so that a new document is of the plain type, and the type's look and style hold.
-settings-default-none = Aucun, comme le veut le type de document
+settings-default-none = Selon le type de document
 # Whether a line of the preview, pressed, shows a chip at the edge of the page that says what it is and opens Look at it.
 settings-look-chips = Afficher les pastilles d’aspect dans la fenêtre d’aperçu
 

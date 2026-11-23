@@ -5,10 +5,10 @@ settings-error-system = Qualcosa dell'applicazione non si è potuto leggere
 settings-error-read = Le impostazioni non si sono potute leggere
 settings-error-save = Le impostazioni non si sono potute salvare
 settings-error-fonts = I font di questo computer non si sono potuti elencare
-settings-error-templates = I modelli non si sono potuti elencare
+settings-error-templates = I tipi di documento non si sono potuti elencare
 # A damaged file of settings was renamed and left beside where it was; $path is where it is now.
 settings-set-aside = Le impostazioni non si sono potute leggere, e sono messe da parte come { $path }; si usano quelle predefinite
-settings-set-aside-person = Le impostazioni non si sono potute leggere, e sono messe da parte come { $path }; si usano quelle predefinite, e questo computer è una persona nuova nella cronologia dei progetti
+settings-set-aside-person = Le impostazioni non si sono potute leggere, e sono messe da parte come { $path }; si usano quelle predefinite, e questo dispositivo è una persona nuova nella cronologia dei progetti
 
 ## Appearance
 
@@ -133,7 +133,7 @@ settings-default-type = Tipo di documento predefinito
 settings-default-look = Aspetto predefinito
 settings-default-style = Stile di citazione predefinito
 # The first choice of each of the three defaults: none, so that a new document is of the plain type, and the type's look and style hold.
-settings-default-none = Nessuno, come vuole il tipo di documento
+settings-default-none = Dal tipo di documento
 # Whether a line of the preview, pressed, shows a chip at the edge of the page that says what it is and opens Look at it.
 settings-look-chips = Mostra i cartellini dell'aspetto nell'anteprima
 

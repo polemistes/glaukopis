@@ -52,35 +52,38 @@ personne qui écrit. Un mot choisi ici est le même dans tous les fichiers.
 - **kind** → le **type** : le type d’un élément, d’un paragraphe, de mots.
   Un type est un sens, jamais une apparence.
 - **look** → l’**aspect** : comment un type est composé dans le document
-  (corps, interligne, italique…). Les aspects appartiennent à la mise en
-  page.
+  (corps, interligne, italique…). Les aspects appartiennent au document, qui
+  les tient de son type de document.
 - **the Look panel** → le volet **Aspect** : le volet à côté de l’aperçu, où
-  se règle tout ce qui décide de l’aspect des pages (modèle, mise en page,
-  citations). Ce qu’on y change est gardé comme les **modifications** propres
-  du document par-dessus sa mise en page.
-- **layout** → la **mise en page** (les **mises en page**) : comment se
-  présente la page d’un document : les marges, les polices, les titres, les
-  notes, les aspects des types. « Manuscrit » et « Livre de fiction » sont
-  des mises en page. Une mise en page « à vous » est une de vos mises en
-  page. C’est ce que l’interface appelait « format » avant l’arrivée des
-  modèles (les fichiers et le code disent encore *format*).
+  se règle tout ce qui décide de l’aspect des pages (type de document,
+  aspects, citations). Ce qu’on y change est gardé comme les **modifications**
+  propres du document par-dessus son type de document (« Modifié dans ce
+  document ») ; **Réinitialiser** les retire. Les messages disent **l’Aspect**
+  (« Selon l’Aspect », « L’Aspect met les figures à gauche »).
+- **layout** → ne se dit plus à la personne qui écrit (2026-11-22). Ce que
+  c’était, comment se présente la page d’un document (les marges, les polices,
+  les titres, les notes, les aspects des types), est l’**aspect** du document,
+  qui se règle dans l’Aspect, et qu’un type de document tient. Les fichiers
+  et le code disent *format*. « Mise en page » ne reste que pour la
+  disposition d’une page lue par l’OCR (*ocr-how-layout*) et dans les
+  messages du cœur où l’anglais dit encore *format* (`core-export-format-…`).
 - **format** → le **format** : seulement le format d’un fichier (Word, PDF,
-  LaTeX…). Jamais pour la mise en page. (« Format » reste aussi le nom du
-  menu des marques, comme en anglais.)
-- **template** → le **modèle** : ce dont se compose un document d’un genre :
-  quelles parties, dans quel ordre, quels types d’éléments et de passages il
-  met sous la main, quelle mise en page et quel style de référence il
-  apporte, ce qu’il exige (mots, mots-clés, anonymat), quels fichiers il
-  produit. « Article de revue », « Manuscrit de roman » et celui d’une revue
-  sont des modèles. Il se choisit dans les réglages du document d’un
-  élément, et se transmet aux éléments du dessous.
+  LaTeX…). Jamais pour l’aspect d’un document. (« Format » reste aussi le nom
+  du menu des marques, comme en anglais.)
+- **template** → ne se dit plus (2026-11-22) : le **type de document**, voir
+  plus bas. Ce dont se compose un document d’un genre : quelles parties, dans
+  quel ordre, quels types d’éléments et de passages il met sous la main,
+  quel aspect et quel style de référence il apporte, ce qu’il exige (mots,
+  mots-clés, anonymat), quels fichiers il produit. « Article de revue »,
+  « Manuscrit de roman » et celui d’une revue sont des types de document. Il
+  se choisit dans les réglages du document d’un élément, et se transmet aux
+  éléments du dessous. Les fichiers et le code disent *template*.
 - **pattern document** → le **document patron** : le document d’où Word et
-  OpenDocument prennent leurs styles (anciennement « document modèle », mot
-  qui revient désormais aux modèles).
+  OpenDocument prennent leurs styles (anciennement « document modèle »).
 - **style** → le **style** : le style de référence seulement (citations et
   bibliographie). Jamais pour l’aspect.
 - **document settings** → les **réglages du document** : la fenêtre du
-  document d’un élément (son modèle, ses informations, ses parties, son
+  document d’un élément (son type de document, ses informations, ses parties, son
   aspect, sa langue, la liste de contrôle). Menu : « Réglages du
   document… ».
 - **details** (of a document) → les **informations** (titre, auteurs, date,
@@ -93,11 +96,11 @@ personne qui écrit. Un mot choisi ici est le même dans tous les fichiers.
 - **parts of a window** (the sections chosen at the left) → les
   **rubriques** (« Rubriques de la fenêtre »), pour ne pas les confondre
   avec les parties du document.
-- **requirements** → les **exigences** (de la revue, de l’éditeur, du
-  modèle) ; **limit** → la **limite**
-- **checklist** → la **liste de contrôle** : ce que le modèle exige, en
+- **requirements** → les **exigences** (de la revue, de l’éditeur, du type
+  de document) ; **limit** → la **limite**
+- **checklist** → la **liste de contrôle** : ce que le type de document exige, en
   regard du texte et de l’arbre
-- **in hand** (kinds) → **sous la main** (les types que le modèle met sous
+- **in hand** (kinds) → **sous la main** (les types que le type de document met sous
   la main)
 - **document** → le **document**
 - **the manuscript** → le **manuscrit**
@@ -225,7 +228,7 @@ personne qui écrit. Un mot choisi ici est le même dans tous les fichiers.
 - **settings** → les **réglages**
 - **data directory** → le **dossier des données**
 - **credits** → les **crédits** (« Crédits et licences »)
-- **your usual** (layout, style, template) → **votre choix habituel**, qui
+- **your usual** (aspect, style, type de document) → **votre choix habituel**, qui
   s’accorde avec les trois
 - **tab** → l’**onglet** ; **button** → le **bouton** ; **menu** → le
   **menu** ; **shortcut** → le **raccourci**
@@ -239,7 +242,7 @@ personne qui écrit. Un mot choisi ici est le même dans tous les fichiers.
 - **what you are writing** → **ce que vous écrivez** : le bouton au-dessus de
   l’aperçu nomme ce qu’est le document (« Article de revue », « Thèse ») ;
   la question du **sélecteur** (chooser) est « Qu’écrivez-vous ? ». Ce
-  qu’est le document, c’est le modèle de son élément.
+  qu’est le document, c’est le type de document de son élément.
 - **About this document** → **À propos de ce document** : la fenêtre de ce
   que le document dit de lui-même (informations, langue, liste de contrôle).
   Les « réglages du document » restent le nom de ce qu’on y règle.
@@ -277,7 +280,8 @@ personne qui écrit. Un mot choisi ici est le même dans tous les fichiers.
   par ses titres ou par ses pages, les marques de page).
 - **Gothic type** → les **caractères gothiques** (l’impression allemande et
   scandinave d’autrefois) ; **Fraktur** reste le nom du caractère et du
-  modèle : « le modèle Fraktur », « Fraktur (caractères gothiques) ».
+  modèle de l’OCR : « le modèle Fraktur », « Fraktur (caractères gothiques) ».
+  C’est le seul « modèle » qui reste.
 
 ## La fenêtre, l’aspect et les lignes (après 0.2.4)
 
@@ -304,7 +308,7 @@ est devenu **Propriétés du document** ; « Ouvrir comme carte » est devenu
 - **the typesetting pane** → le volet **Composition** (la **composition**) :
   les pages du côté choisi, telles qu’elles s’imprimeront, avec l’Aspect à
   côté. « Masquer la composition ». Pas « mise en pages », trop proche de
-  la mise en page (layout).
+  la disposition d’une page.
 - **the document pane** → le **volet du document** (références, images,
   commentaires, citations non liées, historique, modifications) ; son
   bouton dans la barre : **Document**.
@@ -317,7 +321,7 @@ est devenu **Propriétés du document** ; « Ouvrir comme carte » est devenu
   « une espace insécable »)
 - **Inline number** → le **numéro dans la ligne** (ce qu’on insère : 3:16,
   327a). Les **marques de référence** restent le nom de ces numéros dans
-  la mise en page (« Les marques de référence sont rendues »).
+  l’aspect du document (« Les marques de référence sont rendues »).
 - **clone** → le **clone** ; **cloner** : « Cloner un autre élément… »,
   « Clone de « … » », « Aller à l’original », « Ne plus être un clone »
 - **sub-elements** → les **sous-éléments** ; **child element** →
@@ -329,8 +333,8 @@ est devenu **Propriétés du document** ; « Ouvrir comme carte » est devenu
   *image* lui aussi)
 - **look chip** → la **pastille d’aspect** (voir *chip* plus haut)
 - **Document properties** → **Propriétés du document** ; **Document type**
-  → le **type de document** : ce qu’est le document, c’est-à-dire son
-  modèle (« Article de revue », « Thèse »). « Type » reste aussi le mot de
+  → le **type de document** : ce qu’est le document (« Article de revue »,
+  « Thèse »). « Type » reste aussi le mot de
   *kind* : un type de document, un type de paragraphe, un type de mots.
 - **Paragraph kind** / **Words kind** → **Type de paragraphe** / **Type de
   mots**
@@ -446,9 +450,9 @@ est devenu **Propriétés du document** ; « Ouvrir comme carte » est devenu
 - **Name by the reference** / **Name by their references** → **Nommer
   d’après la référence** / **Nommer d’après leurs références**
 - **mind map** → la **carte mentale** ; **Freeplane**, **FreeMind**,
-  **XMind** et **OPML** restent eux-mêmes ; **Open a mind map…** → **Ouvrir
-  une carte mentale…** ; **Save as a mind map…** → **Enregistrer comme
-  carte mentale…**
+  **XMind** et **OPML** restent eux-mêmes ; **Import a mind map…** →
+  **Importer une carte mentale…** ; **Export as a mind map…** → **Exporter
+  comme carte mentale…**
 - **left out** (what has no place on the other side) → **laissé de côté**.
   Les choses propres à ces logiciels, dites comme leur interface française
   les dit : **clouds** → les **nuages** (Freeplane) ; **summaries** → les
@@ -508,6 +512,56 @@ est devenu **Propriétés du document** ; « Ouvrir comme carte » est devenu
   plus récente**.
 - **the notebook** (dans le commutateur de la bibliothèque) → **Carnet**, comme
   dans la barre du haut : « Références, carnet ou fichiers ».
+
+## La synchronisation, le téléphone, le type de document (0.2.15)
+
+- **synchronization** → la **synchronisation**, **synchroniser** : le mot des
+  téléphones et des programmes de courrier. Les messages disent « Cesser de
+  synchroniser », comme « Cesser de partager ».
+- **device** → l’**appareil** : un ordinateur ou un téléphone de la personne
+  qui écrit (le mot du propriétaire, 2026-11-22). Les mots de la
+  synchronisation disent *appareil*, jamais *ordinateur*, puisqu’un téléphone
+  en est un ; de même « cet appareil » où l’anglais dit *this device* (le
+  certificat, une image ou un fichier absents, la personne nouvelle de
+  l’historique). *Ordinateur* reste dans les messages du partage d’un projet
+  (« partagé depuis cet ordinateur ») et là où l’anglais dit encore
+  *computer*.
+- **Export** / **Import** (le menu d’un projet) → **Exporter** / **Importer**
+  : un projet est *exporté* comme fichier, en Org ou comme carte mentale, et
+  *importé* d’un fichier de projet, d’un fichier Org ou d’une carte mentale ;
+  jamais *Enregistrer* ni *Ouvrir*, qui disent que le fichier est travaillé
+  (le mot du propriétaire, 2026-11-21).
+- **From Look** → **Selon l’Aspect** ; **From the document type** → **Selon
+  le type de document**, comme **Selon le document**.
+- **home** (ce que le serveur garde pour les appareils d’une personne ;
+  l’interface ne le dit jamais) → dans les messages du cœur : « la
+  synchronisation » ou « vos appareils », selon la phrase.
+- **code** (créé sur un appareil, entré sur un autre pour le rejoindre) → le
+  **code** ; **Join with a code** → **Rejoindre avec un code** ; **Join** →
+  **Rejoindre** ; **Joining…** → **Connexion…**, comme pour un projet
+  partagé.
+- **Update is needed for synchronization** → **Une mise à jour est
+  nécessaire pour la synchronisation** (les mots du propriétaire, dits dans
+  les réglages et sur le téléphone).
+- **written in on two devices while they were apart** → **écrit sur deux
+  appareils alors qu’ils n’étaient pas en contact** ; le moment d’où part la
+  révision est un nom, pour que « Depuis « … » » se lise en français :
+  « Depuis « la rencontre des appareils » ».
+- **the phone** (`phone.ftl`) → **Retour**, **Plus**, **Photographier**
+  (le bouton qui ouvre l’appareil photo), **Image ou fichier**.
+- **document type** → le **type de document** (Bokmål *dokumenttype*), jamais
+  « modèle » ni « mise en page » depuis le 2026-11-22 : ce qu’est un document
+  (une lettre, un article, une thèse), les parties qu’il apporte et son
+  aspect. On en fait un à soi depuis l’Aspect (**Enregistrer comme type de
+  document…**) ou depuis le sélecteur (**Nouveau type de document…**). Tous
+  les messages disent ce mot (2026-11-23) ; « un autre ordinateur » reste où
+  l’anglais le dit encore.
+- **Breaks and whitespace** → **Sauts et espaces** ; **Enter key** → **Touche
+  Entrée**, avec **Saut de paragraphe** et **Saut de ligne**.
+- **Reset** (un réglage de l’Aspect revient à celui du type) →
+  **Réinitialiser**.
+- **what another app shared** (`core-notebook-shared-…`) → commence par une
+  minuscule : « rien n’a été partagé », « { $name } n’a pas pu être lu ».
 
 ## Les noms qui ne se traduisent pas
 

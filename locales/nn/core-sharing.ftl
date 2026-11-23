@@ -40,6 +40,27 @@ core-sharing-not-as-named = Det som vart sendt, er ikkje det namnet seier at det
 core-sharing-file-too-large = Fila er større enn denne tenaren tek imot: éi fil kan vere på høgst { $most }.
 core-sharing-project-full = Det er ikkje plass til fila: filene i eitt prosjekt kan til saman vere på høgst { $most } på denne tenaren.
 
+## What the server refuses of the synchronization of a writer's own
+## devices, which it keeps together as what it calls a home.
+
+core-sharing-no-home = Tenaren tek ikkje lenger vare på det desse einingane synkroniserer.
+# The texts of a project, the notebook or the library use something this version does not know.
+core-sharing-later = Noko vart skrive på ei anna eining med ein nyare versjon av Glaukopis. Oppdater Glaukopis på denne eininga for å synkronisere det.
+core-sharing-home-not-admitted = Tenaren slepp ikkje lenger inn denne eininga: den kan ha vorte fjerna frå dei som blir synkroniserte.
+core-sharing-home-full = Tenaren synkroniserer einingane til så mange skribentar som den er sett opp til.
+core-sharing-many-computers = Det er allereie seksten einingar som blir synkroniserte, og fleire kan det ikkje vere; fjern éi først.
+core-sharing-many-codes = Det er allereie fem opne kodar; trekk tilbake éin.
+core-sharing-no-computer = Det finst inga slik eining blant dei som blir synkroniserte.
+core-sharing-no-computer-name = Eininga har ikkje noko namn.
+core-sharing-bad-kind = Kva slag dokument det er, blir skrive med éin til seksten små bokstavar.
+core-sharing-bad-document = Tenaren kan ikkje bruke id-en til dokumentet.
+core-sharing-many-documents = Tenaren har så mange dokument for desse einingane som den kan ha.
+core-sharing-not-an-exchange = Tenaren kunne ikkje lese det som vart sendt.
+core-sharing-unreadable-change = Ei endring som vart sendt, kunne ikkje lesast.
+core-sharing-document-too-large = Eit prosjekt, notatblokka eller biblioteket ville bli større enn denne tenaren tek vare på.
+# The most is in the server's words: "10 GB".
+core-sharing-home-files-full = Det er ikkje plass til fila: filene som blir synkroniserte, kan til saman vere på høgst { $most } på denne tenaren.
+
 ## The pictures of the figures, which are sent and fetched one by one.
 
 core-sharing-picture-too-large = { $host } tek ikkje imot eit så stort bilete.

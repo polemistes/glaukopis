@@ -5,10 +5,10 @@ settings-error-system = Etwas an der Anwendung konnte nicht gelesen werden
 settings-error-read = Die Einstellungen konnten nicht gelesen werden
 settings-error-save = Die Einstellungen konnten nicht gespeichert werden
 settings-error-fonts = Die Schriften dieses Computers konnten nicht aufgelistet werden
-settings-error-templates = Die Vorlagen konnten nicht aufgelistet werden
+settings-error-templates = Die Dokumenttypen konnten nicht aufgelistet werden
 # A damaged file of settings was renamed and left beside where it was; $path is where it is now.
 settings-set-aside = Die Einstellungen konnten nicht gelesen werden und sind als { $path } beiseitegelegt; die Standardeinstellungen gelten
-settings-set-aside-person = Die Einstellungen konnten nicht gelesen werden und sind als { $path } beiseitegelegt; die Standardeinstellungen gelten, und dieser Computer ist im Verlauf der Projekte eine neue Person
+settings-set-aside-person = Die Einstellungen konnten nicht gelesen werden und sind als { $path } beiseitegelegt; die Standardeinstellungen gelten, und dieses Gerät ist im Verlauf der Projekte eine neue Person
 
 ## Appearance
 
@@ -133,7 +133,7 @@ settings-default-type = Standard-Dokumenttyp
 settings-default-look = Standard-Aussehen
 settings-default-style = Standard-Zitierstil
 # The first choice of each of the three defaults: none, so that a new document is of the plain type, and the type's look and style hold.
-settings-default-none = Keine, wie der Dokumenttyp es vorsieht
+settings-default-none = Aus dem Dokumenttyp
 # Whether a line of the preview, pressed, shows a chip at the edge of the page that says what it is and opens Look at it.
 settings-look-chips = Etiketten des Aussehens in der Vorschau zeigen
 

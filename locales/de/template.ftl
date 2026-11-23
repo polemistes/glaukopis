@@ -47,13 +47,13 @@ template-target-epub = E-Book
 
 # The name a template of one's own is first given, made from that of the template it is made from.
 template-name-changed = { $name }, geändert
-template-saved = „{ $name }“ ist unter Ihren eigenen Vorlagen gespeichert
-template-save-failed = Die Vorlage konnte nicht gespeichert werden.
-template-delete-failed = Die Vorlage konnte nicht gelöscht werden.
-template-keep-failed = Die Vorlage konnte nicht im Projekt aufbewahrt werden. Auf einem anderen Computer und in einer Datei des Projekts hat das Dokument stattdessen die gewohnte Vorlage.
-template-delete-title = Die Vorlage „{ $name }“ löschen?
-template-delete-message = Elemente, die sie verwenden, verwenden stattdessen die Vorlage, aus der sie gemacht wurde.
-template-delete-confirm = Vorlage löschen
+template-saved = „{ $name }“ ist unter Ihren eigenen Dokumenttypen gespeichert
+template-save-failed = Der Dokumenttyp konnte nicht gespeichert werden.
+template-delete-failed = Der Dokumenttyp konnte nicht gelöscht werden.
+template-keep-failed = Der Dokumenttyp konnte nicht im Projekt aufbewahrt werden. Auf einem anderen Computer und in einer Datei des Projekts hat das Dokument stattdessen den Standard-Dokumenttyp.
+template-delete-title = Den Dokumenttyp „{ $name }“ löschen?
+template-delete-message = Elemente, die ihn verwenden, verwenden stattdessen den Dokumenttyp, aus dem er gemacht wurde.
+template-delete-confirm = Dokumenttyp löschen
 
 ## The parts of the editor, as they are chosen at the left.
 

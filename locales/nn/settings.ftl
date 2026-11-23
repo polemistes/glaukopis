@@ -5,10 +5,10 @@ settings-error-system = Opplysningane om programmet kunne ikkje lesast
 settings-error-read = Innstillingane kunne ikkje lesast
 settings-error-save = Innstillingane kunne ikkje lagrast
 settings-error-fonts = Skriftene på denne datamaskina kunne ikkje listast opp
-settings-error-templates = Malane kunne ikkje listast opp
+settings-error-templates = Dokumenttypane kunne ikkje listast opp
 # A damaged file of settings was renamed and left beside where it was; $path is where it is now.
 settings-set-aside = Innstillingane kunne ikkje lesast, og er lagde til side som { $path }; standardinnstillingane blir brukte
-settings-set-aside-person = Innstillingane kunne ikkje lesast, og er lagde til side som { $path }; standardinnstillingane blir brukte, og denne datamaskina er ein ny person i historikken til prosjekta
+settings-set-aside-person = Innstillingane kunne ikkje lesast, og er lagde til side som { $path }; standardinnstillingane blir brukte, og denne eininga er ein ny person i historikken til prosjekta
 
 ## Appearance
 
@@ -133,7 +133,7 @@ settings-default-type = Standard dokumenttype
 settings-default-look = Standard utsjånad
 settings-default-style = Standard referansestil
 # The first choice of each of the three defaults: none, so that a new document is of the plain type, and the type's look and style hold.
-settings-default-none = Ingen: som dokumenttypen har det
+settings-default-none = Frå dokumenttypen
 # Whether a line of the preview, pressed, shows a chip at the edge of the page that says what it is and opens Look at it.
 settings-look-chips = Vis brikker for utsjånaden i førehandsvisinga
 

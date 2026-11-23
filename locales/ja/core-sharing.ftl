@@ -39,6 +39,27 @@ core-sharing-not-as-named = 送られたものは、その名前が示すもの�
 core-sharing-file-too-large = ファイルがこのサーバーで受け付ける大きさを超えています。一つのファイルは{ $most }までです。
 core-sharing-project-full = ファイルを置く余地がありません。このサーバーでは、一つのプロジェクトのファイルは合わせて{ $most }までです。
 
+## What the server refuses of the synchronization of a writer's own
+## devices, which it keeps together as what it calls a home.
+
+core-sharing-no-home = サーバーには、これらのデバイスが同期するものがもうありません。
+# The texts of a project, the notebook or the library use something this version does not know.
+core-sharing-later = ほかのデバイスで、より新しいバージョンのGlaukopisによって書き込まれたものがあります。同期するには、このデバイスのGlaukopisを更新してください。
+core-sharing-home-not-admitted = サーバーはこのデバイスをもう受け付けません。同期するデバイスから外された可能性があります。
+core-sharing-home-full = サーバーが同期できる書き手の数は、設定された上限までです。
+core-sharing-many-computers = すでに16台のデバイスが同期されていて、これが上限です。先に1台を外してください。
+core-sharing-many-codes = 未使用のコードがすでに5件あります。1件を取り消してください。
+core-sharing-no-computer = 同期しているデバイスの中に、そのようなデバイスはありません。
+core-sharing-no-computer-name = デバイスに名前がありません。
+core-sharing-bad-kind = 文書の種類は、1文字から16文字の小文字です。
+core-sharing-bad-document = 文書のIDがサーバーで使えるものではありません。
+core-sharing-many-documents = これらのデバイスの文書は、サーバーが保てる数に達しています。
+core-sharing-not-an-exchange = サーバーは送られたものを読み取れませんでした。
+core-sharing-unreadable-change = 送られた変更を読み取れませんでした。
+core-sharing-document-too-large = プロジェクト、ノートブック、またはライブラリが、このサーバーの保てる大きさを超えてしまいます。
+# The most is in the server's words: "10 GB".
+core-sharing-home-files-full = ファイルを置く余地がありません。このサーバーでは、同期するファイルは合わせて{ $most }までです。
+
 ## 図の画像。一枚ずつ送られ、取得される。
 
 core-sharing-picture-too-large = { $host }はこれほど大きな画像を受け付けません。

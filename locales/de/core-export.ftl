@@ -64,12 +64,12 @@ core-export-the-format = das Layout „{ $id }“
 
 ## Templates.
 
-core-export-template-bad-id = „{ $id }“ kann nicht die Kennung einer Vorlage sein
-core-export-template-needs-name = Eine Vorlage braucht einen Namen.
-core-export-template-own-only = Nur eigene Vorlagen können gelöscht werden.
-core-export-the-template = die Vorlage „{ $id }“
-core-export-output-not-yet = Die Ausgabe „{ $id }“ der Vorlage kann noch nicht erzeugt werden, nur das Dokument.
-core-export-output-unknown = Die Vorlage hat keine Ausgabe „{ $id }“.
+core-export-template-bad-id = „{ $id }“ kann nicht die Kennung eines Dokumenttyps sein
+core-export-template-needs-name = Ein Dokumenttyp braucht einen Namen.
+core-export-template-own-only = Nur eigene Dokumenttypen können gelöscht werden.
+core-export-the-template = der Dokumenttyp „{ $id }“
+core-export-output-not-yet = Die Ausgabe „{ $id }“ des Dokumenttyps kann noch nicht erzeugt werden, nur das Dokument.
+core-export-output-unknown = Der Dokumenttyp hat keine Ausgabe „{ $id }“.
 
 ## Stage 5 of the settings in plain words: LaTeX's hyphenation.
 

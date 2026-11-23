@@ -147,7 +147,7 @@ format-bibliography-entry-spacing = Luft mellom oppføringane
 
 format-kind-based-on = byggjer på { $base }
 # Of the kind Text, which the parts for type and paragraphs set.
-format-kind-text-note = som skrifta og avsnitta i oppsettet har det
+format-kind-text-note = sett under Skrift og Avsnitt
 # At the right of a kind's line where this layout says nothing of it.
 format-kind-as-base = som grunnlaget
 format-kind-resolved = Slik det blir: { $look }

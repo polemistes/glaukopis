@@ -37,13 +37,13 @@ figures-stands-where = { $kind ->
         [table] 表
        *[equation] 数式
     }の配置
-figures-side-format = レイアウトどおり
+figures-side-format = 見た目のとおり
 figures-side-left = 左
 figures-side-middle = 中央
 figures-side-right = 右
 # 文書のレイアウトが、ある種類のものの配置について言うこと。flow は、
 # 数式と中央に置くものでは none。
-figures-usual = レイアウトでは{ $kind ->
+figures-usual = 見た目では{ $kind ->
         [figure] 図
         [table] 表
        *[equation] 数式
@@ -62,7 +62,7 @@ figures-flows-where = { $kind ->
         [table] 表
        *[equation] 数式
     }の周りにテキストを回り込ませるか
-figures-flow-format = レイアウトどおり
+figures-flow-format = 見た目のとおり
 figures-flow-around = 回り込ませる
 figures-flow-apart = 離して置く
 figures-flow-at-side = 左右に置いたものの周りにはテキストが回り込みます。
@@ -135,11 +135,11 @@ figures-targets-figure-unsaid = 説明のない図
 figures-targets-table-unsaid = 説明のない表
 figures-targets-no-match = 文書にこの語に当てはまるものはありません。
 figures-targets-none = 参照できるものがまだありません。図も表も、番号付きの数式も、名前のある部分もありません。
-figures-targets-hint = 相互参照は参照先に従います：その番号にも、レイアウトでの呼び名にも。
+figures-targets-hint = 相互参照は参照先に従います：その番号にも、見た目での呼び名にも。
 
 ## ページにその語のための要素がないとき、スタイルシートが出す。
 
-figures-picture-absent = 画像がこのコンピューターにありません
+figures-picture-absent = 画像がこのデバイスにありません
 # このコンピューターにあるが読めなかった画像。reason は読み込みが言ったこと。
 figures-picture-unread = 画像を読み込めませんでした：{ $reason }
 figures-caption-placeholder = 画像の説明

@@ -15,7 +15,7 @@ preview-program-missing = { $program } n’est pas installé
 preview-programs-needed = L’aperçu et l’exportation se font avec Pandoc et Typst. Installez-les avec le gestionnaire de paquets de votre système, ou indiquez dans les réglages où ils se trouvent.
 preview-look-again = Chercher de nouveau
 preview-looking-failed = Les programmes n’ont pas pu être cherchés
-preview-reading-failed = Les styles, les mises en page et les modèles n’ont pas pu être lus
+preview-reading-failed = Les styles de référence, les aspects et les types de document n’ont pas pu être lus
 preview-failed = L’aperçu n’a pas pu être produit
 preview-failed-message = L’aperçu n’a pas pu être produit.
 # A page of the preview, as it is told to those who cannot see it.
@@ -52,7 +52,7 @@ preview-remarks = Remarques
 preview-remarks-font = Police
 preview-font-missing = { $font } n’est pas installée.
 # The first name is that of the font the layout asks for; this is of the one used in its place.
-preview-font-substitute = { $font } la remplace, ici dans l’aperçu et dans un PDF produit. Dans un document exporté pour Word, LibreOffice ou LaTeX, la police est nommée comme la mise en page le demande, et elle y est pour quiconque ouvre le document et l’a.
+preview-font-substitute = { $font } la remplace, ici dans l’aperçu et dans un PDF produit. Dans un document exporté pour Word, LibreOffice ou LaTeX, la police est nommée comme l’Aspect le règle, et elle y est pour quiconque ouvre le document et l’a.
 preview-remarks-references = Références
 # In bold, and the next follows it in the same sentence.
 preview-works-missing = { $count ->

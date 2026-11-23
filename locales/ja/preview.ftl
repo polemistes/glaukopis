@@ -15,7 +15,7 @@ preview-program-missing = { $program }がインストールされていません
 preview-programs-needed = プレビューと書き出しはPandocとTypstで作成します。システムのパッケージマネージャーでインストールするか、設定でその場所を指定してください。
 preview-look-again = もう一度探す
 preview-looking-failed = プログラムを探せませんでした
-preview-reading-failed = スタイル、レイアウト、テンプレートを読み込めませんでした
+preview-reading-failed = 引用スタイル、見た目、文書種別を読み込めませんでした
 preview-failed = プレビューを作成できませんでした
 preview-failed-message = プレビューを作成できませんでした。
 # プレビューのページ。画面を見られない人に伝えるときの言い方。
@@ -44,7 +44,7 @@ preview-remarks = 指摘
 preview-remarks-font = フォント
 preview-font-missing = { $font }がインストールされていません。
 # 最初の名前はレイアウトが求めるフォント。これは代わりに使うフォントについて。
-preview-font-substitute = 代わりに{ $font }を、このプレビューと作成するPDFで使います。Word、LibreOffice、LaTeX向けに書き出した文書では、フォントはレイアウトの指定どおりの名前で記され、文書を開く人がそのフォントをもっていれば使われます。
+preview-font-substitute = 代わりに{ $font }を、このプレビューと作成するPDFで使います。Word、LibreOffice、LaTeX向けに書き出した文書では、フォントは見た目の設定どおりの名前で記され、文書を開く人がそのフォントをもっていれば使われます。
 preview-remarks-references = 文献
 # 太字で示し、次のメッセージが同じ文の中で続く。
 preview-works-missing = { $count ->

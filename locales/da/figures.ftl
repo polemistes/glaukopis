@@ -37,13 +37,13 @@ figures-stands-where = Hvor { $kind ->
         [table] tabellen
        *[equation] ligningen
     } står
-figures-side-format = Som opsætningen
+figures-side-format = Fra Udseende
 figures-side-left = Venstre
 figures-side-middle = Midten
 figures-side-right = Højre
 # What the layout of the document says of where things of a kind stand. The
 # flow is none for equations, and for what stands in the middle.
-figures-usual = Opsætningen har { $kind ->
+figures-usual = Udseende har { $kind ->
         [figure] figurer
         [table] tabeller
        *[equation] ligninger
@@ -62,7 +62,7 @@ figures-flows-where = Om teksten løber omkring { $kind ->
         [table] tabellen
        *[equation] ligningen
     }
-figures-flow-format = Som opsætningen
+figures-flow-format = Fra Udseende
 figures-flow-around = Løber omkring
 figures-flow-apart = Står for sig
 figures-flow-at-side = Teksten løber omkring det, der står i en side.
@@ -135,11 +135,11 @@ figures-targets-figure-unsaid = En figur, der intet er sagt om
 figures-targets-table-unsaid = En tabel, der intet er sagt om
 figures-targets-no-match = Intet i dokumentet svarer til disse ord.
 figures-targets-none = Der er intet at henvise til endnu: ingen figur, ingen tabel, ingen nummereret ligning, ingen del med et navn.
-figures-targets-hint = En krydshenvisning følger det, den henviser til: dets nummer, og hvad opsætningen kalder det.
+figures-targets-hint = En krydshenvisning følger det, den henviser til: dets nummer, og hvad Udseende kalder det.
 
 ## Shown by the stylesheet, where the page has no element for the words.
 
-figures-picture-absent = Billedet er ikke på denne computer
+figures-picture-absent = Billedet er ikke på denne enhed
 # A picture that is on this computer and could not be read: the reason is what the reading said.
 figures-picture-unread = Billedet kunne ikke læses: { $reason }
 figures-caption-placeholder = Det, der siges om billedet

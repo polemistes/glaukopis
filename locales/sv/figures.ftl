@@ -37,13 +37,13 @@ figures-stands-where = Var { $kind ->
         [table] tabellen
        *[equation] ekvationen
     } står
-figures-side-format = Som layouten
+figures-side-format = Från Utseende
 figures-side-left = Vänster
 figures-side-middle = Mitten
 figures-side-right = Höger
 # What the layout of the document says of where things of a kind stand. The
 # flow is none for equations, and for what stands in the middle.
-figures-usual = Layouten har { $kind ->
+figures-usual = Utseende har { $kind ->
         [figure] figurer
         [table] tabeller
        *[equation] ekvationer
@@ -62,7 +62,7 @@ figures-flows-where = Om texten flyter runt { $kind ->
         [table] tabellen
        *[equation] ekvationen
     }
-figures-flow-format = Som layouten
+figures-flow-format = Från Utseende
 figures-flow-around = Flyter runt den
 figures-flow-apart = Står för sig
 figures-flow-at-side = Texten flyter runt det som står vid en sida.
@@ -135,11 +135,11 @@ figures-targets-figure-unsaid = En figur som inget sägs om
 figures-targets-table-unsaid = En tabell som inget sägs om
 figures-targets-no-match = Inget i dokumentet svarar mot de här orden.
 figures-targets-none = Det finns inget att hänvisa till än: ingen figur, ingen tabell, ingen numrerad ekvation, ingen del med namn.
-figures-targets-hint = En korshänvisning följer det den hänvisar till: dess nummer, och vad layouten kallar det.
+figures-targets-hint = En korshänvisning följer det den hänvisar till: dess nummer, och vad Utseende kallar det.
 
 ## Shown by the stylesheet, where the page has no element for the words.
 
-figures-picture-absent = Bilden finns inte på den här datorn
+figures-picture-absent = Bilden finns inte på den här enheten
 # A picture that is on this computer and could not be read: the reason is what the reading said.
 figures-picture-unread = Bilden kunde inte läsas: { $reason }
 figures-caption-placeholder = Vad som sägs om bilden

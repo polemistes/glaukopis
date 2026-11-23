@@ -102,8 +102,8 @@ home-deleted-projects = 削除したプロジェクト{ $count }件
 home-menu-rename = 名前を変更…
 home-menu-duplicate = 複製…
 home-menu-history = 以前のバージョン…
-home-menu-save-file = ファイルとして保存…
-home-menu-save-org = Orgとして保存…
+home-menu-save-file = ファイルとして書き出す…
+home-menu-save-org = Orgとして書き出す…
 
 ## プロジェクトに名前を付ける
 
@@ -154,14 +154,14 @@ home-history-open-failed = そのバージョンを開けませんでした
 
 ## 一つのファイルとしてのプロジェクト
 
-home-file-open = プロジェクトファイルを開く…
-home-file-open-title = プロジェクトファイルを開く
+home-file-open = プロジェクトファイルをインポート…
+home-file-open-title = プロジェクトファイルをインポート
 # ファイルを求めるダイアログでの、ファイルの種類。
 home-file-filter = Glaukopisプロジェクト
-home-file-save-title = プロジェクトをファイルとして保存
-home-file-saved = 「{ $name }」をファイルとして保存しました
-home-file-save-failed = プロジェクトをファイルとして保存できませんでした
-home-file-open-failed = プロジェクトファイルを開けませんでした
+home-file-save-title = プロジェクトをファイルとして書き出す
+home-file-saved = 「{ $name }」をファイルとして書き出しました
+home-file-save-failed = プロジェクトをファイルとして書き出せませんでした
+home-file-open-failed = プロジェクトファイルをインポートできませんでした
 home-file-opened = ファイルから「{ $name }」を作りました
 home-file-opened-added = ファイルから「{ $name }」を作りました。{ $count ->
    *[other] 文献{ $count }件をライブラリに追加しました。
@@ -191,14 +191,14 @@ home-file-make = プロジェクトを作る
 
 ## Orgとしてのプロジェクト：フォルダーの中の読めるコピーと、Orgファイルから作る新しいプロジェクト
 
-home-org-open = Orgファイルを開く…
-home-org-open-title = Orgファイルを開く
+home-org-open = Orgファイルをインポート…
+home-org-open-title = Orgファイルをインポート
 # ファイルを求めるダイアログでの、ファイルの種類。
 home-org-filter = Orgファイル
-home-org-open-failed = Orgファイルを開けませんでした
-home-org-save-title = プロジェクトをOrgとして保存するフォルダーを選択
-home-org-saved = 「{ $name }」をOrgとして保存しました
-home-org-save-failed = プロジェクトをOrgとして保存できませんでした
+home-org-open-failed = Orgファイルをインポートできませんでした
+home-org-save-title = プロジェクトをOrgとして書き出すフォルダーを選択
+home-org-saved = 「{ $name }」をOrgとして書き出しました
+home-org-save-failed = プロジェクトをOrgとして書き出せませんでした
 
 ## ホームの変更を元に戻す、やり直す
 home-redo = やり直す
@@ -230,17 +230,17 @@ home-delete-many-confirm = プロジェクトを削除
 home-share = 共有…
 
 ## ほかのプログラムのマインドマップ：Freeplane、FreeMind、XMind をプロジェクトとして開き、プロジェクトをそれらと OPML として保存する（エージェント「mindmaps」）
-home-mindmap-open = マインドマップを開く…
-home-mindmap-open-title = マインドマップを開く
+home-mindmap-open = マインドマップをインポート…
+home-mindmap-open-title = マインドマップをインポート
 home-mindmap-filter = マインドマップ（Freeplane、FreeMind、XMind）
-home-mindmap-open-failed = マインドマップを開けませんでした
-home-menu-save-mindmap = マインドマップとして保存…
-home-mindmap-save-title = プロジェクトをマインドマップとして保存
+home-mindmap-open-failed = マインドマップをインポートできませんでした
+home-menu-save-mindmap = マインドマップとして書き出す…
+home-mindmap-save-title = プロジェクトをマインドマップとして書き出す
 home-mindmap-filter-freeplane = FreeplaneとFreeMind
 home-mindmap-filter-xmind = XMind
 home-mindmap-filter-opml = OPML
-home-mindmap-saved = 「{ $name }」をマインドマップとして保存しました
-home-mindmap-save-failed = プロジェクトをマインドマップとして保存できませんでした
+home-mindmap-saved = 「{ $name }」をマインドマップとして書き出しました
+home-mindmap-save-failed = プロジェクトをマインドマップとして書き出せませんでした
 home-mindmap-not-a-map = 「{ $name }」はFreeplane、FreeMind、XMindのマインドマップではありません。
 # マインドマップを開いた後、下の行の上に言う。
 home-mindmap-left-out = マインドマップの中身のうち、プロジェクトに置き場所のないものは除外しました：

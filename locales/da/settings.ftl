@@ -5,10 +5,10 @@ settings-error-system = Noget om programmet kunne ikke læses
 settings-error-read = Indstillingerne kunne ikke læses
 settings-error-save = Indstillingerne kunne ikke gemmes
 settings-error-fonts = Skrifterne på denne computer kunne ikke opregnes
-settings-error-templates = Skabelonerne kunne ikke opregnes
+settings-error-templates = Dokumenttyperne kunne ikke opregnes
 # A damaged file of settings was renamed and left beside where it was; $path is where it is now.
 settings-set-aside = Indstillingerne kunne ikke læses og er lagt til side som { $path }; standardindstillingerne bruges
-settings-set-aside-person = Indstillingerne kunne ikke læses og er lagt til side som { $path }; standardindstillingerne bruges, og denne computer er en ny person i projekternes historik
+settings-set-aside-person = Indstillingerne kunne ikke læses og er lagt til side som { $path }; standardindstillingerne bruges, og denne enhed er en ny person i projekternes historik
 
 ## Appearance
 
@@ -133,7 +133,7 @@ settings-default-type = Standarddokumenttype
 settings-default-look = Standardudseende
 settings-default-style = Standardreferencestil
 # The first choice of each of the three defaults: none, so that a new document is of the plain type, and the type's look and style hold.
-settings-default-none = Ingen: som dokumenttypen har det
+settings-default-none = Fra dokumenttypen
 # Whether a line of the preview, pressed, shows a chip at the edge of the page that says what it is and opens Look at it.
 settings-look-chips = Vis udseendeskilte i forhåndsvisningen
 

@@ -57,7 +57,7 @@ network-wait = { $host } ber oss vänta innan vi frågar igen
 network-status = { $host } svarade med ett fel ({ $status })
 # $most is in megabytes.
 network-too-large = { $host } svarade med mer än Glaukopis tar emot ({ $most } MB)
-network-tls = ingen säker förbindelse med { $host } kunde upprättas: dess certifikat är kanske inte betrott på den här datorn, eller så står något emellan, som en proxy eller en brandvägg, i vägen
+network-tls = ingen säker förbindelse med { $host } kunde upprättas: dess certifikat är kanske inte betrott på den här enheten, eller så står något emellan, som en proxy eller en brandvägg, i vägen
 network-redirects = { $host } skickade frågan vidare från en adress till en annan för många gånger
 network-stalled = svaret från { $host } slutade komma
 network-not-understood = { $host } svarade på ett sätt som inte kunde förstås

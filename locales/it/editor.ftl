@@ -39,9 +39,9 @@ editor-numbering = Numerazione
 editor-numbering-none = Non numerate
 editor-numbering-counted = Contate dal primo numero dato
 editor-numbering-given = Solo i numeri dati
-editor-line-numbers-every-layout = Come l'impaginazione: ogni { $every }
+editor-line-numbers-every-layout = Come in Aspetto: ogni { $every }
 editor-line-numbers-side = Lato dei numeri
-editor-side-layout = Come dice l'impaginazione ({ $side })
+editor-side-layout = Come in Aspetto ({ $side })
 editor-side-left = Sinistra
 editor-side-right = Destra
 # Over a number in the margin of the text, which opens a field for it when pressed.
@@ -77,7 +77,7 @@ editor-gloss-hint = Che cosa significa il lemma
 editor-code = Codice
 editor-code-hint = Una riga di codice, o di qualunque cosa tenuta lettera per lettera
 editor-break = Stacco
-editor-break-hint = Una pausa tra parti, con il segno che l'impaginazione le dà
+editor-break-hint = Una pausa tra parti, con il segno che le dà Aspetto
 editor-draft = Appunto di lavoro
 editor-draft-hint = Per i tuoi occhi: non va in nessun documento
 editor-foreign = Parole straniere
@@ -171,7 +171,7 @@ editor-pointer = Rimando…
 editor-refmark-title = Numero nel testo
 editor-refmark-label = Etichetta
 editor-refmark-placeholder = 3:16, 327a, 1094a1
-editor-refmark-dialog-hint = Il segno non fa parte delle parole: l'ortografia, la ricerca e il conto delle parole lo saltano. L'impaginazione dice se sta in alto nel rigo o a margine.
+editor-refmark-dialog-hint = Il segno non fa parte delle parole: l'ortografia, la ricerca e il conto delle parole lo saltano. Aspetto dice se sta in alto nel rigo o a margine.
 # What a picture that was pasted without a name of its own is called in the store of pictures.
 editor-pasted-picture = immagine
 
@@ -245,7 +245,7 @@ editor-locator-sub-verbo = Sub voce
 # The number is that of the note, or a letter for a note that stands in a place of its own.
 editor-note-numbered = Nota { $number }
 editor-note-place = Dove sta la nota
-editor-note-place-format = Dove l'impaginazione ha le sue note
+editor-note-place-format = Dove Aspetto mette le note
 editor-note-place-foot = A piè di pagina
 editor-note-place-end = Alla fine del testo
 editor-note-placeholder = Il testo della nota
@@ -255,6 +255,11 @@ editor-words-kind = Tipo di parole
 editor-words-kind-now = Tipo di parole: { $kind }
 editor-marks = Segni
 editor-marks-shown = Segni degli spazi e dei paragrafi
+editor-breaks = Interruzioni e spazi
+# The heading over the two choices of what the Enter key makes in a text: a break between paragraphs, or a break of the line within the paragraph.
+editor-enter-key = Tasto Invio
+editor-enter-paragraph = Interruzione di paragrafo
+editor-enter-line = Interruzione di riga
 editor-image = Immagine
 editor-inline-number = Numero nel testo…
 

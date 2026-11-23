@@ -37,25 +37,30 @@ Page Down, piltangenterna. Pluralformer: one, other.
 - **passage** — passage (passagen); oftast ”det markerade”
 - **kind** — slag (slaget, slagen): ett slag av element, ett slags
   stycke, ett slag av ord. Aldrig ”typ”, aldrig ”stil”.
-- **look** — utseende (utseendet): hur ett slag sätts i dokumentet;
-  utseendena hör till layouten, inte till texten
-- **layout** — layout (layouten, layouter, layouterna): hur ett dokuments
-  sidor ser ut, med marginaler, typsnitt, rubriker, noter och slagens
-  utseenden. ”Manuskript” och ”En skönlitterär bok” är layouter; *dina
-  egna layouter*; *manuskriptlayouten*. Filerna och koden kallar den
-  *format*.
+- **look** — utseende (utseendet): hur ett dokuments sidor ser ut, med
+  marginaler, typsnitt, rubriker, noter och slagens utseenden; också
+  panelen *Utseende*. Engelskan säger *Look* som ett namn utan artikel
+  (*From Look*, *Look decides how deep*), och det gör svenskan också:
+  *Från Utseende*, *Utseende avgör hur djupt*, *under Delar i Utseende*.
+- **layout** — sägs inte längre i gränssnittet (sedan 0.3.0): det som hette
+  layout heter *utseende*, och det som en layout bestod av hör till
+  *dokumenttypen*. Kvar finns bara textigenkänningens *sidans layout*
+  (*Layout of the page*, hur Tesseract delar upp en sida) och kärnans
+  *layout* i core-export-format-… (engelskans *format*), som väntar på ett
+  beslut.
 - **format** — format, bara om filformat (Word, PDF, LaTeX): *filformat*.
   Till 2026-10-18 stod ”format” här också för layouten; det är rättat
   där engelskan har ändrats.
-- **template** — mall (mallen, mallar, mallarna): vad ett dokument av ett
-  slag består av, vilka delar det har och i vilken ordning, vilka slag
-  det har till hands, vilken layout och referensstil det har med sig,
-  vad det kräver och vilka filer det blir. ”Tidskriftsartikel” är en
-  mall. En mall väljs i ett elements dokumentinställningar och ärvs nedåt
-  i trädet. *To put in hand* = ha till hands, ta fram.
+- **template** — sägs inte längre (sedan 0.3.0): det som hette mall heter
+  *dokumenttyp* (se nedan): vad ett dokument av ett slag består av, vilka
+  delar det har och i vilken ordning, vilka slag det har till hands, vilket
+  utseende och vilken referensstil det har med sig, vad det kräver och
+  vilka filer det blir. ”Tidskriftsartikel” är en dokumenttyp. En
+  dokumenttyp väljs i ett elements dokumentegenskaper och ärvs nedåt i
+  trädet. *To put in hand* = ha till hands, ta fram.
 - **document settings** — dokumentinställningar (fönstret
   *Dokumentinställningar*; i elementets meny *Dokumentinställningar…*):
-  mallen, uppgifterna, delarna, utseendet, språket och checklistan
+  dokumenttypen, uppgifterna, delarna, utseendet, språket och checklistan
 - **details** — uppgifter (dokumentets uppgifter: titel, författare,
   datum, nyckelord, identifierare)
 - **part** — del (delen, delar, delarna): ett slag av element som har en
@@ -71,7 +76,7 @@ Page Down, piltangenterna. Pluralformer: one, other.
   uppifrån och ner.
 - **what you are writing** — vad du skriver (*Vad skriver du?*): knappen
   över förhandsvisningen som säger vad dokumentet är (ett vanligt
-  dokument, en tidskriftsartikel, en avhandling…), alltså elementets mall;
+  dokument, en tidskriftsartikel, en avhandling…), alltså elementets dokumenttyp;
   **the chooser** — väljaren (väljaren av vad du skriver)
 - **About this document** — Om det här dokumentet: fönstret med ett
   elements dokumentinställningar (uppgifterna, språket, checklistan);
@@ -82,7 +87,7 @@ Page Down, piltangenterna. Pluralformer: one, other.
 - **running head** — kolumntitel (kolumntiteln), som i svensk typografi;
   **header** / **footer** — sidhuvud / sidfot, med platserna vänster,
   mitten och höger, på första sidan och på de övriga
-- **checklist** — checklista (checklistan): vad mallen kräver, mot det
+- **checklist** — checklista (checklistan): vad dokumenttypen kräver, mot det
   texten och trädet har
 - **style** — stil, bara om referensstilen (referensstil). De stilar som
   hittas i en PDF:s text (ocr.ftl) heter *textstilar*, för att inte blandas
@@ -90,7 +95,14 @@ Page Down, piltangenterna. Pluralformer: one, other.
 - **document** — dokument (dokumentet)
 - **the manuscript** — manuskriptet
 - **the preview** — förhandsvisningen
-- **export** — exportera, export
+- **export** — exportera, export: också ett projekt *exporteras*, som en
+  fil, som Org eller som en tankekarta (*Exportera som en fil…*, ”…”
+  *exporterades som Org*); aldrig *spara som*, som säger att det är
+  projektet.
+- **import** — importera: en projektfil, en Org-fil eller en tankekarta
+  *importeras* och blir ett nytt projekt (*Importera en projektfil…*,
+  *Projektfilen kunde inte importeras*); aldrig *öppna*, som säger att
+  man arbetar i filen.
 - **bring in** — hämta in (ett dokument hämtas in och blir en karta);
   referenser *importeras* från Zotero
 
@@ -221,13 +233,13 @@ Page Down, piltangenterna. Pluralformer: one, other.
 - **Document properties** — Dokumentegenskaper (fönstret, och
   *Dokumentegenskaper…* i elementets meny); ersätter *Om det här
   dokumentet*
-- **document type** — dokumenttyp (dokumenttypen): det gränssnittet nu
-  kallar mallen, vad dokumentet är (*Dokumenttyp…*, *Dokumenttypens
-  delar*, *Förvald dokumenttyp*). Där engelskan ännu säger *template*
-  står *mall*.
+- **document type** — dokumenttyp (dokumenttypen): det som förut hette mall,
+  vad dokumentet är (*Dokumenttyp…*, *Dokumenttypens
+  delar*, *Förvald dokumenttyp*). Engelskan säger *document type* överallt
+  nu, och svenskan *dokumenttyp*; *mall* sägs inte.
 - **default** (i inställningarna) — förvald, förvalt (*Förvalt utseende*,
-  *Förvald referensstil*); **None, as the document type has it** — Ingen,
-  som dokumenttypen har det
+  *Förvald referensstil*); **From the document type** — Från
+  dokumenttypen
 - **Paragraph kind** / **Words kind** — Slag av stycke / Slag av ord (inte
   ”ordslag”, som är grammatikens ordklass); i plural *Slag av stycken*,
   *Slag av ord*
@@ -463,6 +475,48 @@ Page Down, piltangenterna. Pluralformer: one, other.
   (*skrevs av en senare version av Glaukopis*, *Uppdatera Glaukopis för att
   öppna det*), som core-projectfile-later.
 - **Notebook** (i bibliotekets omkopplare) — Anteckningsbok.
+
+## Synkronisering, telefonen och dokumenttyper (0.2.15, 2026-11-23)
+
+- **synchronization** — synkronisering (synkroniseringen), verbet
+  *synkronisera*, som telefoner och e-postprogram säger: *Synkronisera nu*,
+  *Sluta synkronisera på den här enheten*, *Senast synkroniserat …*.
+- **device** — enhet (enheten, enheter, enheterna): en dator eller en
+  telefon som skribenten själv har, och som synkroniseras med de andra.
+  Synkroniseringens ord säger *enhet*, aldrig *dator*, eftersom en telefon
+  också är en. *This device* = den här enheten; *your other devices* = dina
+  andra enheter. *Remove the device* = ta bort enheten; *Rename the device*
+  = Byt namn på enheten.
+- **home** (kärnans ord för det servern håller för en skribents enheter) —
+  sägs aldrig; kärnans meddelanden säger *det som de här enheterna
+  synkroniserar* eller *synkroniseringen*, och gränssnittet säger det aldrig.
+- **code** (för att gå med) — kod (koden); *Join with a code* = *Gå med via
+  en kod* (för att inte säga *med* två gånger); knappen *Join* = *Gå med*,
+  som i delade projekt. Koden *återkallas* (*withdrawn*), som en inbjudan.
+- **Update is needed for synchronization** — Uppdatering behövs för
+  synkronisering.
+- **written in on two devices while they were apart** — skrevs i på två
+  enheter medan de inte var i kontakt med varandra (*skriva i* ett projekt,
+  som i *skrevs av en senare version*); *the devices met* = enheterna
+  möttes (stället i granskningen: *Sedan ”enheterna möttes”*).
+- **the phone's page** (phone.ftl) — *Photograph* = Ta foto (som kamerans
+  knapp på en svensk telefon); *Picture or file* = Bild eller fil; *Back* =
+  Tillbaka; *More* = Mer; *Kept here, and sent when the server is reached* =
+  Sparat här, och skickas när servern nås.
+- **document type** — dokumenttyp (dokumenttypen, dokumenttyper): vad ett
+  dokument är (ett brev, en artikel, en avhandling), med de delar det har
+  och hur det ser ut. Skribenten kan göra egna dokumenttyper i Utseende
+  (*Spara som dokumenttyp…*, *Dokumenttypens namn*, *Redigerar
+  dokumenttypen ”…”*, *Radera den här dokumenttypen…*) och spara ett
+  dokuments ändringar som en. Aldrig *mall* eller *layout* för det som
+  engelskan kallar *document type*. *Start from* = Utgå från; *Nothing* =
+  Ingenting.
+- **Breaks and whitespace** — Brytningar och mellanrum (knappen som visar
+  tecknen för radbrytning, styckebrytning och mellanslag); **Enter key** —
+  Returtangenten, med valen *Styckebrytning* (*Paragraph break*) och
+  *Radbrytning* (*Line break*).
+- **what another app shared** (core-notebook-shared-…) — gement, eftersom de
+  står efter andra ord: *ingenting delades*, *{ $name } kunde inte läsas*.
 
 ## Namn som inte översätts
 

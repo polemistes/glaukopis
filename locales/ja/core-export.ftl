@@ -63,12 +63,12 @@ core-export-the-format = レイアウト「{ $id }」
 
 ## テンプレート。
 
-core-export-template-bad-id = 「{ $id }」はテンプレートのIDにできません
-core-export-template-needs-name = テンプレートには名前が必要です。
-core-export-template-own-only = 削除できるのは独自のテンプレートだけです。
-core-export-the-template = テンプレート「{ $id }」
-core-export-output-not-yet = テンプレートの出力「{ $id }」はまだ作成できません。作成できるのは文書だけです。
-core-export-output-unknown = テンプレートに出力「{ $id }」はありません。
+core-export-template-bad-id = 「{ $id }」は文書種別のIDにできません
+core-export-template-needs-name = 文書種別には名前が必要です。
+core-export-template-own-only = 削除できるのは独自の文書種別だけです。
+core-export-the-template = 文書種別「{ $id }」
+core-export-output-not-yet = 文書種別の出力「{ $id }」はまだ作成できません。作成できるのは文書だけです。
+core-export-output-unknown = 文書種別に出力「{ $id }」はありません。
 
 ## わかりやすい言葉での設定、第5段階：LaTeXのハイフネーション。
 

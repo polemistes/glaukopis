@@ -15,7 +15,7 @@ preview-program-missing = { $program } ist nicht installiert
 preview-programs-needed = Vorschau und Export werden mit Pandoc und Typst erzeugt. Installieren Sie sie mit der Paketverwaltung Ihres Systems, oder geben Sie in den Einstellungen an, wo sie sind.
 preview-look-again = Noch einmal nachsehen
 preview-looking-failed = Nach den Programmen konnte nicht gesucht werden
-preview-reading-failed = Die Zitierstile, Layouts und Vorlagen konnten nicht gelesen werden
+preview-reading-failed = Die Zitierstile, das Aussehen und die Dokumenttypen konnten nicht gelesen werden
 preview-failed = Die Vorschau konnte nicht erzeugt werden
 preview-failed-message = Die Vorschau konnte nicht erzeugt werden.
 # A page of the preview, as it is told to those who cannot see it.
@@ -48,7 +48,7 @@ preview-remarks = Hinweise
 preview-remarks-font = Schrift
 preview-font-missing = { $font } ist nicht installiert.
 # The first name is that of the font the layout asks for; this is of the one used in its place.
-preview-font-substitute = An ihrer Stelle wird { $font } verwendet, hier in der Vorschau und in einem erzeugten PDF. In einem Dokument, das für Word, LibreOffice oder LaTeX exportiert wird, ist die Schrift genannt, wie das Layout sie verlangt, und ist da für den, der das Dokument öffnet und sie hat.
+preview-font-substitute = An ihrer Stelle wird { $font } verwendet, hier in der Vorschau und in einem erzeugten PDF. In einem Dokument, das für Word, LibreOffice oder LaTeX exportiert wird, ist die Schrift so genannt, wie sie in „Aussehen“ eingestellt ist, und ist da für den, der das Dokument öffnet und sie hat.
 preview-remarks-references = Quellen
 # In bold, and the next follows it in the same sentence.
 preview-works-missing = { $count ->

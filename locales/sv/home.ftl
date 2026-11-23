@@ -105,8 +105,8 @@ home-deleted-projects = { $count ->
 home-menu-rename = Byt namn…
 home-menu-duplicate = Kopiera…
 home-menu-history = Tidigare versioner…
-home-menu-save-file = Spara som en fil…
-home-menu-save-org = Spara som Org…
+home-menu-save-file = Exportera som en fil…
+home-menu-save-org = Exportera som Org…
 
 ## Naming a project
 
@@ -157,14 +157,14 @@ home-history-open-failed = Den versionen kunde inte öppnas
 
 ## A project as one file
 
-home-file-open = Öppna en projektfil…
-home-file-open-title = Öppna en projektfil
+home-file-open = Importera en projektfil…
+home-file-open-title = Importera en projektfil
 # The kind of file, in the dialog that asks for one.
 home-file-filter = Glaukopis-projekt
-home-file-save-title = Spara projektet som en fil
-home-file-saved = ”{ $name }” sparades som en fil
-home-file-save-failed = Projektet kunde inte sparas som en fil
-home-file-open-failed = Projektfilen kunde inte öppnas
+home-file-save-title = Exportera projektet som en fil
+home-file-saved = ”{ $name }” exporterades som en fil
+home-file-save-failed = Projektet kunde inte exporteras som en fil
+home-file-open-failed = Projektfilen kunde inte importeras
 home-file-opened = ”{ $name }” gjordes av filen
 home-file-opened-added = ”{ $name }” gjordes av filen. { $count ->
     [one] Ett verk
@@ -198,14 +198,14 @@ home-file-make = Gör projektet
 
 ## A project as Org: its readable copy in a folder, and a new project made of an Org file
 
-home-org-open = Öppna en Org-fil…
-home-org-open-title = Öppna en Org-fil
+home-org-open = Importera en Org-fil…
+home-org-open-title = Importera en Org-fil
 # The kind of file, in the dialog that asks for one.
 home-org-filter = Org-fil
-home-org-open-failed = Org-filen kunde inte öppnas
-home-org-save-title = Välj mappen där projektet ska sparas som Org
-home-org-saved = ”{ $name }” sparades som Org
-home-org-save-failed = Projektet kunde inte sparas som Org
+home-org-open-failed = Org-filen kunde inte importeras
+home-org-save-title = Välj mappen där projektet ska exporteras som Org
+home-org-saved = ”{ $name }” exporterades som Org
+home-org-save-failed = Projektet kunde inte exporteras som Org
 
 ## Changes of the home undone and done again
 home-redo = Gör om
@@ -252,17 +252,17 @@ home-delete-many-confirm = Radera projekten
 home-share = Dela…
 
 ## Mind maps of other programs: Freeplane, FreeMind and XMind opened as projects, and projects saved as them and as OPML (agent "mindmaps")
-home-mindmap-open = Öppna en tankekarta…
-home-mindmap-open-title = Öppna en tankekarta
+home-mindmap-open = Importera en tankekarta…
+home-mindmap-open-title = Importera en tankekarta
 home-mindmap-filter = Tankekarta (Freeplane, FreeMind, XMind)
-home-mindmap-open-failed = Tankekartan kunde inte öppnas
-home-menu-save-mindmap = Spara som en tankekarta…
-home-mindmap-save-title = Spara projektet som en tankekarta
+home-mindmap-open-failed = Tankekartan kunde inte importeras
+home-menu-save-mindmap = Exportera som en tankekarta…
+home-mindmap-save-title = Exportera projektet som en tankekarta
 home-mindmap-filter-freeplane = Freeplane och FreeMind
 home-mindmap-filter-xmind = XMind
 home-mindmap-filter-opml = OPML
-home-mindmap-saved = ”{ $name }” sparades som en tankekarta
-home-mindmap-save-failed = Projektet kunde inte sparas som en tankekarta
+home-mindmap-saved = ”{ $name }” exporterades som en tankekarta
+home-mindmap-save-failed = Projektet kunde inte exporteras som en tankekarta
 home-mindmap-not-a-map = ”{ $name }” är inte en tankekarta från Freeplane, FreeMind eller XMind.
 # Said over the lines below, after a mind map was opened.
 home-mindmap-left-out = En del av det tankekartan rymmer har ingen plats i ett projekt, och utelämnades:

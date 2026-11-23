@@ -57,7 +57,7 @@ network-wait = { $host } nous demande d’attendre avant de redemander
 network-status = { $host } a répondu par une erreur ({ $status })
 # $most is in megabytes.
 network-too-large = { $host } a répondu par plus que Glaukopis n’en accepte ({ $most } Mo)
-network-tls = une connexion sécurisée à { $host } n’a pas pu être établie : son certificat n’est peut-être pas reconnu sur cet ordinateur, ou quelque chose se met en travers, comme un proxy ou un pare-feu
+network-tls = une connexion sécurisée à { $host } n’a pas pu être établie : son certificat n’est peut-être pas reconnu sur cet appareil, ou quelque chose se met en travers, comme un proxy ou un pare-feu
 network-redirects = { $host } a renvoyé la demande d’une adresse à une autre trop de fois
 network-stalled = la réponse de { $host } a cessé d’arriver
 network-not-understood = { $host } a répondu d’une manière qui n’a pas pu être comprise

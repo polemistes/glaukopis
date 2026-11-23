@@ -40,6 +40,27 @@ core-sharing-not-as-named = Det, der blev sendt, er ikke det, dets navn siger, d
 core-sharing-file-too-large = Filen er større, end denne server tager imod: én fil må højst fylde { $most }.
 core-sharing-project-full = Der er ikke plads til filen: ét projekts filer må tilsammen højst fylde { $most } på denne server.
 
+## What the server refuses of the synchronization of a writer's own
+## devices, which it keeps together as what it calls a home.
+
+core-sharing-no-home = Serveren opbevarer ikke længere det, disse enheder synkroniserer.
+# The texts of a project, the notebook or the library use something this version does not know.
+core-sharing-later = Noget blev skrevet på en anden enhed med en nyere version af Glaukopis. Opdater denne for at synkronisere det.
+core-sharing-home-not-admitted = Serveren lukker ikke længere denne enhed ind: den kan være fjernet fra dem, der synkroniseres.
+core-sharing-home-full = Serveren synkroniserer enhederne for så mange personer, som den er sat op til.
+core-sharing-many-computers = Seksten enheder synkroniseres allerede, og flere kan der ikke være; fjern først én.
+core-sharing-many-codes = Der er allerede fem åbne koder; træk én tilbage.
+core-sharing-no-computer = Der er ingen sådan enhed blandt dem, der synkroniseres.
+core-sharing-no-computer-name = Enheden har intet navn.
+core-sharing-bad-kind = Hvilken slags dokument det er, skrives med ét til seksten små bogstaver.
+core-sharing-bad-document = Dokumentets id er ikke et, serveren kan bruge.
+core-sharing-many-documents = Serveren opbevarer så mange dokumenter for disse enheder, som den må.
+core-sharing-not-an-exchange = Serveren kunne ikke læse det, der blev sendt.
+core-sharing-unreadable-change = En ændring, der blev sendt, kunne ikke læses.
+core-sharing-document-too-large = Et projekt, notesbogen eller biblioteket ville blive større, end denne server opbevarer.
+# The most is in the server's words: "10 GB".
+core-sharing-home-files-full = Der er ikke plads til filen: de filer, der synkroniseres, må tilsammen højst fylde { $most } på denne server.
+
 ## The pictures of the figures, which are sent and fetched one by one.
 
 core-sharing-picture-too-large = { $host } tager ikke imod et så stort billede.

@@ -32,6 +32,7 @@ parts-signature = Underskrift
 # The cover.
 parts-blurb = Bagsidetekst
 
+# What Glaukopis makes itself, printed where an element of the kind stands.
 parts-title-page = Titelblad
 parts-half-title = Smudstitel
 parts-keywords = Nøgleord

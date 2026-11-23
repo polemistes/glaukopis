@@ -64,7 +64,7 @@ notebook-org-first-box = Unsortiert
 
 # A file a note holds, as it stands in the note: opened by two presses.
 notebook-file-open-named = { $name } öffnen
-notebook-file-not-here = Die Datei ist nicht auf diesem Computer
+notebook-file-not-here = Die Datei ist nicht auf diesem Gerät
 
 # Files that could not be taken in as notes, said in one message.
 notebook-files-not-taken = Einige Dateien konnten nicht übernommen werden
@@ -283,3 +283,5 @@ notebook-note-window-add-file = Eine Datei hinzufügen…
 # A button in the row of the window of a note: takes away everything written in the note, so that it is empty. Undo brings it back.
 notebook-note-window-clear = Notiz leeren
 notebook-note-window-not-sent = Die Notiz konnte nicht ins Notizbuch geschrieben werden
+# Said in a window of a note that stays when its note is sent, as on a phone, whose one window cannot go: the field is empty again.
+notebook-note-window-sent = Die Notiz wurde ins Notizbuch gesendet

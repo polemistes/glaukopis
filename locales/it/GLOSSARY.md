@@ -392,6 +392,25 @@ Il senso di ciascuna parola è in `locales/GLOSSARY.md`.
 | highlight: None; Highlight colour | Nessun colore; Colore di evidenziazione | il menu dei colori dell'evidenziazione; il nome dello strumento resta «Evidenziato» |
 | Later (version) | più recente | «una versione più recente di Glaukopis», come in `core-projectfile-later`: un progetto o il taccuino scritto da una versione più nuova di quella in uso, che perciò non lo apre |
 
+## Nuovo nella 0.2.15 (2026-11-23)
+
+| inglese | italiano | note |
+| --- | --- | --- |
+| document type | tipo di documento | l'unica parola per ciò che un documento è (una lettera, un articolo, una tesi), con le parti che porta e il suo aspetto; se ne fa uno proprio da Aspetto («Salva come tipo di documento…») o dalla scelta («Nuovo tipo di documento…»). Dalla parola del proprietario del 2026-11-22 non si dice più «modello» né «impaginazione»: dove l'inglese dice *Look*, l'italiano dice «Aspetto» (le voci di `checklist.ftl`, `chooser.ftl`, `editor.ftl`, `look.ftl` sono state riportate a questa regola; «Parti» è il nome della sezione che era «Parti del tipo di documento»). Le righe *template* e *layout* più su sono la storia, non la regola |
+| synchronize, synchronization | sincronizzare, sincronizzazione | la parola comune di telefoni e programmi di posta; «Sincronizza ora», «Smetti di sincronizzare» |
+| device | dispositivo | un computer o un telefono di chi scrive, sincronizzati fra loro; mai «computer» nelle parole della sincronizzazione, perché un telefono è un dispositivo (dove l'inglese dice ancora *this computer*, come in `chooser-of-project`, l'italiano dice «computer»). L'interfaccia non dice mai *home*: il core dice «la sincronizzazione» o «i tuoi dispositivi» |
+| code (to join) | codice | breve, fatto su un dispositivo e scritto su un altro: «Entra con un codice», «Aggiungi un dispositivo…»; il tempo di scadenza segue dopo «Scadenza:», per non dipendere dall'ora («alle 1:30», «alle 14:30») |
+| Update is needed for synchronization | Serve un aggiornamento per la sincronizzazione | detto dove un altro dispositivo ha una versione più nuova |
+| written in on two devices while they were apart | scritto su due dispositivi che non erano in contatto fra loro | e il momento «quando i dispositivi si sono incontrati», da cui la revisione parte («Da «quando i dispositivi si sono incontrati»») |
+| Last synchronized, Last seen | Ultima sincronizzazione, Ultimo collegamento | seguiti da due punti e dal quando («proprio ora», «3 minuti fa», «12 marzo»), perché «ultima sincronizzazione proprio ora» non regge e «12 marzo» non ha preposizione |
+| Photograph, Picture or file | Scatta una foto, Immagine o file | i due pulsanti della riga sopra la tastiera sul telefono |
+| Breaks and whitespace, Enter key | Interruzioni e spazi, Tasto Invio | il pulsante dei segni di interruzione di riga e di paragrafo e degli spazi; la scelta di ciò che Invio fa: Interruzione di paragrafo, Interruzione di riga |
+| what another app shared (`core-notebook-shared-…`) | non è stato condiviso niente; { $name } non si è potuto leggere | parole e file passati a Glaukopis da un'altra app sul telefono; cominciano con la minuscola perché stanno dopo altre parole |
+| export, import (a project as a file, as Org, as a mind map) | esportare, importare | un progetto si *esporta* come file, come Org o come mappa mentale («Esporta come file…», ««{ $name }» è stato esportato come Org»): ciò che si scrive esce dal programma e non è più il progetto; un file di progetto, un file Org o una mappa mentale si *importano* («Importa un file Org…») e ne nasce un nuovo progetto. Mai «salva come» né «apri», che direbbero che nel file si lavora (parola del proprietario, 2026-11-21) |
+| this device (where a file or the settings are not) | questo dispositivo | `figures-picture-absent`, `notebook-file-not-here`, `settings-set-aside-person`, `network-tls`: dove l'inglese ora dice *this device*; «computer» resta dove dice ancora *this computer* (`settings-error-fonts`, `chooser-of-project`) |
+| Look (as a place, in a sentence) | Aspetto | «Come in Aspetto», «Aspetto mette le figure a sinistra», «come lo chiama Aspetto», «Quanto profondo lo decide Aspetto»; mai «impaginazione» né «modello»; `format-kind-text-note`: «stabilito sotto Caratteri e Paragrafi» |
+| Reset (a change in Look) | Ripristina | toglie una modifica e riporta ciò che il tipo di documento dà; «Azzera» resta di ricerche e filtri |
+
 ## Nomi che non si traducono
 
 Glaukopis; Pandoc, Typst, Tesseract, Hunspell, LaTeX, LuaLaTeX, BibLaTeX,

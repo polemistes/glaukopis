@@ -16,9 +16,6 @@ template-group-journal = Riviste
 template-group-publisher = Editori
 template-group-style-guide = Manuali di stile
 
-## Where a kind of element stands in the document.
-
-
 ## The parts of a document the application makes itself.
 
 template-generated-half-title = Occhietto
@@ -43,32 +40,17 @@ template-target-markdown = Markdown
 template-target-html = Pagina web
 template-target-epub = E-book
 
-## The template editor.
+## Saving and deleting a document type of the writer's own.
 
-# The name a template of one's own is first given, made from that of the template it is made from.
+# The name a document type of one's own is first given, made from that of the type it is made from.
 template-name-changed = { $name }, modificato
-template-saved = «{ $name }» è salvato tra i tuoi modelli
-template-save-failed = Il modello non si è potuto salvare.
-template-delete-failed = Il modello non si è potuto eliminare.
-template-keep-failed = Il modello non si è potuto tenere nel progetto. Su un altro computer, e in un file del progetto, il documento avrà invece il modello solito.
-template-delete-title = Eliminare il modello «{ $name }»?
-template-delete-message = Gli elementi che lo usano useranno invece il modello da cui è stato fatto.
-template-delete-confirm = Elimina il modello
-
-## The parts of the editor, as they are chosen at the left.
-
-
-## About the template.
-
-
-## The layout and the reference style it brings.
-
-
-## The contents: the order of the document.
-
-
-## The kinds in hand.
-
+template-saved = «{ $name }» è salvato tra i tuoi tipi di documento
+template-save-failed = Il tipo di documento non si è potuto salvare.
+template-delete-failed = Il tipo di documento non si è potuto eliminare.
+template-keep-failed = Il tipo di documento non si è potuto tenere nel progetto. Su un altro computer, e in un file del progetto, il documento avrà invece il tipo di documento predefinito.
+template-delete-title = Eliminare il tipo di documento «{ $name }»?
+template-delete-message = Gli elementi che lo usano useranno invece il tipo di documento da cui è stato fatto.
+template-delete-confirm = Elimina il tipo di documento
 
 ## The requirements.
 
@@ -78,10 +60,7 @@ template-requirement-keywords = Parole chiave
 # Beside a number of 0, in the place of its unit.
 template-no-limit = nessun limite
 
-## The files the template makes.
-
-
-## The names of the kinds of text that come with Glaukopis, as the chooser of what you are writing
+## The names of the document types that come with Glaukopis, as the chooser of what you are writing
 ## and the button over the preview give them; journals, publishers and style guides keep their own.
 
 template-called-plain = Documento semplice
@@ -105,6 +84,7 @@ template-called-news-article = Articolo di giornale
 
 template-requirement-anonymity = Anonimo
 
-## Stage 4 of the settings, the zoom and the keys of the kinds: the kinds Ctrl+Alt and a digit gives.
+## What is said in words of a document type that comes with Glaukopis, over
+## what it brings: only where its name does not say what it is.
 
 template-described-plain = Testo generico.

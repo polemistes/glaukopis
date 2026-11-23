@@ -5,10 +5,10 @@ settings-error-system = アプリケーションについての情報の一部�
 settings-error-read = 設定を読み込めませんでした
 settings-error-save = 設定を保存できませんでした
 settings-error-fonts = このコンピューターのフォントを一覧にできませんでした
-settings-error-templates = テンプレートを一覧にできませんでした
+settings-error-templates = 文書種別を一覧にできませんでした
 # 壊れた設定ファイルは名前を変えて、もとの場所の隣に残した。$path は今それがある場所。
 settings-set-aside = 設定を読み込めなかったため、{ $path }に退避しました。既定の設定を使います
-settings-set-aside-person = 設定を読み込めなかったため、{ $path }に退避しました。既定の設定を使います。プロジェクトの履歴では、このコンピューターは新しい人として扱われます
+settings-set-aside-person = 設定を読み込めなかったため、{ $path }に退避しました。既定の設定を使います。プロジェクトの履歴では、このデバイスは新しい人として扱われます
 
 ## 外観
 
@@ -134,7 +134,7 @@ settings-default-type = 既定の文書種別
 settings-default-look = 既定の見た目
 settings-default-style = 既定の引用スタイル
 # 三つの既定のそれぞれの最初の選択肢：なし。新しい文書は無地の種別になり、その種別の見た目とスタイルに従う。
-settings-default-none = なし（文書種別のとおり）
+settings-default-none = 文書種別のとおり
 # プレビューの行を押したとき、それが何かを言い、そこで見た目の欄を開くラベルをページの端に出すかどうか。
 settings-look-chips = プレビューに見た目ラベルを表示する
 

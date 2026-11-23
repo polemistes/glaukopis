@@ -8,6 +8,10 @@ ui-working = Arbejder
 ui-dismiss = Luk
 ui-no-backend = Glaukopis skal køres som et program, ikke i en browser.
 
+# How the interface puts together pieces of what it says: between the parts
+# of a list ("3 images, 2 files"), between the words of one phrase
+# ("indented smaller"), and at the end of a sentence made of parts. A space
+# is written {" "}, nothing {""}: Japanese has 、, nothing and 。.
 ui-list-between = ,{" "}
 ui-words-between = {" "}
 ui-sentence-end = .

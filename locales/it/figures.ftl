@@ -37,13 +37,13 @@ figures-stands-where = Dove sta { $kind ->
         [table] la tabella
        *[equation] l'equazione
     }
-figures-side-format = Come l'impaginazione
+figures-side-format = Come in Aspetto
 figures-side-left = A sinistra
 figures-side-middle = In mezzo
 figures-side-right = A destra
 # What the layout of the document says of where things of a kind stand. The
 # flow is none for equations, and for what stands in the middle.
-figures-usual = L'impaginazione mette { $kind ->
+figures-usual = Aspetto mette { $kind ->
         [figure] le figure
         [table] le tabelle
        *[equation] le equazioni
@@ -62,7 +62,7 @@ figures-flows-where = Se il testo scorre intorno { $kind ->
         [table] alla tabella
        *[equation] all'equazione
     }
-figures-flow-format = Come l'impaginazione
+figures-flow-format = Come in Aspetto
 figures-flow-around = Scorre intorno
 figures-flow-apart = Sta staccato
 figures-flow-at-side = Il testo scorre intorno a ciò che sta a lato.
@@ -135,11 +135,11 @@ figures-targets-figure-unsaid = Una figura di cui non si dice nulla
 figures-targets-table-unsaid = Una tabella di cui non si dice nulla
 figures-targets-no-match = Nulla nel documento risponde a queste parole.
 figures-targets-none = Non c'è ancora nulla a cui rimandare: nessuna figura, nessuna tabella, nessuna equazione numerata, nessuna parte con un nome.
-figures-targets-hint = Un rimando segue ciò a cui rimanda: il suo numero, e come l'impaginazione lo chiama.
+figures-targets-hint = Un rimando segue ciò a cui rimanda: il suo numero, e come lo chiama Aspetto.
 
 ## Shown by the stylesheet, where the page has no element for the words.
 
-figures-picture-absent = L'immagine non è su questo computer
+figures-picture-absent = L'immagine non è su questo dispositivo
 # A picture that is on this computer and could not be read: the reason is what the reading said.
 figures-picture-unread = L'immagine non si è potuta leggere: { $reason }
 figures-caption-placeholder = Ciò che si dice dell'immagine

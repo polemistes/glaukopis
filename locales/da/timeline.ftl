@@ -76,7 +76,8 @@ when-hint-units = Tider er tal af tidslinjens enhed, angivet under dens baner. �
 when-bc = f.Kr.
 # $month: 1 to 12; $year: as written.
 when-month-of = { $year }, måned { $month }
-# How a placement is said beside the element: "after the quarrel, before the embassy".
+# How a placement is said beside the element: "after the quarrel, before the embassy";
+# $name is the name of the element it is placed by.
 when-said-after-name = efter { $name }
 when-said-before-name = før { $name }
 when-said-during-name = under { $name }

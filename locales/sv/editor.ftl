@@ -39,9 +39,9 @@ editor-numbering = Numrering
 editor-numbering-none = Inte numrerade
 editor-numbering-counted = Räknade från det första nummer som anges
 editor-numbering-given = Bara de nummer som anges
-editor-line-numbers-every-layout = Som layouten: var { $every }:e
+editor-line-numbers-every-layout = Från Utseende: var { $every }:e
 editor-line-numbers-side = Numren till
-editor-side-layout = Den sida layouten anger ({ $side })
+editor-side-layout = Från Utseende ({ $side })
 editor-side-left = Vänster
 editor-side-right = Höger
 # Over a number in the margin of the text, which opens a field for it when pressed.
@@ -77,7 +77,7 @@ editor-gloss-hint = Vad uppslagsordet betyder
 editor-code = Kod
 editor-code-hint = En rad kod, eller av något som bevaras bokstav för bokstav
 editor-break = Avdelare
-editor-break-hint = En paus mellan delar, med det tecken layouten ger den
+editor-break-hint = En paus mellan delar, med det tecken Utseende ger den
 editor-draft = Arbetsanteckning
 editor-draft-hint = För dina ögon: den hamnar inte i något dokument
 editor-foreign = Främmande ord
@@ -170,7 +170,7 @@ editor-pointer = Korshänvisning…
 editor-refmark-title = Nummer i raden
 editor-refmark-label = Beteckning
 editor-refmark-placeholder = 3:16, 327a, 1094a1
-editor-refmark-dialog-hint = Märket är ingen del av orden: stavningen, sökningen och ordräkningen går förbi det. Layouten avgör om det sätts upphöjt i raden eller i marginalen.
+editor-refmark-dialog-hint = Märket är ingen del av orden: stavningen, sökningen och ordräkningen går förbi det. Utseende avgör om det sätts upphöjt i raden eller i marginalen.
 # What a picture that was pasted without a name of its own is called in the store of pictures.
 editor-pasted-picture = bild
 
@@ -244,7 +244,7 @@ editor-locator-sub-verbo = Sub verbo
 # The number is that of the note, or a letter for a note that stands in a place of its own.
 editor-note-numbered = Not { $number }
 editor-note-place = Var noten står
-editor-note-place-format = Där layouten har sina noter
+editor-note-place-format = Där Utseende placerar noterna
 editor-note-place-foot = Längst ner på sidan
 editor-note-place-end = I slutet av texten
 editor-note-placeholder = Notens text
@@ -254,6 +254,11 @@ editor-words-kind = Slag av ord
 editor-words-kind-now = Slag av ord: { $kind }
 editor-marks = Märkning
 editor-marks-shown = Osynliga tecken
+editor-breaks = Brytningar och mellanrum
+# The heading over the two choices of what the Enter key makes in a text: a break between paragraphs, or a break of the line within the paragraph.
+editor-enter-key = Returtangenten
+editor-enter-paragraph = Styckebrytning
+editor-enter-line = Radbrytning
 editor-image = Bild
 editor-inline-number = Nummer i raden…
 

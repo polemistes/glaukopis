@@ -147,7 +147,7 @@ format-bibliography-entry-spacing = Mellanrum mellan posterna
 
 format-kind-based-on = bygger på { $base }
 # Of the kind Text, which the parts for type and paragraphs set.
-format-kind-text-note = som layoutens typografi och stycken har det
+format-kind-text-note = satt under Typografi och Stycken
 # At the right of a kind's line where this layout says nothing of it.
 format-kind-as-base = som grunden
 format-kind-resolved = Som det kommer att stå: { $look }

@@ -70,7 +70,7 @@ search-everything-found-notebook = { $count ->
    *[other] i { $projects } prosjekt og i notatblokka
 }
 search-where-details = Opplysningane om dokumentet
-# An association that has a name, with the elements at its ends: "Part 1 ↔ Part 2".
+# An association that has a name, with the elements at its ends and the sign of its arrow between: "Part 1 → Part 2", "Part 1 – Part 2" where it has none.
 search-where-association = Assosiasjonen { $ends }
 search-where-note = Det du tenkjer om { $work }
 # Said before what was found in a note.

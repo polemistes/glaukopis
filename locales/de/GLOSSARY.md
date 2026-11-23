@@ -34,19 +34,26 @@ Bild ab, Einfg.
 - **passage** — die Passage
 - **kind** — die Art (Art des Elements, Absatzart, Art von Wörtern; nie
   „Wortart“, das ist Grammatik)
-- **look** — das Aussehen (wie eine Art im Dokument gesetzt wird)
-- **layout** — das Layout, die Layouts (wie die Seite eines Dokuments
-  aussieht: Ränder, Schriften, Überschriften, Anmerkungen, das Aussehen der
-  Arten; „Manuskript“ ist ein Layout). Nicht „Gestaltung“, das eher das
-  Gestalten nennt und keinen guten Plural hat; nicht „Vorlage“, das ist
-  *template*. Bis 2026-10-11 hieß es in der Oberfläche „Format“.
+- **look** — das Aussehen (wie eine Art im Dokument gesetzt wird; auch der
+  Name der Ansicht, in der das ganze Aussehen eines Dokuments eingestellt
+  wird: „Aussehen“, in Meldungen in Anführungszeichen, da es sonst wie ein
+  Satzglied gelesen wird: „In „Aussehen“ stehen Abbildungen links“; eine
+  Wahl, die dort ihren Wert nimmt, heißt „Aus „Aussehen““)
+- **layout** — wird der schreibenden Person nicht mehr gesagt (2026-11-22);
+  die Oberfläche sagt *Layout* nie. Gemeint ist, wie die Seite eines
+  Dokuments aussieht: Ränder, Schriften, Überschriften, Anmerkungen, das
+  Aussehen der Arten; für die Person ist das **das Aussehen** des Dokuments,
+  eingestellt in „Aussehen“, und ein Dokumenttyp enthält es. Nicht
+  „Gestaltung“, nicht „Vorlage“. Bis 2026-10-11 hieß es in der Oberfläche
+  „Format“, bis 2026-11-22 „Layout“.
 - **format** — das Format: nur noch für Dateiformate (Word, PDF). Dateien
-  und Code nennen das Layout *format*; die Oberfläche nicht mehr, auch nicht
+  und Code nennen das Aussehen *format*; die Oberfläche nicht, auch nicht
   in Meldungen des Kerns.
-- **template** — die Vorlage (was ein Dokument einer Art enthält: seine
-  Teile und ihre Folge, die Arten, die es zur Hand gibt, sein Layout und
-  sein Zitierstil, seine Vorgaben, seine Dateien; so nennen Word und
-  LibreOffice sie auch). **requirements** (einer Vorlage) — die Vorgaben
+- **template** — wird nicht gesagt (2026-11-22): die Oberfläche sagt
+  **Dokumenttyp**, nie *Vorlage* (was ein Dokument einer Art enthält: seine
+  Teile und ihre Folge, die Arten, die es zur Hand gibt, sein Aussehen und
+  sein Zitierstil, seine Vorgaben, seine Dateien). Dateien und Code sagen
+  *template*. **requirements** (eines Dokumenttyps) — die Vorgaben
 - **document settings** — die Dokumenteinstellungen (das Fenster des
   Dokuments eines Elements); **details** (Titel, Autoren, Datum…) — die
   Angaben; **affiliation** — die Institution; **identifiers** — die
@@ -64,11 +71,20 @@ Bild ab, Einfg.
   *attachment* ist der Anhang; der Zusammenhang trennt sie); **afterword** —
   das Nachwort; **blurb** — der Klappentext
 - **the Look panel** — *Aussehen*, ein Reiter der Seitenleiste neben der
-  Vorschau
+  Vorschau; seine Bereiche: **Parts** — „Teile“ (die Teile des Dokuments,
+  die der Dokumenttyp vorschlägt), **Type** — „Schrift“, **Paragraphs** —
+  „Absätze“
 - **document** — das Dokument
 - **the manuscript** — das Manuskript
 - **the preview** — die Vorschau
-- **export** — exportieren, der Export
+- **export** — exportieren, der Export. Auch ein Projekt wird *exportiert*,
+  als Datei, als Org oder als Mindmap: „Als Datei exportieren…“; was
+  geschrieben wird, verlässt das Programm und ist nicht mehr das Projekt
+  (nie „speichern unter“; das Wort des Eigentümers, 2026-11-21)
+- **import** — eine Projektdatei, eine Org-Datei oder eine Mindmap wird
+  *importiert* und ein neues Projekt daraus gemacht: „Projektdatei
+  importieren…“ (nie „öffnen“, das sagt, dass in der Datei gearbeitet
+  wird)
 - **bring in** — einlesen (ein Dokument wird eingelesen und wird zur
   Karte); Quellen aus Zotero werden *importiert*, ebenso Sprachpakete
 
@@ -206,14 +222,15 @@ Bild ab, Einfg.
   allein, das ist der Zitierstil; **the body** — der Fließtext
 - **the words of a language** (der Oberfläche, als Projekt) — die Texte;
   **a message** (einer Fluent-Datei) — der Eintrag
-- **your usual** (Layout, Zitierstil, Vorlage aus den Einstellungen) — wie
-  gewohnt
+- **your usual** (Aussehen, Zitierstil, Dokumenttyp aus den Einstellungen) —
+  wie gewohnt; seit 2026-11-22 zeigt die erste Wahl der drei Standards, wo
+  es keinen gibt, „Aus dem Dokumenttyp“
 
 ## Seit 0.2.2 (2026-10-20)
 
 - **what you are writing** — was Sie schreiben; die Frage des Fensters:
-  „Was schreiben Sie?“. **the chooser** (der Vorlagen) — die Vorlagenwahl;
-  im Menü „Was dieses Dokument ist…“. Nicht „Auswahl“, das ist *selected*.
+  „Was schreiben Sie?“. **the chooser** (der Dokumenttypen) — die Wahl des
+  Dokumenttyps; im Menü „Was dieses Dokument ist…“. Nicht „Auswahl“, das ist *selected*.
 - **About this document** — Über dieses Dokument (das Fenster der
   Dokumenteinstellungen eines Elements, früher selbst so genannt)
 - **chip** — das Etikett (das kleine Schild, das auf einer Zeile der
@@ -277,13 +294,14 @@ Das Fenster:
 - **Paragraph kind** — die Absatzart; **Words kind** — die Art der Wörter
   (nie „Wortart“)
 - **Inline number** — die Nummer in der Zeile (3:16, 327a: was bis 0.2.4
-  *Stellenmarke* hieß; Layout und Seite sagen noch *Stellenmarken*, wie das
+  *Stellenmarke* hieß; Aussehen und Seite sagen noch *Stellenmarken*, wie das
   Englische *reference marks*)
 - **Share** (im Menü der Liste) — „Teilen…“
 - **Document properties** — die Dokumenteigenschaften (das Fenster, das
   bis 0.2.4 „Über dieses Dokument“ hieß)
-- **Document type** — der Dokumenttyp (was ein Dokument ist, seine
-  Vorlage); nicht „Dokumentart“, denn *Art* ist *kind*
+- **Document type** — der Dokumenttyp (was ein Dokument ist, mit seinen
+  Teilen und seinem Aussehen); nicht „Dokumentart“, denn *Art* ist *kind*,
+  und nicht „Vorlage“
 
 Die Elemente:
 
@@ -441,9 +459,10 @@ Mindmaps und das Diagramm als Bild:
 
 - **mind map** (eine Datei von Freeplane, FreeMind oder XMind) — die
   Mindmap, die Mindmaps. Die eigenen Karten bleiben *Karten*; die der
-  anderen Programme heißen, wie Duden und die Programme sie nennen. **Open
-  a mind map…** — „Mindmap öffnen…“; **Save as a mind map…** — „Als Mindmap
-  speichern…“; **Freeplane and FreeMind**, **XMind**, **OPML** bleiben
+  anderen Programme heißen, wie Duden und die Programme sie nennen. **Import
+  a mind map…** — „Mindmap importieren…“; **Export as a mind map…** — „Als
+  Mindmap exportieren…“ (bis 2026-11-21 „öffnen“ und „speichern“);
+  **Freeplane and FreeMind**, **XMind**, **OPML** bleiben
 - **left out** — weggelassen, wie zuvor. Was die Programme eigen haben, wie
   ihre deutschen Oberflächen es sagen: **cloud** — die Wolke (Freeplane);
   **summary** — die Zusammenfassung (Freeplane und XMind; der Zusammenhang
@@ -497,6 +516,38 @@ Der Kern:
   geschrieben“
 - **the notebook** (in der Wahl der Bibliothek) — „Notizbuch“, wie in der
   Leiste
+
+## Seit 0.2.15 (2026-11-23)
+
+- **synchronization** — die Synchronisierung, synchronisieren („Zuletzt
+  synchronisiert vor 3 Minuten“); das Wort von Android und Mailprogrammen.
+  **Start synchronizing** — „Synchronisierung starten“; **Stop
+  synchronizing** — „Synchronisierung beenden“ (der Schalter), „angehalten“
+  dort, wo sie von selbst stehen blieb
+- **device** — das Gerät, die Geräte: ein Computer oder ein Telefon der
+  schreibenden Person; nie „Computer“, da ein Telefon auch eines ist.
+  **Name of this device** — „Name dieses Geräts“
+- **home** (nur in Meldungen des Kerns; die Oberfläche sagt es nie) — wo es
+  der Zusammenhang verlangt, „die Synchronisierung“ oder „diese Geräte“,
+  nicht „Zuhause“ und nicht „Heimat“
+- **code** (kurz, auf einem Gerät erzeugt, auf dem anderen eingegeben) — der
+  Code, wie bei den Einladungen zu geteilten Projekten; **Join with a code**
+  — „Mit einem Code beitreten“
+- **Document type** — der Dokumenttyp, wie schon oben. Seit 2026-11-22 sagt
+  die Oberfläche nie *Vorlage* und nie *Layout* (das Wort des Eigentümers);
+  *template* und *layout* gibt es nur noch in Dateien und Code. Neu: „Neuer
+  Dokumenttyp…“, „Als Dokumenttyp speichern…“, „Aussehen übernommen von“
+- **Photograph** (Schaltfläche des Telefons, öffnet die Kamera) — „Foto
+  aufnehmen“, wie Android es sagt; **Picture or file** — „Bild oder Datei“
+- **Enter key** — „Eingabetaste“ (als Name der Taste; in Hinweisen steht
+  *Eingabe*, wie schon). **Paragraph break** — „Absatzumbruch“; **Line
+  break** — „Zeilenumbruch“. **Breaks and whitespace** — „Umbrüche und
+  Leerzeichen“ (der Schalter, der die Zeichen dafür zeigt)
+- **shared** (was eine andere App an Glaukopis übergeben hat) — „geteilt“,
+  wie das Teilen-Menü von Android: „es wurde nichts geteilt“ (klein, da es
+  hinter anderen Wörtern steht)
+- **devices met** (der Zeitpunkt, ab dem ein Projekt nach dem Getrenntsein
+  durchgesehen wird) — „Geräte verbunden“: „Seit „Geräte verbunden““
 
 ## Namen, die nicht übersetzt werden
 

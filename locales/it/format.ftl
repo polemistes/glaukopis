@@ -147,7 +147,7 @@ format-bibliography-entry-spacing = Spazio tra le voci
 
 format-kind-based-on = basato su { $base }
 # Of the kind Text, which the parts for type and paragraphs set.
-format-kind-text-note = come stabiliscono i caratteri e i paragrafi dell'impaginazione
+format-kind-text-note = stabilito sotto Caratteri e Paragrafi
 # At the right of a kind's line where this layout says nothing of it.
 format-kind-as-base = come la base
 format-kind-resolved = Come apparirà: { $look }

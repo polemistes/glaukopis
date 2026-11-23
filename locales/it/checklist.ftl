@@ -2,19 +2,19 @@
 # the tree says, as remarks in the window of the document.
 
 checklist-words = { $count ->
-    [one] { $count } parola; il modello ne consente { $limit }.
-    [many] { $count } parole; il modello ne consente { $limit }.
-   *[other] { $count } parole; il modello ne consente { $limit }.
+    [one] { $count } parola; il tipo di documento ne consente { $limit }.
+    [many] { $count } parole; il tipo di documento ne consente { $limit }.
+   *[other] { $count } parole; il tipo di documento ne consente { $limit }.
 }
 checklist-abstract-words = { $count ->
-    [one] L'abstract ha { $count } parola; il modello ne consente { $limit }.
-    [many] L'abstract ha { $count } parole; il modello ne consente { $limit }.
-   *[other] L'abstract ha { $count } parole; il modello ne consente { $limit }.
+    [one] L'abstract ha { $count } parola; il tipo di documento ne consente { $limit }.
+    [many] L'abstract ha { $count } parole; il tipo di documento ne consente { $limit }.
+   *[other] L'abstract ha { $count } parole; il tipo di documento ne consente { $limit }.
 }
 checklist-keywords = { $count ->
-    [one] { $count } parola chiave; il modello ne consente { $limit }.
-    [many] { $count } parole chiave; il modello ne consente { $limit }.
-   *[other] { $count } parole chiave; il modello ne consente { $limit }.
+    [one] { $count } parola chiave; il tipo di documento ne consente { $limit }.
+    [many] { $count } parole chiave; il tipo di documento ne consente { $limit }.
+   *[other] { $count } parole chiave; il tipo di documento ne consente { $limit }.
 }
 checklist-doubled = { $count ->
     [one] Un altro elemento del tipo «{ $kind }» sta accanto al primo; si stampa solo il primo.
@@ -22,9 +22,9 @@ checklist-doubled = { $count ->
    *[other] Altri { $count } elementi del tipo «{ $kind }» stanno accanto al primo; si stampa solo il primo.
 }
 checklist-unplaced = { $count ->
-    [one] Il modello non fa copertina: un elemento di un tipo da copertina non è stampato.
-    [many] Il modello non fa copertina: { $count } elementi di un tipo da copertina non sono stampati.
-   *[other] Il modello non fa copertina: { $count } elementi di un tipo da copertina non sono stampati.
+    [one] Il tipo di documento non fa copertina: un elemento di un tipo da copertina non è stampato.
+    [many] Il tipo di documento non fa copertina: { $count } elementi di un tipo da copertina non sono stampati.
+   *[other] Il tipo di documento non fa copertina: { $count } elementi di un tipo da copertina non sono stampati.
 }
 
 ## Fewer words, stage 4: what the type and the layout ask of the front page and of quotations.
@@ -36,10 +36,17 @@ checklist-long-quotation = { $by ->
         [one] { $lines } riga
         [many] { $lines } righe
        *[other] { $lines } righe
-    }; l'impaginazione stacca dal testo le citazioni da { $limit } righe in su.
+    }; Aspetto stacca dal testo le citazioni da { $limit } righe in su.
    *[words] «{ $element }» ha nel testo una citazione di { $words } parole, circa { $lines ->
         [one] { $lines } riga
         [many] { $lines } righe
        *[other] { $lines } righe
-    }; l'impaginazione stacca dal testo le citazioni da { $limit } parole in su.
+    }; Aspetto stacca dal testo le citazioni da { $limit } parole in su.
 }
+
+## The order of the tree: what is said of the parts, and never mended.
+
+# Works are cited in the text, and no element of the kind Bibliography stands under the document.
+checklist-no-bibliography = Nel testo sono citate delle opere, e il documento non ha una bibliografia. Aggiungine una sotto Parti in Aspetto.
+# The parts the document has, in the order its type has them: "Title page · Abstract · The text · Bibliography".
+checklist-order = Il tipo di documento ha queste parti in quest'ordine: { $parts }.

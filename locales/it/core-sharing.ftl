@@ -40,6 +40,27 @@ core-sharing-not-as-named = Ciò che è stato mandato non è ciò che il suo nom
 core-sharing-file-too-large = Il file è più grande di quanto questo server accetti: un file può pesare al massimo { $most }.
 core-sharing-project-full = Non c'è spazio per il file: su questo server i file di un progetto possono pesare insieme al massimo { $most }.
 
+## What the server refuses of the synchronization of a writer's own
+## devices, which it keeps together as what it calls a home.
+
+core-sharing-no-home = Il server non tiene più ciò che questi dispositivi sincronizzano.
+# The texts of a project, the notebook or the library use something this version does not know.
+core-sharing-later = Qualcosa è stato scritto su un altro dispositivo con una versione più recente di Glaukopis. Aggiorna questa versione per sincronizzarlo.
+core-sharing-home-not-admitted = Il server non fa più entrare questo dispositivo: può essere stato tolto da quelli sincronizzati.
+core-sharing-home-full = Il server sincronizza già i dispositivi di tante persone quante è impostato a sincronizzarne.
+core-sharing-many-computers = Sono già sincronizzati sedici dispositivi, che è il massimo; togline prima uno.
+core-sharing-many-codes = Ci sono già cinque codici aperti; ritirane uno.
+core-sharing-no-computer = Non c'è un dispositivo così fra quelli sincronizzati.
+core-sharing-no-computer-name = Il dispositivo non ha nome.
+core-sharing-bad-kind = Il tipo di un documento si scrive con da una a sedici lettere minuscole.
+core-sharing-bad-document = L'identificativo del documento non è uno che il server possa usare.
+core-sharing-many-documents = Il server tiene per questi dispositivi tanti documenti quanti ne può tenere.
+core-sharing-not-an-exchange = Il server non ha potuto leggere ciò che è stato mandato.
+core-sharing-unreadable-change = Una modifica mandata non si è potuta leggere.
+core-sharing-document-too-large = Un progetto, il taccuino o la biblioteca sarebbe più grande di quanto questo server tenga.
+# The most is in the server's words: "10 GB".
+core-sharing-home-files-full = Non c'è spazio per il file: su questo server i file sincronizzati possono pesare insieme al massimo { $most }.
+
 ## The pictures of the figures, which are sent and fetched one by one.
 
 core-sharing-picture-too-large = { $host } non accetta un'immagine grande così.

@@ -39,9 +39,9 @@ editor-numbering = Nummerering
 editor-numbering-none = Ikkje nummerert
 editor-numbering-counted = Talt frå det første nummeret som er gitt
 editor-numbering-given = Berre numra som er gitt
-editor-line-numbers-every-layout = Som oppsettet: kvar { $every }
+editor-line-numbers-every-layout = Frå Utsjånad: kvar { $every }
 editor-line-numbers-side = Numra på
-editor-side-layout = Sida oppsettet seier ({ $side })
+editor-side-layout = Frå Utsjånad ({ $side })
 editor-side-left = Venstre
 editor-side-right = Høgre
 # Over a number in the margin of the text, which opens a field for it when pressed.
@@ -74,7 +74,7 @@ editor-gloss-hint = Kva oppslagsordet tyder
 editor-code = Kode
 editor-code-hint = Ei linje med kode, eller med anna som blir halde bokstav for bokstav
 editor-break = Skilje
-editor-break-hint = Eit opphald mellom delar, med teiknet oppsettet gir det
+editor-break-hint = Eit opphald mellom delar, med teiknet som Utsjånad gir det
 editor-draft = Kladd
 editor-draft-hint = For dine auge: det kjem ikkje med i noko dokument
 editor-foreign = Anna språk
@@ -167,7 +167,7 @@ editor-pointer = Kryssreferanse …
 editor-refmark-title = Tal i linja
 editor-refmark-label = Merke
 editor-refmark-placeholder = 3:16, 327a, 1094a1
-editor-refmark-dialog-hint = Merket er ingen del av orda: stavekontrollen, søket og ordteljinga går forbi det. Oppsettet avgjer om det blir heva i linja eller sett i margen.
+editor-refmark-dialog-hint = Merket er ingen del av orda: stavekontrollen, søket og ordteljinga går forbi det. Utsjånad avgjer om det blir heva i linja eller sett i margen.
 # What a picture that was pasted without a name of its own is called in the store of pictures.
 editor-pasted-picture = bilete
 
@@ -241,7 +241,7 @@ editor-locator-sub-verbo = Sub verbo
 # The number is that of the note, or a letter for a note that stands in a place of its own.
 editor-note-numbered = Note { $number }
 editor-note-place = Kvar noten står
-editor-note-place-format = Der oppsettet har notane sine
+editor-note-place-format = Der Utsjånad set notane
 editor-note-place-foot = Nedst på sida
 editor-note-place-end = Til slutt i teksten
 editor-note-placeholder = Teksten i noten
@@ -251,6 +251,11 @@ editor-words-kind = Slag ord
 editor-words-kind-now = Slag ord: { $kind }
 editor-marks = Merke
 editor-marks-shown = Teikn for mellomrom og avsnitt
+editor-breaks = Skift og mellomrom
+# The heading over the two choices of what the Enter key makes in a text: a break between paragraphs, or a break of the line within the paragraph.
+editor-enter-key = Enter-tasten
+editor-enter-paragraph = Avsnittsskift
+editor-enter-line = Linjeskift
 editor-image = Bilete
 editor-inline-number = Tal i linja …
 

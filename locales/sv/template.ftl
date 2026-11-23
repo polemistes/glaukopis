@@ -47,13 +47,13 @@ template-target-epub = E-bok
 
 # The name a template of one's own is first given, made from that of the template it is made from.
 template-name-changed = { $name }, ändrad
-template-saved = ”{ $name }” är sparad bland dina egna mallar
-template-save-failed = Mallen kunde inte sparas.
-template-delete-failed = Mallen kunde inte raderas.
-template-keep-failed = Mallen kunde inte sparas i projektet. På en annan dator, och i en fil av projektet, får dokumentet den vanliga mallen i stället.
-template-delete-title = Radera mallen ”{ $name }”?
-template-delete-message = Element som använder den kommer att använda mallen den gjordes av i stället.
-template-delete-confirm = Radera mallen
+template-saved = ”{ $name }” är sparad bland dina egna dokumenttyper
+template-save-failed = Dokumenttypen kunde inte sparas.
+template-delete-failed = Dokumenttypen kunde inte raderas.
+template-keep-failed = Dokumenttypen kunde inte sparas i projektet. På en annan dator, och i en fil av projektet, får dokumentet den förvalda dokumenttypen i stället.
+template-delete-title = Radera dokumenttypen ”{ $name }”?
+template-delete-message = Element som använder den kommer att använda den dokumenttyp den gjordes av i stället.
+template-delete-confirm = Radera dokumenttypen
 
 ## The parts of the editor, as they are chosen at the left.
 

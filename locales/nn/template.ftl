@@ -45,15 +45,15 @@ template-target-epub = E-bok
 
 ## The template editor.
 
-# The name a template of one's own is first given, made from that of the template it is made from.
+# The name a document type of one's own is first given, made from that of the type it is made from.
 template-name-changed = { $name }, endra
-template-saved = «{ $name }» er lagra blant dine eigne malar
-template-save-failed = Malen kunne ikkje lagrast.
-template-delete-failed = Malen kunne ikkje slettast.
-template-keep-failed = Malen kunne ikkje takast vare på i prosjektet. På ei anna datamaskin, og i ei fil av prosjektet, får dokumentet den vanlege malen i staden.
-template-delete-title = Slette malen «{ $name }»?
-template-delete-message = Element som bruker den, vil bruke malen den vart laga av, i staden.
-template-delete-confirm = Slett malen
+template-saved = «{ $name }» er lagra blant dine eigne dokumenttypar
+template-save-failed = Dokumenttypen kunne ikkje lagrast.
+template-delete-failed = Dokumenttypen kunne ikkje slettast.
+template-keep-failed = Dokumenttypen kunne ikkje takast vare på i prosjektet. På ei anna datamaskin, og i ei fil av prosjektet, får dokumentet standard dokumenttype i staden.
+template-delete-title = Slette dokumenttypen «{ $name }»?
+template-delete-message = Element som bruker den, vil bruke dokumenttypen den vart laga av, i staden.
+template-delete-confirm = Slett dokumenttypen
 
 ## The parts of the editor, as they are chosen at the left.
 

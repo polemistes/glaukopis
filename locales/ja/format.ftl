@@ -2,7 +2,7 @@
 
 ## 文書のレイアウトの種類。レイアウトはこれでまとめて示される。
 
-format-kind-own = 独自のレイアウト
+format-kind-own = 独自の見た目
 format-kind-general = 一般
 format-kind-style-guide = スタイルガイド
 format-kind-publisher = 出版社
@@ -147,7 +147,7 @@ format-bibliography-entry-spacing = 文献の間隔
 
 format-kind-based-on = { $base }を基準にする
 # 種類「本文」について。これは文字と段落の部分が決める。
-format-kind-text-note = レイアウトの文字と段落の設定のとおり
+format-kind-text-note = 「文字」と「段落」で設定
 # このレイアウトがその種類について何も言わないとき、種類の行の右に出る。
 format-kind-as-base = 基準と同じ
 format-kind-resolved = 仕上がり：{ $look }

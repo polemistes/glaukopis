@@ -1,9 +1,9 @@
-# テンプレート：ある種類の文書が何から成るか（ADR 0038）。そのグループ、
-# 文書を作る部分、ファイルの種類、テンプレートのエディター。
+# 文書種別：ある種類の文書が何から成るか（ADR 0038）。そのグループ、
+# 文書を作る部分、ファイルの種類、独自の文書種別の保存と削除。
 
-## テンプレートのグループ。選択画面に並ぶとおり。
+## 文書種別のグループ。選択画面に並ぶとおり。
 
-template-group-own = 独自のテンプレート
+template-group-own = 独自の文書種別
 template-group-plain = 基本
 template-group-article = 論文とレポート
 template-group-book = 書籍と学位論文
@@ -30,7 +30,7 @@ template-generated-body = 本文
 template-generated-notes = 注
 template-generated-bibliography = 参考文献
 
-## テンプレートが作るファイルの種類。
+## 文書種別が作るファイルの種類。
 
 template-target-pdf = PDF
 template-target-pdf-latex = PDF（LaTeXで組版）
@@ -42,32 +42,17 @@ template-target-markdown = Markdown
 template-target-html = ウェブページ
 template-target-epub = 電子書籍
 
-## テンプレートのエディター。
+## 独自の文書種別の保存と削除。
 
-# 独自のテンプレートに最初に付く名前。もとにしたテンプレートの名前から作る。
+# 独自の文書種別に最初に付く名前。もとにした文書種別の名前から作る。
 template-name-changed = { $name }（変更）
-template-saved = 「{ $name }」を独自のテンプレートに保存しました
-template-save-failed = テンプレートを保存できませんでした。
-template-delete-failed = テンプレートを削除できませんでした。
-template-keep-failed = テンプレートをプロジェクトに保存できませんでした。ほかのコンピューターやプロジェクトのファイルでは、文書は代わりに既定のテンプレートを使います。
-template-delete-title = テンプレート「{ $name }」を削除しますか？
-template-delete-message = このテンプレートを使っている要素は、代わりにもとにしたテンプレートを使います。
-template-delete-confirm = テンプレートを削除
-
-## エディターの各部。左で選ぶ。
-
-
-## テンプレートについて。
-
-
-## テンプレートがもたらすレイアウトと引用スタイル。
-
-
-## 構成：文書の順序。
-
-
-## 手元に出す種類。
-
+template-saved = 「{ $name }」を独自の文書種別に保存しました
+template-save-failed = 文書種別を保存できませんでした。
+template-delete-failed = 文書種別を削除できませんでした。
+template-keep-failed = 文書種別をプロジェクトに保存できませんでした。ほかのコンピューターやプロジェクトのファイルでは、文書は代わりに既定の文書種別を使います。
+template-delete-title = 文書種別「{ $name }」を削除しますか？
+template-delete-message = この文書種別を使っている要素は、代わりにもとにした文書種別を使います。
+template-delete-confirm = 文書種別を削除
 
 ## 要件。
 

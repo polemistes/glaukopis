@@ -5,6 +5,35 @@
 ファイルが食い違うところでは、英語のファイルが正しい（GLOSSARY.md のほうが
 古い）。
 
+## 2026-11-23 の変更：「レイアウト」と「テンプレート」は言わない
+
+所有者の言葉（2026-11-22）：書き手には **layout** も **template** も言わない。
+英語は 0.2.15 でそのとおりに改まった。下の古い項目のうち、「レイアウト」
+「テンプレート」と書いてあるものは、次のように読み替える。
+
+- **template — テンプレート** をやめた。→ **文書種別**（document type）。
+  「独自のテンプレート」→「独自の文書種別」、「既定のテンプレート」→
+  「既定の文書種別」。コードとファイルの中だけ template と呼ぶ。
+- **layout — レイアウト** をやめた。ページの見た目は書き手には **見た目**
+  （Look）。英語の「As the layout」は「From Look」になった →
+  「見た目のとおり」；「the layout decides」→「見た目が決めます」。
+  「独自のレイアウト」→「独自の見た目」（見た目の取得元の一覧のグループ）。
+  OCR のページのレイアウト（ocr.ftl、core-ocr.ftl）は別のことなので、
+  そのまま「レイアウト」。コアの core-export-format-… は英語がまだ
+  「format」と言うので、「レイアウト」のまま。
+- **Parts of the document type** は英語で **Parts** になった → **部分**
+  （見た目の欄の部分。チェックリストは「見た目の「部分」」と名指す）。
+- **Changed here** は **Changed in this document** → **この文書で変更**。
+  **From “X” (what)** は **what, from “X”** → 「{ $what }（「{ $name }」から）」；
+  「{ $name }（「{ $type }」から）」；「{ $name }（既定）」。
+- **Save as a file / Open a project file** は英語で **Export as a file /
+  Import a project file** になった（Org、マインドマップも）：保存 →
+  **書き出す**、開く → **インポート**。
+- 「このコンピューター」は、同期に関わる言葉では **このデバイス**
+  （settings-set-aside-person、network-tls、notebook-file-not-here、
+  figures-picture-absent）。英語が今も computer と言うところは
+  コンピューターのまま。
+
 ## 2026-10-24 の変更（Changed on 2026-10-24）
 
 0.2.4 以降、英語は大きく変わった。古い選択のうち、今の英語に合わなくなった
@@ -164,32 +193,33 @@
 - **press**（ボタンも、キーも）— 押す；**click** — クリック
 - **project file** — プロジェクトファイル
 
-## 文書：種別、テンプレート、レイアウト、見た目
+## 文書：文書種別、見た目（2026-11-23 に「テンプレート」「レイアウト」を除いた）
 
-- **document type** — 文書種別（何を書くか：テンプレートの、使う人に見える名。
-  「既定の文書種別」「文書種別の要件」）
-- **template** — テンプレート（文書種別の中身：部分とその順、手元に出す
-  種類、レイアウトと引用スタイル、要件、作るファイル）。**Your own** —
-  独自のテンプレート
+- **document type** — 文書種別（何を書くか。文書種別の中身：部分とその順、
+  手元に出す種類、見た目と引用スタイル、要件、作るファイル。使う人に見える名。
+  「既定の文書種別」「文書種別の要件」）。**Your own** — 独自の文書種別。
+  **template** は書き手には言わない（上の 2026-11-23 を見よ）
 - **what you are writing** — 何を書くか；選択画面の題「何を書きますか？」；
   **the chooser** — 文書種別の選択
-- **layout** — レイアウト（ページの見た目：余白、フォント、見出し、注、
-  種類の見た目。「原稿」はレイアウトの一つ）。**layout of my own** —
-  独自のレイアウト
+- **layout** — 書き手には言わない。ページの見た目（余白、フォント、見出し、注、
+  種類の見た目）は **見た目**。「原稿」は見た目の取得元の一つ。
+  **a look of my own**（見た目の取得元の一覧のグループ）— 独自の見た目
 - **format**（ファイル）— 形式、ファイル形式。「書式」は使わない。
-- **look** — 見た目（種類が文書でどう組まれるか。レイアウトに属する）；
+- **look** — 見た目（種類が文書でどう組まれるか。文書種別に属する）；
   **Look**（組版ペインの欄）— 見た目；**Hide the look** — 見た目を隠す；
   **Default look** — 既定の見た目
 - **look chip** — 見た目ラベル（組版のページの行の脇に出て、その行が何かを
   言い、押すと見た目の欄をそこで開く小さな札）。ページの上では単に
   「ラベル」。**Display look chips in the preview window** —
   プレビューに見た目ラベルを表示する
-- **These changes hold for** — この変更の適用範囲；**Changed here** —
-  ここで変更；**Modifications to the layout** — レイアウトへの変更
+- **These changes hold for** — この変更の適用範囲；**Changed in this document**
+  — この文書で変更（もとの Changed here）；**Reset** — リセット；
+  **From Look / As the document type has it** — 見た目のとおり /
+  文書種別のとおり
 - **citation style / reference style** — 引用スタイル、略してスタイル
   （引用と参考文献の書き方のみ。見た目には使わない）
 - **style guides** — スタイルガイド
-- **your usual / Default**（設定で選んだもの）— 既定（「既定（{ $name }）」）；
+- **your usual / Default**（設定で選んだもの）— 既定；名前を添えるときは「{ $name }（既定）」；
   **None** — なし
 - **Document properties** — 文書のプロパティ；**details** — 詳細；
   **affiliation** — 所属；**identifiers** — 識別子；**keywords** —
@@ -484,6 +514,39 @@
   バージョン；**Update Glaukopis to open it** — 開くにはGlaukopisを更新して
   ください
 - **Notebook**（ライブラリの切り替え）— ノートブック
+
+## 2026-11-23 の追加：同期、デバイス、電話、文書種別の編集（0.2.15）
+
+- **synchronization** — 同期（スマートフォンやメールソフトがいう「同期」）。
+  **Synchronize now** 今すぐ同期；**Start synchronizing** 同期を開始；
+  **Stop synchronizing** 同期をやめる；**Last synchronized { $when }** —
+  最終同期：{ $when }；**Update is needed for synchronization** —
+  同期するには更新が必要です（設定と中核で同じ言葉）
+- **device**（書き手自身のコンピューターや電話。同期の言葉は「コンピューター」と
+  言わない）— デバイス。助数詞は台（「2台のデバイス」「16台のデバイス」）。
+  **Name of this device** このデバイスの名前；**Add a device…** デバイスを
+  追加…；**Remove** は「外す」（同期するデバイスから外す。削除ではない）
+- **a code**（一方のデバイスで作り、もう一方で入力して参加する短いコード）—
+  コード；**Join with a code** — コードで参加；**Start here** — ここから始める
+  （共有の「招待コード」とは別の語）
+- **home**（中核のメッセージにだけ出る、サーバーが書き手のデバイスのために
+  保つもの）— 日本語では言わない。「同期するもの」「これらのデバイス」と言う
+- **Written in on two devices while they were apart** — 2台のデバイスが互いに
+  つながっていないあいだに、それぞれで書き込まれました；**the devices met**
+  （確認の「…から」の前に）— デバイスがつながった時点
+- **Photograph**（電話のカメラを開くボタン）— 撮影；**Picture or file** —
+  画像またはファイル；**More**（電話のノートの先頭のボタン）— その他
+- **document type**（もう一度）— 文書種別。「テンプレート」とは言わない
+  （2026-11-22、所有者の言葉）。自分の文書種別は見た目の欄（Look）で作り、
+  選択画面で編集する：**New document type…** 新しい文書種別…；
+  **Save as document type…** 文書種別として保存…；**Start from**（選択画面で、
+  新しい文書種別の元）— 作成元；**Look taken from** — 見た目の取得元；
+  **Reset**（文書だけが変えた設定を取り消す）— リセット
+- **Breaks and whitespace**（改行や段落の区切りや空白の記号を表示するボタン）—
+  改行と空白；**Enter key**（Enterで何ができるか）— Enterキー：**Paragraph
+  break** 段落区切り、**Line break** 段落内改行
+- **shared**（他のアプリから電話のGlaukopisに渡された言葉やファイル。文のあとに
+  続くメッセージ）— 共有された
 
 ## Glaukopisの文言
 

@@ -61,7 +61,7 @@ notebook-org-first-box = Usorteret
 
 # A file a note holds, as it stands in the note: opened by two presses.
 notebook-file-open-named = Åbn { $name }
-notebook-file-not-here = Filen er ikke på denne computer
+notebook-file-not-here = Filen er ikke på denne enhed
 
 # Files that could not be taken in as notes, said in one message.
 notebook-files-not-taken = Nogle filer kunne ikke hentes ind
@@ -280,3 +280,5 @@ notebook-note-window-add-file = Tilføj en fil…
 # A button in the row of the window of a note: takes away everything written in the note, so that it is empty. Undo brings it back.
 notebook-note-window-clear = Ryd notatet
 notebook-note-window-not-sent = Notatet kunne ikke skrives i notesbogen
+# Said in a window of a note that stays when its note is sent, as on a phone, whose one window cannot go: the field is empty again.
+notebook-note-window-sent = Notatet er sendt til notesbogen

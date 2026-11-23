@@ -15,7 +15,7 @@ preview-program-missing = { $program } non è installato
 preview-programs-needed = Anteprima ed esportazione si fanno con Pandoc e Typst. Installali con il gestore dei pacchetti del tuo sistema, oppure di' nelle impostazioni dove si trovano.
 preview-look-again = Cerca di nuovo
 preview-looking-failed = Non si sono potuti cercare i programmi
-preview-reading-failed = Gli stili, le impaginazioni e i modelli non si sono potuti leggere
+preview-reading-failed = Gli stili di citazione, gli aspetti e i tipi di documento non si sono potuti leggere
 preview-failed = L'anteprima non si è potuta fare
 preview-failed-message = L'anteprima non si è potuta fare.
 # A page of the preview, as it is told to those who cannot see it.
@@ -52,7 +52,7 @@ preview-remarks = Osservazioni
 preview-remarks-font = Font
 preview-font-missing = { $font } non è installato.
 # The first name is that of the font the layout asks for; this is of the one used in its place.
-preview-font-substitute = Al suo posto si usa { $font }, qui nell'anteprima e in un PDF che si produce. In un documento esportato per Word, LibreOffice o LaTeX, il font è indicato come chiede l'impaginazione, e c'è per chi apre il documento e ce l'ha.
+preview-font-substitute = Al suo posto si usa { $font }, qui nell'anteprima e in un PDF che si produce. In un documento esportato per Word, LibreOffice o LaTeX, il font è indicato come lo imposta Aspetto, e c'è per chi apre il documento e ce l'ha.
 preview-remarks-references = Riferimenti
 # In bold, and the next follows it in the same sentence.
 preview-works-missing = { $count ->

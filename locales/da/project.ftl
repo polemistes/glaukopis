@@ -200,6 +200,7 @@ project-nothing-said = Der er intet sagt om det endnu
 project-no-pictures = Ingen billeder endnu
 project-no-pictures-hint = Billederne i projektets figurer står her. Alle bibliotekets billeder står under Alle.
 project-pictures-drag = Træk et billede ind i en tekst for at lave en figur af det dér, eller hen på et element for at sætte det sidst i dets tekst.
+# The count is of the images that are used and are not among the files of this computer.
 project-pictures-absent-project = { $count ->
     [one] { $count } i dette projekt er ikke på denne computer.
    *[other] { $count } i dette projekt er ikke på denne computer.
@@ -319,6 +320,7 @@ project-show-file-named = Vis »{ $name }«
 # Over the document pane while the side that has the focus shows a file: the document is that of the other side.
 project-document-of-other = Den anden sides dokument
 
+# One place for files (ADR 0070): what the list of all the images says where there are none.
 project-library-no-images = Biblioteket har ingen billeder
 project-library-no-images-hint = Tilføj billeder fra filer, eller slip dem på en tekst.
 

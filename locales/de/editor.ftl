@@ -39,9 +39,9 @@ editor-numbering = Nummerierung
 editor-numbering-none = Nicht nummeriert
 editor-numbering-counted = Ab der ersten angegebenen Nummer gezählt
 editor-numbering-given = Nur die angegebenen Nummern
-editor-line-numbers-every-layout = Wie im Layout: alle { $every }
+editor-line-numbers-every-layout = Aus „Aussehen“: alle { $every }
 editor-line-numbers-side = Seite der Nummern
-editor-side-layout = Wie im Layout ({ $side })
+editor-side-layout = Aus „Aussehen“ ({ $side })
 editor-side-left = Links
 editor-side-right = Rechts
 # Over a number in the margin of the text, which opens a field for it when pressed.
@@ -74,7 +74,7 @@ editor-gloss-hint = Was das Stichwort bedeutet
 editor-code = Code
 editor-code-hint = Eine Zeile Code oder von etwas, das Buchstabe für Buchstabe bewahrt wird
 editor-break = Zäsur
-editor-break-hint = Eine Pause zwischen Teilen, mit dem Zeichen, das das Layout ihr gibt
+editor-break-hint = Eine Pause zwischen Teilen, mit dem Zeichen, das „Aussehen“ ihr gibt
 editor-draft = Arbeitsnotiz
 editor-draft-hint = Nur für Ihre Augen: sie kommt in kein Dokument
 editor-foreign = Fremdsprachig
@@ -167,7 +167,7 @@ editor-pointer = Verweis…
 editor-refmark-title = Nummer in der Zeile
 editor-refmark-label = Bezeichnung
 editor-refmark-placeholder = 3:16, 327a, 1094a1
-editor-refmark-dialog-hint = Die Marke gehört nicht zu den Wörtern: Rechtschreibung, Suche und Wortzählung übergehen sie. Das Layout bestimmt, ob sie in der Zeile hochgestellt oder an den Rand gesetzt wird.
+editor-refmark-dialog-hint = Die Marke gehört nicht zu den Wörtern: Rechtschreibung, Suche und Wortzählung übergehen sie. In „Aussehen“ wird bestimmt, ob sie in der Zeile hochgestellt oder an den Rand gesetzt wird.
 # What a picture that was pasted without a name of its own is called in the store of pictures.
 editor-pasted-picture = Bild
 
@@ -241,7 +241,7 @@ editor-locator-sub-verbo = Sub verbo
 # The number is that of the note, or a letter for a note that stands in a place of its own.
 editor-note-numbered = Anmerkung { $number }
 editor-note-place = Wo die Anmerkung steht
-editor-note-place-format = Wo das Layout seine Anmerkungen hat
+editor-note-place-format = Wohin „Aussehen“ die Anmerkungen setzt
 editor-note-place-foot = Am Fuß der Seite
 editor-note-place-end = Am Ende des Textes
 editor-note-placeholder = Der Text der Anmerkung
@@ -251,6 +251,11 @@ editor-words-kind = Art der Wörter
 editor-words-kind-now = Art der Wörter: { $kind }
 editor-marks = Auszeichnungen
 editor-marks-shown = Formatierungszeichen
+editor-breaks = Umbrüche und Leerzeichen
+# The heading over the two choices of what the Enter key makes in a text: a break between paragraphs, or a break of the line within the paragraph.
+editor-enter-key = Eingabetaste
+editor-enter-paragraph = Absatzumbruch
+editor-enter-line = Zeilenumbruch
 editor-image = Bild
 editor-inline-number = Nummer in der Zeile…
 

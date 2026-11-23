@@ -147,7 +147,7 @@ format-bibliography-entry-spacing = Abstand zwischen Einträgen
 
 format-kind-based-on = beruht auf { $base }
 # Of the kind Text, which the parts for type and paragraphs set.
-format-kind-text-note = wie die Schrift und die Absätze des Layouts es vorsehen
+format-kind-text-note = unter „Schrift“ und „Absätze“ eingestellt
 # At the right of a kind's line where this layout says nothing of it.
 format-kind-as-base = wie die Grundlage
 format-kind-resolved = So wird es stehen: { $look }

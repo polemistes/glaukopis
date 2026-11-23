@@ -45,15 +45,15 @@ template-target-epub = E-bog
 
 ## The template editor.
 
-# The name a template of one's own is first given, made from that of the template it is made from.
+# The name a document type of one's own is first given, made from that of the type it is made from.
 template-name-changed = { $name }, ændret
-template-saved = »{ $name }« er gemt blandt dine egne skabeloner
-template-save-failed = Skabelonen kunne ikke gemmes.
-template-delete-failed = Skabelonen kunne ikke slettes.
-template-keep-failed = Skabelonen kunne ikke gemmes i projektet. På en anden computer og i en projektfil får dokumentet i stedet den sædvanlige skabelon.
-template-delete-title = Slet skabelonen »{ $name }«?
-template-delete-message = Elementer, der bruger den, vil bruge den skabelon, den blev lavet ud fra, i stedet.
-template-delete-confirm = Slet skabelonen
+template-saved = »{ $name }« er gemt blandt dine egne dokumenttyper
+template-save-failed = Dokumenttypen kunne ikke gemmes.
+template-delete-failed = Dokumenttypen kunne ikke slettes.
+template-keep-failed = Dokumenttypen kunne ikke gemmes i projektet. På en anden computer og i en projektfil får dokumentet i stedet standarddokumenttypen.
+template-delete-title = Slet dokumenttypen »{ $name }«?
+template-delete-message = Elementer, der bruger den, vil bruge den dokumenttype, den blev lavet ud fra, i stedet.
+template-delete-confirm = Slet dokumenttype
 
 ## The parts of the editor, as they are chosen at the left.
 

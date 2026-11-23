@@ -60,7 +60,7 @@ notebook-org-first-box = 未整理
 
 # A file a note holds, as it stands in the note: opened by two presses.
 notebook-file-open-named = { $name }を開く
-notebook-file-not-here = このコンピューターにファイルがありません
+notebook-file-not-here = このデバイスにファイルがありません
 
 # Files that could not be taken in as notes, said in one message.
 notebook-files-not-taken = 取り込めなかったファイルがあります
@@ -273,3 +273,5 @@ notebook-note-window-add-file = ファイルを追加…
 # A button in the row of the window of a note: takes away everything written in the note, so that it is empty. Undo brings it back.
 notebook-note-window-clear = ノートをクリア
 notebook-note-window-not-sent = ノートをノートブックに書き込めませんでした
+# Said in a window of a note that stays when its note is sent, as on a phone, whose one window cannot go: the field is empty again.
+notebook-note-window-sent = ノートをノートブックに送りました

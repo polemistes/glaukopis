@@ -377,6 +377,59 @@ prosjekt hadde vorte eitt tre.
   (`project-later`, `notebook-later`); i eit delt prosjekt **Skrive i med ein
   nyare versjon**. **Update** — **Oppdater**
 
+## Nytt 2026-11-23: synkronisering, telefonen, dokumenttypen, skift
+
+- **device** — **eining** (ei eining, eininga, einingar, einingane): ei
+  datamaskin eller ein telefon som høyrer til den som skriv, og som blir
+  synkroniserte med kvarandre. Orda om synkroniseringa seier *eining*, aldri
+  *datamaskin*, for ein telefon er òg ei eining; berre den eine setninga om
+  kva som er likt på kvar av datamaskinene dine seier datamaskin. Bokmål:
+  «enhet»; nynorsk har ikkje det ordet
+- **synchronization** — **synkronisering** (ei synkronisering, synkroniseringa);
+  **synchronize** — **synkronisere** (synkroniserer, synkroniserte, synkronisert;
+  «blir synkroniserte» om mange ting). **Stop synchronizing** — **Slutt å
+  synkronisere**; at synkroniseringa har stansa (stanse – stansar – stansa –
+  stansa), ikkje «stoppa»
+- **the home** (kjernen sitt ord for det tenaren held for eininga til ein
+  skribent) — blir ikkje sagt til den som skriv: **synkroniseringa** eller
+  **einingane dine**, som i bokmål
+- **code** (til å bli med frå ei anna eining) — **kode** (ein kode, koden,
+  kodar, kodane): **Bruk ein kode** (*Join with a code*, som bokmål «Bruk en
+  kode»), knappen **Bli med**, **Byrj her** (*Start here*), **Start
+  synkronisering**
+- **Update is needed for synchronization** — **Oppdatering trengst for
+  synkronisering**: orda til eigaren, same setning i innstillingane, på telefonen
+  og i kjernen
+- **Written in on two devices while they were apart** — **skrive i på to
+  einingar medan dei var utan kontakt med kvarandre**; **the devices met** —
+  **einingane møttest**
+- **Photograph** (knappen som opnar kameraet) — **Ta bilete**; **Picture or
+  file** — **Bilete eller fil**
+- **shared** (om ord og filer ei anna app gir frå seg på ein telefon) —
+  **delt**: «ingenting vart delt»
+- **Breaks and whitespace** — **Skift og mellomrom** (knappen som viser
+  teikna for linjeskift, avsnittsskift og mellomrom); **Enter key** —
+  **Enter-tasten**: **Avsnittsskift** eller **Linjeskift**
+- **Reset** (tek ei endring bort att) — **Tilbakestill**; **Description**
+  (av ein dokumenttype) — **Skildring**; **Look taken from** — **Utsjånad
+  henta frå**. *Ein dokumenttype* seier aldri *mal* eller *oppsett* i dei nye
+  meldingane
+- **template**, **layout** — blir ikkje sagde til den som skriv (2026-11-22):
+  der engelsk seier *document type* står **dokumenttype** (ein dokumenttype,
+  dokumenttypen, dokumenttypar, dokumenttypane), ikkje *mal*; der engelsk seier
+  *Look* står **Utsjånad** (utan artikkel, som namnet på panelet: «Frå
+  Utsjånad», «Utsjånad avgjer kor djupt»), ikkje *oppsettet*. *Oppsett* står
+  berre for noko anna: korleis ei side blir lesen (OCR) og å setje opp Firefox.
+  Heile nynorskfila er gått gjennom for dette 2026-11-23; *Parts* i Utsjånad er
+  **Delar**
+- **Export** / **Import** (eit prosjekt som fil, Org eller tankekart) —
+  **Eksporter** / **Importer**, ikkje *Lagre som* og *Opne*: «Eksporter som
+  fil …», «Importer ei Org-fil …», «vart eksportert som tankekart»
+- **this computer** → **this device** (der engelsk no seier *device*:
+  `network-tls`, `figures-picture-absent`, `notebook-file-not-here`,
+  `settings-set-aside-person`) — **denne eininga**; elles står *datamaskina*
+  som før, òg der engelsk seier *computer*
+
 ## Referansar og tilvisingar
 
 - **the library** — biblioteket

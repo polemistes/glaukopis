@@ -2,24 +2,24 @@
 # the tree says, as remarks in the window of the document.
 
 checklist-words = { $count ->
-    [one] { $count } ord; mallen tillåter { $limit }.
-   *[other] { $count } ord; mallen tillåter { $limit }.
+    [one] { $count } ord; dokumenttypen tillåter { $limit }.
+   *[other] { $count } ord; dokumenttypen tillåter { $limit }.
 }
 checklist-abstract-words = { $count ->
-    [one] Sammanfattningen har { $count } ord; mallen tillåter { $limit }.
-   *[other] Sammanfattningen har { $count } ord; mallen tillåter { $limit }.
+    [one] Sammanfattningen har { $count } ord; dokumenttypen tillåter { $limit }.
+   *[other] Sammanfattningen har { $count } ord; dokumenttypen tillåter { $limit }.
 }
 checklist-keywords = { $count ->
-    [one] { $count } nyckelord; mallen tillåter { $limit }.
-   *[other] { $count } nyckelord; mallen tillåter { $limit }.
+    [one] { $count } nyckelord; dokumenttypen tillåter { $limit }.
+   *[other] { $count } nyckelord; dokumenttypen tillåter { $limit }.
 }
 checklist-doubled = { $count ->
     [one] Ytterligare ett element av slaget ”{ $kind }” står bredvid det första; bara det första skrivs ut.
    *[other] Ytterligare { $count } element av slaget ”{ $kind }” står bredvid det första; bara det första skrivs ut.
 }
 checklist-unplaced = { $count ->
-    [one] Mallen gör inget omslag: ett element av ett slag för omslaget skrivs inte ut.
-   *[other] Mallen gör inget omslag: { $count } element av ett slag för omslaget skrivs inte ut.
+    [one] Dokumenttypen gör inget omslag: ett element av ett slag för omslaget skrivs inte ut.
+   *[other] Dokumenttypen gör inget omslag: { $count } element av ett slag för omslaget skrivs inte ut.
 }
 
 ## Fewer words, stage 4: what the type and the layout ask of the front page and of quotations.
@@ -30,9 +30,16 @@ checklist-long-quotation = { $by ->
     [lines] ”{ $element }” har ett citat på { $words } ord i texten, ungefär { $lines ->
         [one] { $lines } rad
        *[other] { $lines } rader
-    }; layouten bryter ut citat från { $limit } rader.
+    }; Utseende bryter ut citat från { $limit } rader.
    *[words] ”{ $element }” har ett citat på { $words } ord i texten, ungefär { $lines ->
         [one] { $lines } rad
        *[other] { $lines } rader
-    }; layouten bryter ut citat från { $limit } ord.
+    }; Utseende bryter ut citat från { $limit } ord.
 }
+
+## The order of the tree: what is said of the parts, and never mended.
+
+# Works are cited in the text, and no element of the kind Bibliography stands under the document.
+checklist-no-bibliography = Det hänvisas till verk, och dokumentet har ingen litteraturförteckning. Lägg till en under Delar i Utseende.
+# The parts the document has, in the order its type has them: "Title page · Abstract · The text · Bibliography".
+checklist-order = Dokumenttypen har de här delarna i den här ordningen: { $parts }.

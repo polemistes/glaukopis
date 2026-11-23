@@ -47,13 +47,13 @@ template-target-epub = Livre numérique
 
 # The name a template of one's own is first given, made from that of the template it is made from.
 template-name-changed = { $name }, modifié
-template-saved = « { $name } » est enregistré parmi vos propres modèles
-template-save-failed = Le modèle n’a pas pu être enregistré.
-template-delete-failed = Le modèle n’a pas pu être supprimé.
-template-keep-failed = Le modèle n’a pas pu être gardé dans le projet. Sur un autre ordinateur, et dans un fichier de projet, le document aura à la place le modèle habituel.
-template-delete-title = Supprimer le modèle « { $name } » ?
-template-delete-message = Les éléments qui l’utilisent prendront à la place le modèle à partir duquel il a été fait.
-template-delete-confirm = Supprimer le modèle
+template-saved = « { $name } » est enregistré parmi vos propres types de document
+template-save-failed = Le type de document n’a pas pu être enregistré.
+template-delete-failed = Le type de document n’a pas pu être supprimé.
+template-keep-failed = Le type de document n’a pas pu être gardé dans le projet. Sur un autre ordinateur, et dans un fichier de projet, le document aura à la place le type de document par défaut.
+template-delete-title = Supprimer le type de document « { $name } » ?
+template-delete-message = Les éléments qui l’utilisent prendront à la place le type de document à partir duquel il a été fait.
+template-delete-confirm = Supprimer le type de document
 
 ## The parts of the editor, as they are chosen at the left.
 

@@ -57,7 +57,7 @@ network-wait = { $host } bittet uns zu warten, bevor wir wieder fragen
 network-status = { $host } hat mit einem Fehler geantwortet ({ $status })
 # $most is in megabytes.
 network-too-large = { $host } hat mit mehr geantwortet, als Glaukopis annimmt ({ $most } MB)
-network-tls = eine sichere Verbindung zu { $host } kam nicht zustande: sein Zertifikat ist auf diesem Computer vielleicht nicht vertrauenswürdig, oder etwas dazwischen, etwa ein Proxy oder eine Firewall, steht im Weg
+network-tls = eine sichere Verbindung zu { $host } kam nicht zustande: sein Zertifikat ist auf diesem Gerät vielleicht nicht vertrauenswürdig, oder etwas dazwischen, etwa ein Proxy oder eine Firewall, steht im Weg
 network-redirects = { $host } hat die Anfrage zu oft von einer Adresse an die nächste weitergeschickt
 network-stalled = die Antwort von { $host } kam nicht mehr weiter
 network-not-understood = { $host } hat so geantwortet, dass es nicht verstanden werden konnte

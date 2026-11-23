@@ -70,12 +70,12 @@ core-export-the-format = la mise en page « { $id } »
 
 ## Templates.
 
-core-export-template-bad-id = « { $id } » ne peut pas être l’identifiant d’un modèle
-core-export-template-needs-name = Un modèle doit avoir un nom.
-core-export-template-own-only = Seuls vos propres modèles peuvent être supprimés.
-core-export-the-template = le modèle « { $id } »
-core-export-output-not-yet = Le fichier « { $id } » du modèle ne peut pas encore être produit : seul le document peut l’être.
-core-export-output-unknown = Le modèle n’a pas de fichier « { $id } ».
+core-export-template-bad-id = « { $id } » ne peut pas être l’identifiant d’un type de document
+core-export-template-needs-name = Un type de document doit avoir un nom.
+core-export-template-own-only = Seuls vos propres types de document peuvent être supprimés.
+core-export-the-template = le type de document « { $id } »
+core-export-output-not-yet = Le fichier « { $id } » du type de document ne peut pas encore être produit : seul le document peut l’être.
+core-export-output-unknown = Le type de document n’a pas de fichier « { $id } ».
 
 ## Stage 5 of the settings in plain words: LaTeX's hyphenation.
 

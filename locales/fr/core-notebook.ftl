@@ -7,3 +7,7 @@ core-notebook-picture-too-large = une image remise au carnet fait plus de { $mos
 core-notebook-note-empty = une note vide n’est pas envoyée
 core-notebook-note-too-large = le texte de la note fait plus de { $most } Mo
 core-notebook-file-too-large = { $name } fait plus de { $most } Mo
+# What was handed over by another app on a phone held neither words nor files; said after other words, so it begins with a small letter.
+core-notebook-shared-empty = rien n’a été partagé
+# A file another app handed over could not be read from it; $name is what the other app calls the file.
+core-notebook-shared-unread = { $name } n’a pas pu être lu

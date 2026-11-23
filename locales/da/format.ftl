@@ -106,6 +106,7 @@ format-level-numbering-roman-lower = i, ii, iii
 format-level-counted = Tælling
 format-level-counted-under = Under niveauet over
 format-level-counted-through = Gennem hele dokumentet
+# How a level is counted, said among its look.
 format-level-counted-through-said = talt gennem hele dokumentet
 # How a level is numbered, said among its look: "numbered I, II, III".
 format-level-numbered-as = nummereret { $style }
@@ -147,7 +148,7 @@ format-bibliography-entry-spacing = Luft mellem posterne
 
 format-kind-based-on = bygger på { $base }
 # Of the kind Text, which the parts for type and paragraphs set.
-format-kind-text-note = som opsætningens skrift og afsnit har det
+format-kind-text-note = sat under Skrift og Afsnit
 # At the right of a kind's line where this layout says nothing of it.
 format-kind-as-base = som grundlaget
 format-kind-resolved = Som det kommer til at stå: { $look }

@@ -39,9 +39,9 @@ editor-numbering = Nummerering
 editor-numbering-none = Ikke nummereret
 editor-numbering-counted = Talt fra det første angivne nummer
 editor-numbering-given = Kun de angivne numre
-editor-line-numbers-every-layout = Som opsætningen: for hver { $every }
+editor-line-numbers-every-layout = Fra Udseende: for hver { $every }
 editor-line-numbers-side = Side for numrene
-editor-side-layout = Som opsætningen siger ({ $side })
+editor-side-layout = Fra Udseende ({ $side })
 editor-side-left = Venstre
 editor-side-right = Højre
 # Over a number in the margin of the text, which opens a field for it when pressed.
@@ -74,7 +74,7 @@ editor-gloss-hint = Hvad opslagsordet betyder
 editor-code = Kode
 editor-code-hint = En linje kode eller andet, der bevares bogstav for bogstav
 editor-break = Skille
-editor-break-hint = En pause mellem dele, med det tegn, opsætningen giver den
+editor-break-hint = En pause mellem dele, med det tegn, Udseende giver den
 editor-draft = Arbejdsnotat
 editor-draft-hint = Kun for dine øjne: det kommer ikke med i noget dokument
 editor-foreign = Andet sprog
@@ -167,7 +167,7 @@ editor-pointer = Krydshenvisning…
 editor-refmark-title = Tal i linjen
 editor-refmark-label = Betegnelse
 editor-refmark-placeholder = 3:16, 327a, 1094a1
-editor-refmark-dialog-hint = Mærket er ingen del af ordene: stavekontrol, søgning og ordtælling springer det over. Opsætningen afgør, om det hæves i linjen eller sættes i margenen.
+editor-refmark-dialog-hint = Mærket er ingen del af ordene: stavekontrol, søgning og ordtælling springer det over. Udseende afgør, om det hæves i linjen eller sættes i margenen.
 # What a picture that was pasted without a name of its own is called in the store of pictures.
 editor-pasted-picture = billede
 
@@ -241,7 +241,7 @@ editor-locator-sub-verbo = Sub verbo
 # The number is that of the note, or a letter for a note that stands in a place of its own.
 editor-note-numbered = Note { $number }
 editor-note-place = Hvor noten står
-editor-note-place-format = Hvor opsætningen har sine noter
+editor-note-place-format = Hvor Udseende sætter noterne
 editor-note-place-foot = Nederst på siden
 editor-note-place-end = Sidst i teksten
 editor-note-placeholder = Notens tekst
@@ -251,6 +251,11 @@ editor-words-kind = Ordenes art
 editor-words-kind-now = Ordenes art: { $kind }
 editor-marks = Mærker
 editor-marks-shown = Tegn for mellemrum og afsnit
+editor-breaks = Skift og mellemrum
+# The heading over the two choices of what the Enter key makes in a text: a break between paragraphs, or a break of the line within the paragraph.
+editor-enter-key = Enter-tasten
+editor-enter-paragraph = Afsnitsskift
+editor-enter-line = Linjeskift
 editor-image = Billede
 editor-inline-number = Tal i linjen…
 

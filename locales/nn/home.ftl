@@ -105,8 +105,8 @@ home-deleted-projects = { $count ->
 home-menu-rename = Gi nytt namn …
 home-menu-duplicate = Dupliser …
 home-menu-history = Tidlegare versjonar …
-home-menu-save-file = Lagre som fil …
-home-menu-save-org = Lagre som Org …
+home-menu-save-file = Eksporter som fil …
+home-menu-save-org = Eksporter som Org …
 
 ## Naming a project
 
@@ -157,14 +157,14 @@ home-history-open-failed = Den versjonen kunne ikkje opnast
 
 ## A project as one file
 
-home-file-open = Opne ei prosjektfil …
-home-file-open-title = Opne ei prosjektfil
+home-file-open = Importer ei prosjektfil …
+home-file-open-title = Importer ei prosjektfil
 # The kind of file, in the dialog that asks for one.
 home-file-filter = Glaukopis-prosjekt
-home-file-save-title = Lagre prosjektet som ei fil
-home-file-saved = «{ $name }» vart lagra som ei fil
-home-file-save-failed = Prosjektet kunne ikkje lagrast som ei fil
-home-file-open-failed = Prosjektfila kunne ikkje opnast
+home-file-save-title = Eksporter prosjektet som ei fil
+home-file-saved = «{ $name }» vart eksportert som ei fil
+home-file-save-failed = Prosjektet kunne ikkje eksporterast som ei fil
+home-file-open-failed = Prosjektfila kunne ikkje importerast
 home-file-opened = «{ $name }» vart laga av fila
 home-file-opened-added = «{ $name }» vart laga av fila. { $count ->
     [one] Eitt verk vart lagt
@@ -198,14 +198,14 @@ home-file-make = Lag prosjektet
 
 ## A project as Org: its readable copy in a folder, and a new project made of an Org file
 
-home-org-open = Opne ei Org-fil …
-home-org-open-title = Opne ei Org-fil
+home-org-open = Importer ei Org-fil …
+home-org-open-title = Importer ei Org-fil
 # The kind of file, in the dialog that asks for one.
 home-org-filter = Org-fil
-home-org-open-failed = Org-fila kunne ikkje opnast
-home-org-save-title = Vel mappa prosjektet skal lagrast som Org i
-home-org-saved = «{ $name }» vart lagra som Org
-home-org-save-failed = Prosjektet kunne ikkje lagrast som Org
+home-org-open-failed = Org-fila kunne ikkje importerast
+home-org-save-title = Vel mappa prosjektet skal eksporterast som Org i
+home-org-saved = «{ $name }» vart eksportert som Org
+home-org-save-failed = Prosjektet kunne ikkje eksporterast som Org
 
 ## Changes of the home undone and done again
 home-redo = Gjer om
@@ -252,17 +252,17 @@ home-delete-many-confirm = Slett prosjekta
 home-share = Del …
 
 ## Mind maps of other programs: Freeplane, FreeMind and XMind opened as projects, and projects saved as them and as OPML (agent "mindmaps")
-home-mindmap-open = Opne eit tankekart …
-home-mindmap-open-title = Opne eit tankekart
+home-mindmap-open = Importer eit tankekart …
+home-mindmap-open-title = Importer eit tankekart
 home-mindmap-filter = Tankekart (Freeplane, FreeMind, XMind)
-home-mindmap-open-failed = Tankekartet kunne ikkje opnast
-home-menu-save-mindmap = Lagre som tankekart …
-home-mindmap-save-title = Lagre prosjektet som tankekart
+home-mindmap-open-failed = Tankekartet kunne ikkje importerast
+home-menu-save-mindmap = Eksporter som tankekart …
+home-mindmap-save-title = Eksporter prosjektet som tankekart
 home-mindmap-filter-freeplane = Freeplane og FreeMind
 home-mindmap-filter-xmind = XMind
 home-mindmap-filter-opml = OPML
-home-mindmap-saved = «{ $name }» vart lagra som tankekart
-home-mindmap-save-failed = Prosjektet kunne ikkje lagrast som tankekart
+home-mindmap-saved = «{ $name }» vart eksportert som tankekart
+home-mindmap-save-failed = Prosjektet kunne ikkje eksporterast som tankekart
 home-mindmap-not-a-map = «{ $name }» er ikkje eit tankekart frå Freeplane, FreeMind eller XMind.
 # Said over the lines below, after a mind map was opened.
 home-mindmap-left-out = Noko av det tankekartet rommar, har ingen plass i eit prosjekt, og vart utelate:

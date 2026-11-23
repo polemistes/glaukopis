@@ -147,7 +147,7 @@ format-bibliography-entry-spacing = Espace entre les notices
 
 format-kind-based-on = fondé sur { $base }
 # Of the kind Text, which the parts for type and paragraphs set.
-format-kind-text-note = comme le veulent les caractères et les paragraphes de la mise en page
+format-kind-text-note = réglé sous Caractères et Paragraphes
 # At the right of a kind's line where this layout says nothing of it.
 format-kind-as-base = comme la base
 format-kind-resolved = Tel que ce sera : { $look }

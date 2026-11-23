@@ -12,10 +12,12 @@ look-scope-document = 文書全体：{ $name }
 # 文書の下の一つの要素だけ。その名前で。
 look-scope-only = { $name }のみ
 
-# 文書がレイアウトと違う設定にしている項目の下に。
-look-changed-here = ここで変更
+# Under a setting the document sets otherwise than its type.
+look-changed-here = この文書で変更
 # この要素より上の要素で行った変更。章に対する本のように。
 look-changed-in = 「{ $name }」で変更
+# Takes a change away.
+look-reset = リセット
 
 look-search = 設定を検索：フォント、余白、ページ番号…
 look-search-nothing = この語を含む設定はありません。
@@ -44,6 +46,11 @@ look-at-bibliography = 参考文献
 ## 要件も示す。ここで変えたものは、文書が何であるかに対する文書自身の
 ## 変更として保存される。
 
+look-parts-add = 追加
+# Under the parts the type suggests: a menu of the other kinds there are.
+look-parts-another = 別の部分…
+# Beside a part, while a document type of the writer's own is edited: takes it out of the parts the type suggests.
+look-parts-take-out = 「{ $name }」から外す
 # 文書に一つだけ置く種類の、二つ目の要素に。
 look-contents-kinds-doubled = 最初のものだけを使います
 look-contents-limit-words = 本文の語数の上限
@@ -52,8 +59,12 @@ look-contents-limit-keywords = キーワードの数の上限
 # 上限が何を数えるか。文書種別が言うとおりに。
 look-contents-requirements-note = 上限の数え方：{ $note }
 
-# この要素より上の要素が選んでいるときの最初の選択肢：その要素と、選んだもの。
-look-from-with = 「{ $name }」から（{ $what }）
+# The look or the reference style a document has where its type brings none: the one from the settings, by its name.
+look-your-default = { $name }（既定）
+# The first choice of a look or a reference style: what the document type brings, by its name, and the type by its name.
+look-from-type = { $name }（「{ $type }」から）
+# The first choice where an element over this one has chosen: what it chose, and the element.
+look-from-with = { $what }（「{ $name }」から）
 look-style = 引用スタイル
 look-style-change = この引用スタイルを変更…
 
@@ -72,7 +83,7 @@ look-hide = 見た目を隠す
 ## 言葉を減らす、第3段階：見た目の部分と見出しをわかりやすい言葉で。
 
 look-section-line-numbers = 行番号
-look-section-type-parts = 文書種別の部分
+look-section-type-parts = 部分
 look-at-quotations-warning = 文中の引用
 look-at-paragraph-kinds = 段落の種類
 look-at-words-kinds = 語句の種類
@@ -83,3 +94,32 @@ look-kind-key = キー
 look-kind-key-none = なし
 # ほかの種類がもっている数字：ここで選ぶと、その種類はキーをもたなくなる。
 look-kind-key-taken = { $keys }（現在は{ $kind }）
+
+## One form (the plan of 2026-11-22, stage 2): the top of Look says what the
+## document sets otherwise than its type, and the last part is the document type.
+
+# How many changes the document has over its type, at the top of Look.
+look-changes-here = { $count ->
+   *[other] この文書で{ $count }件の変更
+  }
+# Puts what the document sets otherwise into its type, a type of the writer's own, by its name.
+look-save-to = 「{ $name }」に保存
+# Makes a document type of the writer's own of the type in use and what the document sets otherwise.
+look-save-as = 文書種別として保存…
+look-save = 保存
+look-type-name = 文書種別の名前
+# While a type of the writer's own is edited in Look: every change goes into it.
+look-editing = 文書種別「{ $name }」を編集中
+look-done = 完了
+look-section-document-type = 文書種別
+# Where the look of the document is taken from: the type, the writer's default, or another document type's look.
+look-taken-from = 見た目の取得元
+# Over the list of what the document sets otherwise than its type.
+look-changed-list = この文書で変更
+
+# What a document type of the writer's own is beside its look and its parts, under Document type in Look.
+look-type-field-name = 名前
+look-type-description = 説明
+look-type-passage-kinds = 最初に示す段落と語句の種類
+look-type-exported-as = 書き出し形式
+look-type-delete = この文書種別を削除…

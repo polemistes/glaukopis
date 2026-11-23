@@ -67,12 +67,12 @@ core-export-the-format = layouten ”{ $id }”
 
 ## Templates.
 
-core-export-template-bad-id = ”{ $id }” kan inte vara id för en mall
-core-export-template-needs-name = En mall behöver ett namn.
-core-export-template-own-only = Bara dina egna mallar kan raderas.
-core-export-the-template = mallen ”{ $id }”
-core-export-output-not-yet = Filen ”{ $id }” i mallen kan inte göras än: bara dokumentet kan göras.
-core-export-output-unknown = Mallen har ingen fil ”{ $id }”.
+core-export-template-bad-id = ”{ $id }” kan inte vara id för en dokumenttyp
+core-export-template-needs-name = En dokumenttyp behöver ett namn.
+core-export-template-own-only = Bara dina egna dokumenttyper kan raderas.
+core-export-the-template = dokumenttypen ”{ $id }”
+core-export-output-not-yet = Filen ”{ $id }” i dokumenttypen kan inte göras än: bara dokumentet kan göras.
+core-export-output-unknown = Dokumenttypen har ingen fil ”{ $id }”.
 
 ## Stage 5 of the settings in plain words: LaTeX's hyphenation.
 

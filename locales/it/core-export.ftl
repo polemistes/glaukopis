@@ -70,12 +70,12 @@ core-export-the-format = l'impaginazione «{ $id }»
 
 ## Templates.
 
-core-export-template-bad-id = «{ $id }» non può essere l'identificativo di un modello
-core-export-template-needs-name = Un modello ha bisogno di un nome.
-core-export-template-own-only = Si possono eliminare solo i modelli propri.
-core-export-the-template = il modello «{ $id }»
-core-export-output-not-yet = Il file «{ $id }» del modello non si può ancora fare: per ora solo il documento.
-core-export-output-unknown = Il modello non ha nessun file «{ $id }».
+core-export-template-bad-id = «{ $id }» non può essere l'identificativo di un tipo di documento
+core-export-template-needs-name = Un tipo di documento ha bisogno di un nome.
+core-export-template-own-only = Si possono eliminare solo i tipi di documento propri.
+core-export-the-template = il tipo di documento «{ $id }»
+core-export-output-not-yet = Il file «{ $id }» del tipo di documento non si può ancora fare: per ora solo il documento.
+core-export-output-unknown = Il tipo di documento non ha nessun file «{ $id }».
 
 ## Stage 5 of the settings in plain words: LaTeX's hyphenation.
 

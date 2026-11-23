@@ -15,7 +15,7 @@ preview-program-missing = { $program } er ikke installeret
 preview-programs-needed = Forhåndsvisning og eksport laves med Pandoc og Typst. Installer dem med dit systems pakkehåndtering, eller sig i indstillingerne, hvor de er.
 preview-look-again = Se efter igen
 preview-looking-failed = Der kunne ikke ledes efter programmerne
-preview-reading-failed = Stilene, opsætningerne og skabelonerne kunne ikke læses
+preview-reading-failed = Referencestilene, udseenderne og dokumenttyperne kunne ikke læses
 preview-failed = Forhåndsvisningen kunne ikke laves
 preview-failed-message = Forhåndsvisningen kunne ikke laves.
 # A page of the preview, as it is told to those who cannot see it.
@@ -48,7 +48,7 @@ preview-remarks = Bemærkninger
 preview-remarks-font = Skrift
 preview-font-missing = { $font } er ikke installeret.
 # The first name is that of the font the layout asks for; this is of the one used in its place.
-preview-font-substitute = { $font } bruges i stedet, her i forhåndsvisningen og i en PDF, der laves. I et dokument, der eksporteres til Word, LibreOffice eller LaTeX, nævnes skriften, som opsætningen beder om, og den er der for den, der åbner dokumentet og har den.
+preview-font-substitute = { $font } bruges i stedet, her i forhåndsvisningen og i en PDF, der laves. I et dokument, der eksporteres til Word, LibreOffice eller LaTeX, nævnes skriften, som den er sat i Udseende, og den er der for den, der åbner dokumentet og har den.
 preview-remarks-references = Referencer
 # In bold, and the next follows it in the same sentence.
 preview-works-missing = { $count ->

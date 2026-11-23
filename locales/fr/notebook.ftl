@@ -63,7 +63,7 @@ notebook-org-first-box = Non classées
 
 # A file a note holds, as it stands in the note: opened by two presses.
 notebook-file-open-named = Ouvrir { $name }
-notebook-file-not-here = Le fichier n’est pas sur cet ordinateur
+notebook-file-not-here = Le fichier n’est pas sur cet appareil
 
 # Files that could not be taken in as notes, said in one message.
 notebook-files-not-taken = Certains fichiers n’ont pas pu être recueillis
@@ -291,3 +291,5 @@ notebook-note-window-add-file = Ajouter un fichier…
 # A button in the row of the window of a note: takes away everything written in the note, so that it is empty. Undo brings it back.
 notebook-note-window-clear = Vider la note
 notebook-note-window-not-sent = La note n’a pas pu être écrite dans le carnet
+# Said in a window of a note that stays when its note is sent, as on a phone, whose one window cannot go: the field is empty again.
+notebook-note-window-sent = La note est envoyée au carnet

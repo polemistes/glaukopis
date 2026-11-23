@@ -471,6 +471,57 @@ Hvor dette afsnit og et ældre siger noget forskelligt, gælder dette.
 - **the notebook** i bibliotekets valg mellem referencer, notesbog og
   filer — Notesbog (notesbogen), som i shell-notebook
 
+## Nyt i 0.2.15 (2026-11-23)
+
+Hvor dette afsnit og et ældre siger noget forskelligt, gælder dette.
+
+- **document type** — dokumenttype (dokumenttypen); aldrig »skabelon« eller
+  »opsætning« (ejerens ord, 2026-11-22). *New document type…* — Ny
+  dokumenttype…; *Save as document type…* — Gem som dokumenttype…; *Start
+  from* — Start fra; *Editing the document type “X”* — Redigerer
+  dokumenttypen »X«. Afsnittene ovenfor, der siger *template* = skabelon og
+  *layout* = opsætning om det, skribenten ser, er afløst: beskederne siger
+  nu dokumenttype og Udseende (rettet 2026-11-23). *Opsætning* bruges kun
+  om en sides opsætning ved tekstgenkendelse (ocr.ftl, core-ocr.ftl).
+- **Look** (panelet og ordet i sætninger som *From Look*, *Look decides how
+  deep*) — Udseende, uden artikel: Fra Udseende; Udseende afgør; i Udseende
+  sættes… Delen af Udseende, der før hed *Parts of the document type*, hedder
+  nu *Parts* — Dele. *Changed in this document* — Ændret i dette dokument.
+  *Standard…* — se ovenfor; *From the document type* — Fra dokumenttypen;
+  *the default document type* — standarddokumenttypen.
+- **export / import** af et projekt, en Org-fil og et tankekort: et projekt
+  *eksporteres* som fil, som Org eller som tankekort og *importeres* fra
+  dem (ikke »gemmes som« og ikke »åbnes«), som glossaryet siger.
+- *this computer* i beskeder om synkronisering og om, hvad der ligger hvor
+  (*this device*) — denne enhed; *another computer* står stadig som en anden
+  computer, hvor engelsk har det.
+- **synchronization** — synkronisering (synkroniseringen); *synchronize* —
+  synkronisere: det almindelige ord, som telefoner og mailprogrammer bruger.
+  *Stop synchronizing* — Hold op med at synkronisere, som »Hold op med at
+  dele« i sharing.ftl.
+- **device** — enhed (enheden, enheder): en af skribentens computere eller
+  telefoner; ikke »computer«, da en telefon også er en. *Name of this
+  device* — Navn på denne enhed; *Add a device…* — Tilføj en enhed…
+- **code** (kort kode, lavet på én enhed og skrevet på en anden) — kode;
+  *Join with a code* — Deltag med en kode; *join* — deltage, som i
+  sharing.ftl.
+- **home** (kun i kernens beskeder: det, serveren opbevarer for én
+  skribents enheder) — siges ikke til skribenten: »synkroniseringen« eller
+  »dine enheder«, som det passer.
+- **Update is needed for synchronization** — Opdatering er nødvendig for
+  synkronisering (ejerens ord).
+- **written in on two devices while they were apart** — Der blev skrevet i
+  »X« på to enheder, mens de var uden forbindelse med hinanden; *the devices
+  met* — enhederne mødtes (efter »Siden«).
+- **Photograph** (knappen, der åbner kameraet) — Tag billede; **Picture or
+  file** — Billede eller fil.
+- **Breaks and whitespace** — Skift og mellemrum; **Enter key** —
+  Enter-tasten, med valgene Afsnitsskift og Linjeskift.
+- **Reset** (en ændring i Udseende) — Nulstil.
+- **what another app shared** (kernens beskeder, der står efter andre ord og
+  derfor begynder med lille bogstav) — intet blev delt; { $name } kunne
+  ikke læses.
+
 ## Navne, der ikke oversættes
 
 Glaukopis; Pandoc, Typst, Tesseract, Hunspell, LaTeX, LuaLaTeX, BibLaTeX,

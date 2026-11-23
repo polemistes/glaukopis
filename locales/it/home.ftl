@@ -106,8 +106,8 @@ home-deleted-projects = { $count ->
 home-menu-rename = Rinomina…
 home-menu-duplicate = Duplica…
 home-menu-history = Versioni precedenti…
-home-menu-save-file = Salva come file…
-home-menu-save-org = Salva come Org…
+home-menu-save-file = Esporta come file…
+home-menu-save-org = Esporta come Org…
 
 ## Naming a project
 
@@ -158,14 +158,14 @@ home-history-open-failed = Quella versione non si è potuta aprire
 
 ## A project as one file
 
-home-file-open = Apri un file di progetto…
-home-file-open-title = Apri un file di progetto
+home-file-open = Importa un file di progetto…
+home-file-open-title = Importa un file di progetto
 # The kind of file, in the dialog that asks for one.
 home-file-filter = Progetto di Glaukopis
-home-file-save-title = Salva il progetto come file
-home-file-saved = «{ $name }» è stato salvato come file
-home-file-save-failed = Il progetto non si è potuto salvare come file
-home-file-open-failed = Il file di progetto non si è potuto aprire
+home-file-save-title = Esporta il progetto come file
+home-file-saved = «{ $name }» è stato esportato come file
+home-file-save-failed = Il progetto non si è potuto esportare come file
+home-file-open-failed = Il file di progetto non si è potuto importare
 home-file-opened = «{ $name }» è stato fatto dal file
 home-file-opened-added = «{ $name }» è stato fatto dal file. { $count ->
     [one] Un'opera è stata aggiunta
@@ -203,14 +203,14 @@ home-file-make = Fai il progetto
 
 ## A project as Org: its readable copy in a folder, and a new project made of an Org file
 
-home-org-open = Apri un file Org…
-home-org-open-title = Apri un file Org
+home-org-open = Importa un file Org…
+home-org-open-title = Importa un file Org
 # The kind of file, in the dialog that asks for one.
 home-org-filter = File Org
-home-org-open-failed = Il file Org non si è potuto aprire
-home-org-save-title = Scegli la cartella in cui salvare il progetto come Org
-home-org-saved = «{ $name }» è stato salvato come Org
-home-org-save-failed = Il progetto non si è potuto salvare come Org
+home-org-open-failed = Il file Org non si è potuto importare
+home-org-save-title = Scegli la cartella in cui esportare il progetto come Org
+home-org-saved = «{ $name }» è stato esportato come Org
+home-org-save-failed = Il progetto non si è potuto esportare come Org
 
 ## Changes of the home undone and done again
 home-redo = Ripeti
@@ -262,17 +262,17 @@ home-delete-many-confirm = Elimina i progetti
 home-share = Condividi…
 
 ## Mind maps of other programs: Freeplane, FreeMind and XMind opened as projects, and projects saved as them and as OPML (agent "mindmaps")
-home-mindmap-open = Apri una mappa mentale…
-home-mindmap-open-title = Apri una mappa mentale
+home-mindmap-open = Importa una mappa mentale…
+home-mindmap-open-title = Importa una mappa mentale
 home-mindmap-filter = Mappa mentale (Freeplane, FreeMind, XMind)
-home-mindmap-open-failed = La mappa mentale non si è potuta aprire
-home-menu-save-mindmap = Salva come mappa mentale…
-home-mindmap-save-title = Salva il progetto come mappa mentale
+home-mindmap-open-failed = La mappa mentale non si è potuta importare
+home-menu-save-mindmap = Esporta come mappa mentale…
+home-mindmap-save-title = Esporta il progetto come mappa mentale
 home-mindmap-filter-freeplane = Freeplane e FreeMind
 home-mindmap-filter-xmind = XMind
 home-mindmap-filter-opml = OPML
-home-mindmap-saved = «{ $name }» è stato salvato come mappa mentale
-home-mindmap-save-failed = Il progetto non si è potuto salvare come mappa mentale
+home-mindmap-saved = «{ $name }» è stato esportato come mappa mentale
+home-mindmap-save-failed = Il progetto non si è potuto esportare come mappa mentale
 home-mindmap-not-a-map = «{ $name }» non è una mappa mentale di Freeplane, FreeMind o XMind.
 # Said over the lines below, after a mind map was opened.
 home-mindmap-left-out = Una parte di ciò che la mappa mentale contiene non ha posto in un progetto, ed è stata lasciata fuori:
