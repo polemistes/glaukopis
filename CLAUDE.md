@@ -283,7 +283,7 @@ CI (`tests.yml`) runs `pnpm build`, `cargo fmt --check`, clippy with
 ## Releases, only when asked
 
 The version in `Cargo.toml`, `Cargo.lock`, `package.json`,
-`src-tauri/tauri.conf.json`, `packaging/arch/PKGBUILD`,
+`src-tauri/tauri.conf.json`, `src-phone/tauri.conf.json` (the app for Android, whose file `glaukopis-x.y.z.apk` is signed with the release key in `~/.android/`), `packaging/arch/PKGBUILD`,
 `packaging/arch/release/PKGBUILD` and `packaging/web/packages/version.json`
 (which tells the installations of Windows and macOS that it is out); a `v*` tag starts the Installers workflow;
 the Arch package is built from `packaging/arch` in a capped unit; the website
