@@ -27,9 +27,11 @@
 //! A device takes everything of its home (a computer) or the notes (a
 //! phone): the notebook, the files its notes hold, and the references
 //! without their files (`Takes`; the plan `docs/plans/an-app-for-android.md`).
-//! A phone keeps the home document as it came, in `sync/home.bin`, and
-//! nothing of it beside: no `home.unsent`, and in `sync/base/` only what the
-//! stores of the library agreed on.
+//! A phone keeps the home document as it came, in `sync/home.bin`, and with
+//! it what was last seen of the server's, in `sync/home/`: `sync.json`, and
+//! `sync.had` beside it, as with every document. Nothing else of the home
+//! document is kept on a phone: no `home.unsent`, and in `sync/base/` only
+//! what the stores of the library agreed on.
 
 use std::collections::BTreeMap;
 use std::fs;

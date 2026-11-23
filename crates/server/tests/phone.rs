@@ -618,6 +618,11 @@ async fn a_phone_holds_the_notes_and_the_references_and_no_project_and_no_file_o
             phone.home_kept().get("facts", &desk.project).is_some(),
             "the home document is kept as it came, with what the list shows of the project"
         );
+        assert_eq!(
+            names_in(&sync.join("home")),
+            ["sync.had", "sync.json"],
+            "and with it what was last seen of the server's, as with every document"
+        );
         // And the computer says of itself what it is.
         let joined = std::fs::read_to_string(computer.data.sync().join("sync.json")).unwrap();
         assert!(joined.contains("\"takes\": \"everything\""), "{joined}");
