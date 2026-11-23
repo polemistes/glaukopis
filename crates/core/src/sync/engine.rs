@@ -20,6 +20,28 @@
 //! What fails for one document is said and the round goes on with the next;
 //! what fails for the server as a whole ends the round, which is tried again.
 //!
+//! That is the round of a device that takes everything of its home: a
+//! computer. A device that takes the notes, a phone (`Takes`; the plan
+//! `docs/plans/an-app-for-android.md`), holds the notebook, the files its
+//! notes hold, and the references without their files, and does less:
+//!
+//! - the home document is read, where the server's is not the one last
+//!   seen, and nothing is written into it (`home_read`): no folder,
+//!   favourite, setting, style or word of a phone is mirrored, and it is
+//!   never sent;
+//! - step 3 is not done: no project is listed, fetched, sent, moved to the
+//!   trash or said to be gone, and no document is taken off the server;
+//! - the notebook and the library are exchanged as on a computer;
+//! - of the files, one is sent as on a computer, one is fetched only where
+//!   its record says that the notes hold it, and none is taken off the
+//!   server (`files`).
+//!
+//! The role that makes the engine says what it takes, and what the device
+//! joined its home as is kept (`kept`): a device does no more than both
+//! allow (`Takes::narrower`), so everything by which a round takes a
+//! document or a file off the server, or says that a project is gone, is
+//! done only where both say everything.
+//!
 //! The thread is woken when something was written here (`touched`), and
 //! otherwise asks the server every half minute.
 
@@ -618,9 +640,12 @@ impl Sync {
     // ---- a round ----
 
     /// Brings this computer and its home to be the same. Returns what could
-    /// not be done for single documents, in words.
+    /// not be done for single documents, in words. A phone does of it what
+    /// a device that takes the notes does: see the head of this file.
     pub fn round(&self) -> Result<Vec<String>> {
         let Some((joined, token)) = self.kept.joined()? else { return Ok(Vec::new()) };
+        // No more than the role and what the device joined as both allow: asked here, once, and handed down.
+        let takes = self.takes.narrower(joined.takes);
         let mut round = held(&self.round);
         let home = self.home(&joined, &token)?;
         let mut problems = Vec::new();
@@ -643,9 +668,15 @@ impl Sync {
             unreachable!("the documents of maps were read above")
         };
 
-        let met = self.met(&joined, docs)?;
-        self.home_round(&home, &joined, doc, docs, &met)?;
-        self.projects_round(&home, &joined, doc, docs, &mut problems)?;
+        match takes {
+            Takes::Everything => {
+                let met = self.met(&joined, docs)?;
+                self.home_round(&home, &joined, doc, docs, &met)?;
+                self.projects_round(&home, &joined, doc, docs, &mut problems)?;
+            }
+            // A phone reads the home document and writes nothing into it, and touches no project.
+            Takes::Notes => self.home_read(&home, &joined, doc, docs)?,
+        }
         if let Err(error) = self.notebook_round(&home, &joined, docs) {
             if of_the_server(&error) {
                 return Err(error);
@@ -660,9 +691,15 @@ impl Sync {
             tracing::warn!(%error, "the library could not be synchronized");
             problems.push(tr!("core-sync-problem-library", why = error.to_string()));
         }
-        // What the projects wrote into the home document, that one is gone or is not, is sent.
-        if self.kept.unsent(HOME.kind) {
-            self.exchange_maps(&home, &joined, HOME, doc, docs)?;
+        match takes {
+            // What the projects wrote into the home document, that one is gone or is not, is sent.
+            Takes::Everything => {
+                if self.kept.unsent(HOME.kind) {
+                    self.exchange_maps(&home, &joined, HOME, doc, docs, true)?;
+                }
+            }
+            // A phone sends nothing of the home document, also where it is marked as holding something unsent.
+            Takes::Notes => {}
         }
         Ok(problems)
     }
@@ -716,7 +753,9 @@ impl Sync {
 
     /// One exchange of a document of maps: what it holds beyond what the
     /// server was last seen to have is sent, and what came is taken in and
-    /// kept. Whether anything came.
+    /// kept. Whether anything came. Without `send` nothing is sent, whatever
+    /// the document holds, and the mark that it holds something unsent is
+    /// left as it is: so a phone reads the home document (`home_read`).
     fn exchange_maps(
         &self,
         home: &Home,
@@ -724,6 +763,7 @@ impl Sync {
         maps: Maps,
         doc: &HomeDoc,
         docs: &mut BTreeMap<String, String>,
+        send: bool,
     ) -> Result<bool> {
         let name = maps.name();
         let of = self.kept.of_doc(maps.kind)?;
@@ -747,7 +787,10 @@ impl Sync {
             "the",
             seen.as_deref(),
             since.as_deref(),
-            &|since| doc.beyond(since).map(Some),
+            // Without `send` the document gives nothing of its own whatever
+            // it is asked, so that no change goes with the exchange: also
+            // where `ask` asks a second time, the server holding less than it did.
+            &|since| if send { doc.beyond(since).map(Some) } else { Ok(None) },
             false,
         )?;
         let news = !whole::nothing(&answer.news);
@@ -763,7 +806,9 @@ impl Sync {
             lies: Lies::default(),
         };
         kept::keep_cursor(&of, &seen, &[])?;
-        self.kept.mark_unsent(maps.kind, false)?;
+        if send {
+            self.kept.mark_unsent(maps.kind, false)?;
+        }
         docs.insert(name, answer.digest);
         Ok(news)
     }
@@ -792,7 +837,7 @@ impl Sync {
         let mut changed = false;
         let mut news = false;
         if theirs.is_some() && theirs != cursor.as_ref().and_then(|c| c.seen.clone()) {
-            news = self.exchange_maps(home, joined, maps, doc, docs)?;
+            news = self.exchange_maps(home, joined, maps, doc, docs, true)?;
             changed |= news;
         }
         if doc.form() > maps.form {
@@ -816,7 +861,7 @@ impl Sync {
             changed = true;
         }
         if self.kept.unsent(maps.kind) {
-            changed |= self.exchange_maps(home, joined, maps, doc, docs)?;
+            changed |= self.exchange_maps(home, joined, maps, doc, docs, true)?;
         }
         if meeting.between(doc)? {
             self.kept.keep_doc(maps.kind, &doc.whole())?;
@@ -865,6 +910,37 @@ impl Sync {
             &settings,
         ];
         self.maps_round(home, joined, HOME, doc, docs, &stores, &Plain)?;
+        Ok(())
+    }
+
+    /// What a phone does with the home document, in the place of
+    /// `home_round`: where the server's is not the one last seen, it is
+    /// exchanged with nothing sent, and what came is taken in and kept, with
+    /// what was seen of it. The maps lie in `sync/home.bin` as they came,
+    /// for the list of projects later. Nothing is written into the
+    /// document: a phone does not begin its form, and gives it no store, so
+    /// nothing of the folders, the favourites, what the list shows, how a
+    /// project is shared, the settings, the styles, the formats, the
+    /// templates or the words is read from the phone's disk or written to
+    /// it, and nothing is kept of them as agreed. That a project is said to
+    /// be gone is not acted on. A home document in a later form ends the
+    /// round, as it does on a computer.
+    fn home_read(
+        &self,
+        home: &Home,
+        joined: &Joined,
+        doc: &HomeDoc,
+        docs: &mut BTreeMap<String, String>,
+    ) -> Result<()> {
+        let name = HOME.name();
+        let cursor = kept::cursor(&self.kept.of_doc(HOME.kind)?, &joined.home, &name);
+        let theirs = docs.get(&name).cloned();
+        if theirs.is_some() && theirs != cursor.and_then(|c| c.seen) {
+            self.exchange_maps(home, joined, HOME, doc, docs, false)?;
+        }
+        if doc.form() > HOME.form {
+            return Err(Error::invalid((HOME.later)()));
+        }
         Ok(())
     }
 
@@ -977,7 +1053,7 @@ impl Sync {
             self.kept.note(LIBRARY_LIES, &lies)?;
         }
         if self.kept.unsent(LIBRARY.kind) {
-            self.exchange_maps(home, joined, LIBRARY, doc, docs)?;
+            self.exchange_maps(home, joined, LIBRARY, doc, docs, true)?;
         }
         Ok(())
     }
