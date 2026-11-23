@@ -6,8 +6,8 @@
 # of 2027; after it, the Intel build has to be cross-compiled on Apple
 # silicon, with an Intel Tesseract from a Homebrew run under Rosetta.
 # The installers are not signed: Windows asks once whether to run the
-# installer; macOS needs the app to be opened with a right-click the first
-# time (see docs/guide.md). All are kept as artifacts of the run, not
+# installer; macOS needs the app to be let open under Privacy & Security in
+# the System Settings the first time (see docs/guide.md). All are kept as artifacts of the run, not
 # published as a release.
 #
 # Pandoc and Tesseract come with the application, in resources/bin, where it

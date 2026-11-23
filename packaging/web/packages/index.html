@@ -240,9 +240,14 @@
         <p>
           <strong>Not signed.</strong> The installers for Windows and macOS carry no signature, so
           both systems warn before they run. On Windows, choose <kbd>More info</kbd> and then
-          <kbd>Run anyway</kbd>. On macOS, open Glaukopis the first time by right-clicking it in
-          <em>Applications</em> and choosing <kbd>Open</kbd>; if macOS says the app is damaged, run
-          <code>xattr -cr /Applications/Glaukopis.app</code> in the Terminal and try again.
+          <kbd>Run anyway</kbd>. On macOS, Glaukopis is not opened the first time: macOS says that
+          Apple could not check it. Choose <kbd>Done</kbd>, open <em>System Settings</em> ›
+          <em>Privacy &amp; Security</em>, and far down, under <em>Security</em>, choose
+          <kbd>Open Anyway</kbd> beside Glaukopis, then <kbd>Open Anyway</kbd> once more, with your
+          password. After that it opens as any application does. On a macOS older than 15, a
+          right-click on Glaukopis in <em>Applications</em> and <kbd>Open</kbd> does the same. If
+          macOS says the app is damaged, or you would rather use the Terminal, run
+          <code>xattr -cr /Applications/Glaukopis.app</code> there and open it again.
         </p>
       </div>
 
@@ -312,7 +317,7 @@
           <div class="what">
             <p>
               For Apple silicon. A disk image: open it and drag Glaukopis into
-              <em>Applications</em>. Then open it the first time with a right-click, as said above.
+              <em>Applications</em>. Then let macOS open it the first time, as said above.
             </p>
           </div>
         </li>

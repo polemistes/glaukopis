@@ -4750,10 +4750,15 @@ languages are imported under *Settings* (see *Spelling* and *Text in scans
 and images*), and on Linux those of the system's packages serve as well.
 
 The installers for Windows and macOS are not signed. On Windows, the
-installer is let run with **More info** › **Run anyway**. On macOS, open
-Glaukopis the first time by right-clicking it in *Applications* and choosing
-**Open**; if macOS says it is damaged, run `xattr -cr
-/Applications/Glaukopis.app` in the Terminal and try again.
+installer is let run with **More info** › **Run anyway**. On macOS,
+Glaukopis is not opened the first time: macOS says that Apple could not
+check it. Choose **Done**, open *System Settings* › *Privacy & Security*,
+and far down, under *Security*, choose **Open Anyway** beside Glaukopis,
+then **Open Anyway** once more, with your password. After that it opens as
+any application does. On a macOS older than 15, a right-click on Glaukopis
+in *Applications* and **Open** does the same. If macOS says it is damaged,
+or you would rather use the Terminal, run `xattr -cr
+/Applications/Glaukopis.app` there and open it again.
 
 ### New versions
 
