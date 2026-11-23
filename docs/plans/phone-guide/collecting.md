@@ -4,10 +4,18 @@ The paragraphs of part B of stage 3 for the phone's chapter of the guide
 the guide's own voice, and say what is built in stage 3: what one sees after
 Share, the icon's New note, and the two buttons of the row over the keyboard.
 Part C's paragraphs, which say how a thing is shared to Glaukopis from another
-app, from the menu over selected words and from the icon, stand beside them;
-this one says "when something is shared to Glaukopis" and "the icon's New
-note" as they do.
+app and from the menu over selected words, and what is sent with Glaukopis
+closed, stand beside them.
 -->
+
+## Sharing to Glaukopis from another app
+
+In a browser, a reader or any app that shares, **Share** offers **Glaukopis**
+among the apps it can share with: a page, words, pictures and files go to the
+notebook so. Words selected in another app can go there without Share as
+well: the menu over the selection offers **Glaukopis**, in some apps under
+its **⋮**. Nothing is fetched from a page that is shared: its address and its
+title are kept, and what it holds stays where it is.
 
 ## When something is shared to Glaukopis
 
@@ -73,3 +81,14 @@ for all that were chosen, with the reason for each; the others are taken in. A
 picture of a kind the figures cannot show, as a photograph kept in HEIF is
 where the phone is set so, is a file in the note, as on a computer. What was
 taken in is one step of **Undo** for each file.
+
+## Sent when Glaukopis is closed
+
+What you write or collect on the phone is sent to your other devices as you
+go, where the phone is in a synchronization. Where the phone had no network
+when you left Glaukopis, it is sent as soon as it has one, without Glaukopis
+being opened: Android runs that once there is a network, at a moment it
+chooses. Where the server cannot be reached though there is a network, it is
+tried again for some two hours, and after that when you next leave Glaukopis.
+Glaukopis asks nothing of you for this, and runs nothing at other times: what
+was written on your other devices comes when you open it.
