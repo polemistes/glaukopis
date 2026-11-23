@@ -157,10 +157,11 @@ export const notebookSayHeld = (files: string[]) => call<void>('notebook_say_hel
 
 /**
  * What a thing in the inbox is: of the plugin, the page, what was selected
- * in it, an image of it, a part of it as a picture; or a note written in a
- * window of its own (record 0109).
+ * in it, an image of it, a part of it as a picture; a note written in a
+ * window of its own (record 0109); or what another app handed over on a
+ * phone (stage 3 of `docs/plans/an-app-for-android.md`).
  */
-export type InboxKind = 'page' | 'selection' | 'image' | 'region' | 'note';
+export type InboxKind = 'page' | 'selection' | 'image' | 'region' | 'note' | 'shared';
 
 /**
  * A thing the plugin for Firefox handed to the helper, or a note written in
@@ -168,6 +169,8 @@ export type InboxKind = 'page' | 'selection' | 'image' | 'region' | 'note';
  * inbox: where it came from, and what it is.
  */
 export interface InboxItem {
+  /** Its name in the inbox. (The meeting points of stage 3: part A makes it always there.) */
+  id?: string;
   kind: InboxKind;
   /** The address of the page, and its title. */
   url: string;
@@ -200,6 +203,22 @@ export const notebookInboxTake = () => call<InboxItem[]>('notebook_inbox_take');
  * notebook is not there to receive.
  */
 export const notebookInboxWaiting = () => call<number>('notebook_inbox_waiting');
+
+/**
+ * A file the page holds, taken in piece by piece (stage 3 of
+ * `docs/plans/an-app-for-android.md`): a piece in base64, put at the end of
+ * what was sent before under the same ticket.
+ */
+export const notebookTakePiece = (ticket: string, name: string, content: string) =>
+  call<void>('notebook_take_piece', { ticket, name, content });
+
+/** The file of a ticket, whole: taken into the store as the notebook's, as a file taken in is. */
+export const notebookTakeWhole = (ticket: string, name: string) =>
+  call<NotebookFile>('notebook_take_whole', { ticket, name });
+
+/** What was sent under a ticket, thrown away. */
+export const notebookTakeDropped = (ticket: string) =>
+  call<void>('notebook_take_dropped', { ticket });
 
 /**
  * Hears that something has come into the notebook's inbox. The shell tells

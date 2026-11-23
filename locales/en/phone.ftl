@@ -10,3 +10,9 @@ phone-more = More
 phone-waiting = Kept here, and sent when the server is reached
 # The line over the notes: the synchronization says something is wrong; pressed, it opens the settings, which say what.
 phone-problem = Something is wrong with the synchronization
+# The button of the row over the keyboard that opens the phone's camera, and puts the photograph taken into the note.
+phone-photograph = Photograph
+# The button of the row over the keyboard that opens the system's picker, and puts the pictures and files chosen into the note.
+phone-picture-or-file = Picture or file
+# Said under the heading that some files could not be taken in, of a file chosen that is larger than a note takes; $most is a number of megabytes.
+phone-file-too-large = { $name } is larger than { $most } MB

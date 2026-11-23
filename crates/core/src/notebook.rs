@@ -42,6 +42,7 @@ pub mod host;
 pub mod inbox;
 pub mod note_window;
 pub mod readable;
+pub mod shared;
 
 pub use facts::{Facts, Place, facts};
 

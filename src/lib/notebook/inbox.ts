@@ -328,6 +328,12 @@ function madeOf(when: string, fallback: string): string {
   return when && !Number.isNaN(time.getTime()) ? time.toISOString() : fallback;
 }
 
+/** A note made of a thing taken from the inbox, with the thing's name there (`InboxItem.id`). */
+export interface MadeOfInbox {
+  thing: string;
+  note: string;
+}
+
 /**
  * Makes a note of each thing in the inbox, in order, all in one step of
  * undo: of what the plugin handed over with the page as the source of what
@@ -336,6 +342,15 @@ function madeOf(when: string, fallback: string): string {
  * ids of the notes made.
  */
 export function notesOfInbox(notebook: Notebook, items: InboxItem[]): string[] {
+  return madeOfInbox(notebook, items).map((made) => made.note);
+}
+
+/**
+ * Makes the notes as `notesOfInbox` does, and gives each with the thing it
+ * was made of, in the order of the things, one for each thing that became
+ * a note.
+ */
+export function madeOfInbox(notebook: Notebook, items: InboxItem[]): MadeOfInbox[] {
   if (!items.length) return [];
   const now = Date.now();
   // The notebook knows a source it was given only once the step is made:
@@ -380,7 +395,7 @@ export function notesOfInbox(notebook: Notebook, items: InboxItem[]): string[] {
             extension: fileEnding(taken.file.name),
           });
       } else writeWords(notebook, id, item, source);
-      return [id];
+      return [{ thing: item.id ?? '', note: id }];
     }),
   );
 }

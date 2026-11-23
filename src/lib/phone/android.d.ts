@@ -8,6 +8,16 @@ interface GlaukopisAndroid {
   ground(colour: string, dark: boolean): void;
   /** Puts the app behind the others. */
   leave(): void;
+  /**
+   * What the app was started or brought to the front for since it was last
+   * asked, as JSON: `{"arrived": ["<the name of a thing in the inbox>"],
+   * "note": true}`, each told once, either left out where there is none.
+   * The event `glaukopis-asked` is sent to `window` when something was asked
+   * while the page runs.
+   */
+  asked(): string;
+  /** Says that the photograph the camera left for the page has been taken in, so that its file is removed. */
+  photographed(): void;
 }
 
 interface Window {

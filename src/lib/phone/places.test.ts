@@ -16,7 +16,7 @@ const leave = vi.fn();
 
 beforeEach(() => {
   leave.mockReset();
-  window.glaukopisAndroid = { ground: () => {}, leave };
+  window.glaukopisAndroid = { ground: () => {}, leave, asked: () => '{}', photographed: () => {} };
   places.begin();
 });
 
