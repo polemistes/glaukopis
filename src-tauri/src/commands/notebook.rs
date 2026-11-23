@@ -220,6 +220,11 @@ pub(crate) fn sweep(state: &AppState, held: &[String]) -> glaukopis_core::Result
     if state.notebook_swept.swap(true, Ordering::SeqCst) {
         return Ok(0);
     }
+    // The library is held from before the refusal is looked at until the
+    // sweep is done. A round that finds the notebook refused says so
+    // before it comes to the library: so either it has said it by now, or
+    // it writes nothing to the library until the sweep has ended.
+    let mut library = state.library();
     if state.notebook_refused || glaukopis_core::sync::notebook_refused(&state.data) {
         tracing::info!(
             "the notebook was refused when it was last exchanged: no file is swept out of the store in this run"
@@ -228,7 +233,7 @@ pub(crate) fn sweep(state: &AppState, held: &[String]) -> glaukopis_core::Result
     }
     let saved = state.notebook.held();
     let held: HashSet<&str> = held.iter().chain(&saved).map(String::as_str).collect();
-    let swept = state.library().notebook_sweep(&held);
+    let swept = library.notebook_sweep(&held);
     if swept.is_err() {
         // What failed may be asked again.
         state.notebook_swept.store(false, Ordering::SeqCst);
