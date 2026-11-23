@@ -37,7 +37,7 @@ impl Computer {
         let projects = Projects::new(&data);
         let notebook = Arc::new(Notebook::new(&data));
         let library = Arc::new(Mutex::new(Library::open(&data).unwrap()));
-        let sync = Sync::new(&data, projects, notebook, library.clone(), Hears::default());
+        let sync = Sync::new(&data, projects, notebook, library.clone(), sync::Takes::Everything, Hears::default());
         Computer { tmp, data, library, sync }
     }
 

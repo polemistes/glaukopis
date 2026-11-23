@@ -27,6 +27,7 @@ pub mod whole;
 pub mod wrote;
 
 pub use engine::{Hears, State, Status, Sync};
+pub use kept::Takes;
 
 /// The form of the texts this version of the application writes and reads
 /// (record 0111), as the interface says it in `src/lib/editor/form.ts`; a

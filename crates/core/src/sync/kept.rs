@@ -1,7 +1,7 @@
 //! What this computer keeps of being synchronized (record 0120).
 //!
 //! ```text
-//! sync/sync.json          the server, the home, and who this computer is in it
+//! sync/sync.json          the server, the home, who this computer is in it, and what it takes of it (`Takes`)
 //! sync/sync.key           the token that admits it, readable by the user alone
 //! sync/home.bin           the home document, as one update (`home`)
 //! sync/home.unsent        there while it holds what the server was not sent
@@ -23,6 +23,13 @@
 //!
 //! These two lie with the document so that a project that goes to the trash
 //! and comes back says the right thing of itself.
+//!
+//! A device takes everything of its home (a computer) or the notes (a
+//! phone): the notebook, the files its notes hold, and the references
+//! without their files (`Takes`; the plan `docs/plans/an-app-for-android.md`).
+//! A phone keeps the home document as it came, in `sync/home.bin`, and
+//! nothing of it beside: no `home.unsent`, and in `sync/base/` only what the
+//! stores of the library agreed on.
 
 use std::collections::BTreeMap;
 use std::fs;
@@ -42,6 +49,28 @@ const JOINED: &str = "sync.json";
 const TOKEN: &str = "sync.key";
 const BASE: &str = "base";
 
+/// What a device takes of its home.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Takes {
+    /// Everything: a computer.
+    #[default]
+    Everything,
+    /// The notes: a phone. The notebook, the files its notes hold, and the references without their files.
+    Notes,
+}
+
+impl Takes {
+    /// What two of them both allow: the one where they are the same, the
+    /// notes where they differ. A device does no more than the role it runs
+    /// in and what it joined its home as both allow, so that it takes two
+    /// things to be wrong, the program and the file, before a phone does
+    /// what only a computer may.
+    pub fn narrower(self, other: Takes) -> Takes {
+        if self == other { self } else { Takes::Notes }
+    }
+}
+
 /// The home this computer is in, and who it is there.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
@@ -53,6 +82,10 @@ pub struct Joined {
     pub device: String,
     /// What this computer is called among the others.
     pub name: String,
+    /// What it takes of the home, as the role that joined said it. One kept
+    /// before this was said says nothing of it, and is read as everything:
+    /// only computers could join then.
+    pub takes: Takes,
 }
 
 /// The folder where it is kept.
@@ -313,7 +346,51 @@ mod tests {
             home: "h".into(),
             device: "d".into(),
             name: "The laptop".into(),
+            takes: Takes::Everything,
         }
+    }
+
+    #[test]
+    fn what_a_device_takes_is_kept_and_read_again() {
+        let tmp = tempfile::tempdir().unwrap();
+        let kept = Kept::at(tmp.path().join("sync"));
+        for (takes, said) in [(Takes::Notes, "\"takes\": \"notes\""), (Takes::Everything, "\"takes\": \"everything\"")]
+        {
+            let device = Joined { takes, ..joined() };
+            kept.join(&device, "t").unwrap();
+            let written = fs::read_to_string(tmp.path().join("sync").join(JOINED)).unwrap();
+            assert!(written.contains(said), "{written}");
+            assert_eq!(kept.joined().unwrap().unwrap().0.takes, takes);
+            // A new name leaves it as it is.
+            kept.rename("Another name").unwrap();
+            assert_eq!(kept.joined().unwrap().unwrap().0, Joined { name: "Another name".into(), ..device });
+        }
+    }
+
+    #[test]
+    fn what_was_kept_before_a_device_said_what_it_takes_is_read_as_everything() {
+        let tmp = tempfile::tempdir().unwrap();
+        let kept = Kept::at(tmp.path());
+        // As it was written when only computers could join.
+        let before = r#"{
+  "server": "https://glaukopis.example.org",
+  "home": "h",
+  "device": "d",
+  "name": "The laptop"
+}"#;
+        fs::write(tmp.path().join(JOINED), before).unwrap();
+        fs::write(tmp.path().join(TOKEN), "t").unwrap();
+        assert_eq!(kept.joined().unwrap(), Some((joined(), "t".to_owned())));
+        assert_eq!(kept.joined().unwrap().unwrap().0.takes, Takes::Everything);
+    }
+
+    #[test]
+    fn the_narrower_of_two_is_the_notes_wherever_they_differ() {
+        use Takes::{Everything, Notes};
+        assert_eq!(Everything.narrower(Everything), Everything);
+        assert_eq!(Notes.narrower(Notes), Notes);
+        assert_eq!(Everything.narrower(Notes), Notes);
+        assert_eq!(Notes.narrower(Everything), Notes);
     }
 
     #[test]

@@ -17,7 +17,7 @@ use tauri::{AppHandle, Emitter, Manager, State};
 
 use glaukopis_core::sync::kept::Apart;
 use glaukopis_core::sync::remote::{NewCode, Told};
-use glaukopis_core::sync::{self, Hears, Status, Sync};
+use glaukopis_core::sync::{self, Hears, Status, Sync, Takes};
 
 use super::notebook::{NOTEBOOK_UPDATE, NotebookUpdate};
 use super::projects::{PROJECT_UPDATE, ProjectUpdate};
@@ -61,7 +61,15 @@ pub fn engine(app: &AppHandle, state: &AppState) -> Arc<Sync> {
             told(of_apart.emit(PROJECT_APART, passed), "a project written in apart");
         }),
     };
-    Arc::new(Sync::new(&state.data, state.projects.clone(), state.notebook.clone(), state.library_shared(), hears))
+    // The application is a computer: it takes everything of its home.
+    Arc::new(Sync::new(
+        &state.data,
+        state.projects.clone(),
+        state.notebook.clone(),
+        state.library_shared(),
+        Takes::Everything,
+        hears,
+    ))
 }
 
 /// Something was written on this computer: the engine sends it in a moment.

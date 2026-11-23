@@ -178,7 +178,7 @@ In `crates/server/tests/homes.rs`, over HTTP, as `tests/server.rs` tries the roo
 | File | What |
 | --- | --- |
 | `mod.rs` | what synchronization is; `Sync`, the engine; `Status` |
-| `kept.rs` | what this computer keeps of it: `sync/sync.json` (`server`, `home`, `device`, `name`), `sync/sync.key` (the token, readable by the user alone), and for each document what was last seen of the server's (`seen`, `since`, and what the files held then) |
+| `kept.rs` | what this computer keeps of it: `sync/sync.json` (`server`, `home`, `device`, `name`, and `takes`, what the device takes of its home: `everything`, a computer, or `notes`, a phone, as `docs/plans/an-app-for-android.md` has it; one written before there was such a field says nothing of it and is read as `everything`), `sync/sync.key` (the token, readable by the user alone), and for each document what was last seen of the server's (`seen`, `since`, and what the files held then) |
 | `remote.rs` | the calls to the server, over the one network client |
 | `whole.rs` | a document from its bytes on disk: the log first and then the state, so that a state saved meanwhile loses nothing; merged; what it holds beyond a state vector; the moment it is at |
 | `home.rs` | the home document, kept in `sync/home.bin`, and its maps |
