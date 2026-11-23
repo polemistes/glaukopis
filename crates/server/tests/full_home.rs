@@ -19,9 +19,18 @@
 //! proxy cuts off is said of that file, and what is to be fetched arrives;
 //! a network that is away still ends the round; and the server's own
 //! refusal for want of room is known for what it is.
+//!
+//! And, after a second reading of the first build: room is kept in the
+//! home for the files of the notes, so that a library larger than the home
+//! does not fill it and leave none for a picture taken later; a file that
+//! fails at every try waits longer each time, and those as large are sent
+//! meanwhile; a file that cannot be fetched does not hold back what is to
+//! be sent; a phone that is not in front asks nothing at regular times for
+//! a file that failed so; and what was taken off the server in a round
+//! that ended at a file is told by the next.
 
 use std::path::PathBuf;
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::Duration;
 
@@ -32,9 +41,10 @@ use glaukopis_core::net::Client;
 use glaukopis_core::notebook::Notebook;
 use glaukopis_core::paths::DataDir;
 use glaukopis_core::projects::Projects;
+use glaukopis_core::sync::home::HomeDoc;
 use glaukopis_core::sync::kept::Kept;
 use glaukopis_core::sync::remote::Home;
-use glaukopis_core::sync::{Hears, State, Status, Sync, Takes};
+use glaukopis_core::sync::{self, Hears, State, Status, Sync, Takes};
 use glaukopis_server::{Config, Server, serve};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::{TcpListener, TcpStream};
@@ -145,6 +155,15 @@ impl Device {
     /// The files the home holds, by their hashes.
     fn home_files(&self) -> Vec<String> {
         self.asked(|home| home.files().unwrap().0.into_iter().map(|f| f.hash).collect())
+    }
+
+    /// The files the library's document says the home holds, as the
+    /// server keeps the document: all of it asked for, and nothing sent.
+    fn said_to_be_stored(&self) -> Vec<String> {
+        self.asked(|home| {
+            let answer = home.exchange("library", "the", None, None, &[], sync::FORM, true).unwrap();
+            HomeDoc::load(Some(&answer.news)).unwrap().map("stored").into_keys().collect()
+        })
     }
 }
 
@@ -550,6 +569,59 @@ async fn a_network_that_is_away_when_a_file_fails_ends_the_round_as_a_server_not
             assert_eq!(status.state, State::Offline, "{:?}", status.problem);
             assert_eq!(tried.load(Ordering::SeqCst), 1, "the round ended at the first file, and tried no other");
             assert!(desk.bytes(&article).is_none(), "nothing more was asked of a server that is not reached");
+        },
+    )
+    .await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn what_was_taken_off_the_server_in_a_round_that_ended_at_a_file_is_told_by_the_next() {
+    with_server_set(
+        |_| {},
+        |direct| {
+            // While the network is away: the sending of a large file is cut
+            // off, and so is what is asked of the home after that.
+            let away = Arc::new(AtomicBool::new(false));
+            let tried = Arc::new(AtomicUsize::new(0));
+            let (is_away, counted) = (away.clone(), tried.clone());
+            let cut = move |asked: &str, length: u64| {
+                if !is_away.load(Ordering::SeqCst) {
+                    return false;
+                }
+                if sends_a_large_file(asked, length) {
+                    counted.fetch_add(1, Ordering::SeqCst);
+                    return true;
+                }
+                counted.load(Ordering::SeqCst) > 0 && asks_how_the_home_stands(asked)
+            };
+            let proxied = tokio::runtime::Handle::current().block_on(through(&direct, cut));
+            let (desk, laptop) = (Device::computer(), Device::computer());
+            assert!(desk.sync.start(&proxied, "The desk", None).unwrap().on);
+            desk.round();
+            join(&laptop, &desk, &direct, "The laptop");
+            let old = desk.take_in("old.pdf", &kib(2, 9));
+            desk.round();
+            laptop.round();
+            assert_eq!(laptop.bytes(&old), desk.bytes(&old));
+
+            // The file leaves the library on the desk, and another is taken in. The network goes
+            // in the round: the file is taken off the server first, and the round ends at the sending.
+            desk.lib().remove_file(&old).unwrap();
+            let scan = desk.take_in("scan.pdf", &kib(20, 2));
+            away.store(true, Ordering::SeqCst);
+            assert_eq!(desk.once().state, State::Offline);
+            assert_eq!(tried.load(Ordering::SeqCst), 1);
+            assert!(!laptop.home_files().contains(&old), "taken off the server before anything was sent");
+            assert!(laptop.said_to_be_stored().contains(&old), "which the home's document does not say yet");
+
+            // The network is back: the next round tells it, and sends what waited.
+            away.store(false, Ordering::SeqCst);
+            let status = desk.once();
+            assert_eq!((status.state, status.problem), (State::Idle, None));
+            let said = laptop.said_to_be_stored();
+            assert!(!said.contains(&old) && said.contains(&scan), "{said:?}");
+            laptop.round();
+            assert!(laptop.bytes(&old).is_none() && laptop.bytes(&scan).is_some());
         },
     )
     .await;
