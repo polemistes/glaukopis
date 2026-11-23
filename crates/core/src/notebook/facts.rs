@@ -39,12 +39,19 @@ const LARGEST_READ: u64 = 256 * 1024 * 1024;
 
 /// What the file at `path` says of itself.
 pub fn facts(path: &Path) -> Facts {
+    facts_of(path, &path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default())
+}
+
+/// What the file at `path` says of itself, its kind told by `name` and not
+/// by the ending of the path: a file kept by what it holds has no ending,
+/// and asked by its path it would say nothing of when and where it was taken.
+pub fn facts_of(path: &Path, name: &str) -> Facts {
     let Ok(meta) = fs::metadata(path) else { return Facts::default() };
     let time = meta.modified().ok().and_then(|t| {
         let t: time::OffsetDateTime = t.into();
         t.replace_nanosecond(0).unwrap_or(t).format(&time::format_description::well_known::Rfc3339).ok()
     });
-    let ending = path.extension().map(|e| e.to_string_lossy().to_ascii_lowercase()).unwrap_or_default();
+    let ending = Path::new(name).extension().map(|e| e.to_string_lossy().to_ascii_lowercase()).unwrap_or_default();
     let (taken, place) = if meta.is_file() && meta.len() <= LARGEST_READ && WITH_EXIF.contains(&ending.as_str()) {
         photograph(path)
     } else {
@@ -138,6 +145,30 @@ mod tests {
         assert!((place.lon + 10.75).abs() < 1e-9, "west is negative: {place:?}");
         let time = facts.time.unwrap();
         assert!(time.starts_with("20") && time.ends_with('Z') && !time.contains('.'), "{time}");
+    }
+
+    #[test]
+    fn a_photograph_kept_under_a_name_with_no_ending_says_when_and_where_by_its_real_name() {
+        let tmp = tempfile::tempdir().unwrap();
+        let path = tmp.path().join("a".repeat(64));
+        let fields = [
+            ascii(Tag::DateTimeOriginal, "2026:11:15 14:03:22"),
+            ascii(Tag::GPSLatitudeRef, "N"),
+            rationals(Tag::GPSLatitude, &[(59, 1), (54, 1), (0, 1)]),
+            ascii(Tag::GPSLongitudeRef, "E"),
+            rationals(Tag::GPSLongitude, &[(10, 1), (45, 1), (0, 1)]),
+        ];
+        fs::write(&path, jpeg_with(&fields)).unwrap();
+        let by_path = facts(&path);
+        assert_eq!((by_path.taken, by_path.place), (None, None), "its path has no ending to say what it is");
+        assert!(by_path.time.is_some());
+        let by_name = facts_of(&path, "JPEG_20261115_140322.jpg");
+        assert_eq!(by_name.taken.as_deref(), Some("2026-11-15T14:03:22"));
+        assert!((by_name.place.unwrap().lon - 10.75).abs() < 1e-9);
+        // A name that is no picture's says nothing of it, however the file reads.
+        let text = facts_of(&path, "notes.txt");
+        assert_eq!((text.taken, text.place), (None, None));
+        assert_eq!(facts_of(&tmp.path().join("not there"), "x.jpg"), Facts::default());
     }
 
     #[test]

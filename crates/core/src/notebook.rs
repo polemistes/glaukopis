@@ -20,7 +20,8 @@
 //! (`inbox`), from which the application takes it; Firefox is told of the
 //! helper in `firefox`. A note written in a window of its own, the
 //! application in yet another role, goes into the same inbox
-//! (`note_window`).
+//! (`note_window`), and so does what another app hands over on a phone
+//! (`shared`). A file the page holds is taken in piece by piece (`pieces`).
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -41,10 +42,11 @@ pub mod firefox;
 pub mod host;
 pub mod inbox;
 pub mod note_window;
+pub mod pieces;
 pub mod readable;
 pub mod shared;
 
-pub use facts::{Facts, Place, facts};
+pub use facts::{Facts, Place, facts, facts_of};
 
 /// What is said of the notebook when its state is saved.
 const INFO: &str = "notebook.json";
