@@ -12,6 +12,7 @@
 mod commands;
 #[cfg(test)]
 mod contract;
+mod door;
 mod error;
 mod log;
 mod phone;

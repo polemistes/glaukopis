@@ -11,7 +11,7 @@
 
 use std::fs::{self, File};
 use std::path::{Path, PathBuf};
-use std::sync::Mutex;
+use std::sync::{Mutex, OnceLock};
 
 use tracing_subscriber::fmt::writer::MakeWriterExt;
 
@@ -20,11 +20,20 @@ pub const DIR: &str = "logs";
 /// How many runs are kept.
 pub const KEEP: usize = 10;
 
+/// The file of this process's log, once it has begun.
+static BEGUN: OnceLock<Option<PathBuf>> = OnceLock::new();
+
 /// Begins to log: to the terminal, and to a new file in `logs` under `root`,
 /// where that can be made. The older files but the last few are deleted.
 /// What happens when the program panics is logged before it goes on as it
-/// would. Gives the file, where there is one.
+/// would. Gives the file, where there is one. Begun once in a process:
+/// asked again (on a phone the door of `door.rs` and the role may both ask,
+/// whichever comes first), it gives the file of the first asking.
 pub fn start(root: &Path) -> Option<PathBuf> {
+    BEGUN.get_or_init(|| begin(root)).clone()
+}
+
+fn begin(root: &Path) -> Option<PathBuf> {
     let filter = || tracing_subscriber::EnvFilter::try_from_env("GLAUKOPIS_LOG").unwrap_or_else(|_| "info".into());
     // The time of this computer, as the one who reads the log lives by it.
     // Asked now, while there is one thread: later it cannot be.

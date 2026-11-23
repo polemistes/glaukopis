@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- What the icon held down offers: a new note (stage 3 of
+     docs/plans/an-app-for-android.md), started by StartActivity as
+     everything from outside is. -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="new_note"
+        android:enabled="true"
+        android:icon="@drawable/shortcut_new_note"
+        android:shortcutShortLabel="@string/new_note"
+        android:shortcutLongLabel="@string/new_note">
+        <intent
+            android:action="org.glaukopis.app.NEW_NOTE"
+            android:targetPackage="org.glaukopis.app"
+            android:targetClass="org.glaukopis.app.StartActivity" />
+    </shortcut>
+</shortcuts>

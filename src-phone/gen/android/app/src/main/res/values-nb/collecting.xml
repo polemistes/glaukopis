@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Det Android-delen sier om det som samles (trinn 3 i
+     docs/plans/an-app-for-android.md), der ingen side kjører som kan si det. -->
+<resources>
+    <!-- På appens ikon når det holdes inne; ordene til notebook-new-note. -->
+    <string name="new_note">Nytt notat</string>
+    <!-- Androids lille melding der ingenting av det som ble delt kunne legges i notatblokken; kjernens ord følger etter et kolon der det er noen. -->
+    <string name="shared_not_taken">Glaukopis kunne ikke ta imot dette</string>
+</resources>

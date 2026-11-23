@@ -8,7 +8,7 @@
 //! the notebook is handed to the windows as a change of another window is
 //! (record 0085), and is in the log already.
 
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 
 use base64::Engine as _;
 use base64::engine::general_purpose::STANDARD as B64;
@@ -38,29 +38,38 @@ pub struct ProjectApart {
     pub name: String,
 }
 
+/// Whom an engine tells what it has to tell: the application, once it is
+/// known. An engine made before there is any window (the phone's door, for
+/// a round with the app closed: `door.rs`) tells nobody until the role that
+/// takes it over sets this.
+pub type Windows = Arc<OnceLock<AppHandle>>;
+
 /// The engine, telling the windows of this application what it has to tell.
 /// What `takes` says is what the device takes of its home: everything on a
 /// computer, the notes on a phone (`phone.rs`).
 pub fn engine(app: &AppHandle, state: &AppState, takes: Takes) -> Arc<Sync> {
-    let (of_status, of_project, of_notebook, of_apart) = (app.clone(), app.clone(), app.clone(), app.clone());
-    let told = |sent: tauri::Result<()>, what: &str| {
-        if let Err(error) = sent {
-            tracing::warn!(%error, "the windows were not told of {what}");
-        }
-    };
+    let windows: Windows = Arc::new(OnceLock::new());
+    let _ = windows.set(app.clone());
+    engine_for(windows, state, takes)
+}
+
+/// The engine, telling what it has to tell to `windows` at the moment it is
+/// to be told, where they are known by then, and to nobody before.
+pub fn engine_for(windows: Windows, state: &AppState, takes: Takes) -> Arc<Sync> {
+    let (of_status, of_project, of_notebook, of_apart) = (windows.clone(), windows.clone(), windows.clone(), windows);
     let hears = Hears {
-        status: Box::new(move |status| told(of_status.emit(SYNC, status.clone()), "the status of the synchronization")),
+        status: Box::new(move |status| tell(&of_status, SYNC, status.clone(), "the status of the synchronization")),
         project: Box::new(move |id, update| {
             let passed = ProjectUpdate { id: id.to_owned(), update: B64.encode(update) };
-            told(of_project.emit(PROJECT_UPDATE, passed), "what another computer wrote into a project");
+            tell(&of_project, PROJECT_UPDATE, passed, "what another computer wrote into a project");
         }),
         notebook: Box::new(move |update| {
             let passed = NotebookUpdate { update: B64.encode(update) };
-            told(of_notebook.emit(NOTEBOOK_UPDATE, passed), "what another computer wrote into the notebook");
+            tell(&of_notebook, NOTEBOOK_UPDATE, passed, "what another computer wrote into the notebook");
         }),
         apart: Box::new(move |id, name| {
             let passed = ProjectApart { id: id.to_owned(), name: name.to_owned() };
-            told(of_apart.emit(PROJECT_APART, passed), "a project written in apart");
+            tell(&of_apart, PROJECT_APART, passed, "a project written in apart");
         }),
     };
     // What the role says this device takes of its home.
@@ -72,6 +81,14 @@ pub fn engine(app: &AppHandle, state: &AppState, takes: Takes) -> Arc<Sync> {
         takes,
         hears,
     ))
+}
+
+/// Tells the windows something, where they are known.
+fn tell<T: Serialize + Clone>(windows: &Windows, event: &str, payload: T, what: &str) {
+    let Some(app) = windows.get() else { return };
+    if let Err(error) = app.emit(event, payload) {
+        tracing::warn!(%error, "the windows were not told of {what}");
+    }
 }
 
 /// Something was written on this computer: the engine sends it in a moment.

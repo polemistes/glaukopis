@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- What the Android part says of what is collected (stage 3 of
+     docs/plans/an-app-for-android.md), where no page runs to say it. -->
+<resources>
+    <!-- On the app's icon held down; the words of notebook-new-note. -->
+    <string name="new_note">New note</string>
+    <!-- Android's small message where nothing of what was shared could be put into the notebook; the core's words follow it after a colon where there are any. -->
+    <string name="shared_not_taken">Glaukopis could not take this in</string>
+</resources>

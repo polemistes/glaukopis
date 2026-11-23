@@ -21,9 +21,7 @@ use std::path::PathBuf;
 
 use tauri::{AppHandle, Manager};
 
-use glaukopis_core::sync::Takes;
-
-use crate::{commands, starting};
+use crate::{commands, door, starting};
 
 /// The label of the phone's window, by which the page knows it is the
 /// phone's (`src/lib/phone/label.ts`) and is allowed what it does
@@ -36,6 +34,11 @@ const WINDOW: &str = "phone";
 /// The argument by which the application on a computer is the phone.
 #[cfg(desktop)]
 pub const FLAG: &str = "--phone";
+
+/// The argument, after `--phone`, by which the application makes one round
+/// of the door and ends (`door.rs`).
+#[cfg(desktop)]
+pub const ROUND: &str = "--round";
 
 /// Whether the application is asked to be the phone: `--phone` among its
 /// arguments, wherever it stands.
@@ -58,6 +61,15 @@ pub fn run() {
             std::process::exit(2);
         }
     };
+    // `--round`: the door's round, as Android makes it with the app closed,
+    // for trying; nothing of Tauri is built, and the program ends with 0
+    // for done and 1 for to be tried again.
+    #[cfg(desktop)]
+    if let Some(root) = &root
+        && std::env::args_os().skip(1).any(|a| a == ROUND)
+    {
+        std::process::exit(door::FOLDER.round(root, "").code());
+    }
     #[cfg(mobile)]
     let root: Option<PathBuf> = None;
     let built = tauri::Builder::default()
@@ -76,10 +88,13 @@ pub fn run() {
             starting::say_compositor(compositor_asked);
             tracing::info!(data = %root.display(), "Glaukopis on a phone");
             starting::tell_the_windows(app.handle());
-            match starting::opening(root.clone(), false, None, starting::speak_as_chosen) {
-                starting::Opening::Ready(state) => {
-                    // The engine, told this device takes the notes alone.
-                    let sync = commands::sync::engine(app.handle(), &state, Takes::Notes);
+            // What a round with the app closed opened in this process is
+            // taken over as it is (`door.rs`); else the folder is opened, and
+            // the engine made, told this device takes the notes alone.
+            let opening = || starting::opening(root.clone(), false, None, starting::speak_as_chosen);
+            match door::FOLDER.for_role(opening) {
+                door::Given::Ready(state, sync, windows) => {
+                    let _ = windows.set(app.handle().clone());
                     app.manage(*state);
                     app.manage(sync.clone());
                     if let Err(error) = make_window(app.handle()) {
@@ -90,8 +105,8 @@ pub fn run() {
                         tracing::error!(%error, "the thread of the synchronization could not be started");
                     }
                 }
-                starting::Opening::InUse(root) => starting::in_use(app.handle(), &root),
-                starting::Opening::Failed(error) => starting::failed(app.handle(), &error, log.as_deref()),
+                door::Given::InUse(root) => starting::in_use(app.handle(), &root),
+                door::Given::Failed(error) => starting::failed(app.handle(), &error, log.as_deref()),
             }
             Ok(())
         })
