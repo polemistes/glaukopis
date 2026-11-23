@@ -852,6 +852,39 @@ async fn a_home_document_in_a_later_form_stops_a_phone_and_a_computer_alike() {
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_computer_whose_kept_document_of_the_library_is_of_a_later_form_stops_before_it_touches_the_files() {
+    with_server(|address, _| {
+        let desk = Device::computer();
+        assert!(desk.sync.start(&address, "The desk", None).unwrap().on);
+        let scan = desk.take_in("scan.pdf", SCAN);
+        settle(&[&desk]);
+        assert!(desk.home_files().contains(&scan));
+
+        // The application was a later version here for a while, and is this
+        // one again. The later one kept the library's document otherwise:
+        // the document says its form, and the record of the file is not
+        // where this version reads it. Nothing has changed on the server
+        // or in the library's files since, so this version asks for nothing
+        // of the document; but its first round looks at the files.
+        let kept = Kept::new(&desk.data);
+        let doc = HomeDoc::load(kept.doc("library").unwrap().as_deref()).unwrap();
+        doc.put("meta", "form", Some(&(LIBRARY_FORM + 1).to_string()));
+        let of_the_file: Vec<String> = doc.map("files").into_keys().filter(|name| name.starts_with(&scan)).collect();
+        assert!(!of_the_file.is_empty());
+        for name in of_the_file {
+            doc.put("files", &name, None);
+        }
+        kept.keep_doc("library", &doc.whole()).unwrap();
+        let desk = desk.started_again(Knows::default());
+
+        stops(&desk);
+        assert!(desk.home_files().contains(&scan), "the file is not taken off the server by a record read wrongly");
+        assert_eq!(desk.bytes(&scan).as_deref(), Some(SCAN));
+    })
+    .await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn a_device_that_is_stopped_for_a_later_form_can_still_leave_its_home() {
     with_server(|address, _| {
         let (computer, phone) = (Device::later_computer(later_texts()), Device::phone());

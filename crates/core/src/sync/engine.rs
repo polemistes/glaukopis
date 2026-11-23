@@ -1123,6 +1123,12 @@ impl Sync {
         else {
             unreachable!("the documents of maps were read above")
         };
+        // The documents of maps as they are kept here: one of a later form
+        // than this version knows, as after the application was put back to
+        // an earlier version, is read by nothing in the round. What comes
+        // from the server is looked at where it comes (`take_maps`).
+        self.known(HOME, doc)?;
+        self.known(LIBRARY, library)?;
 
         match takes {
             Takes::Everything => {
@@ -1486,6 +1492,10 @@ impl Sync {
         takes: Takes,
         problems: &mut Vec<String>,
     ) -> Result<()> {
+        // Before anything is read from the document as it is kept: a round
+        // in which nothing changed asks for nothing of it, and still looks
+        // at the files by what it says.
+        self.known(LIBRARY, doc)?;
         let name = LIBRARY.name();
         let cursor = kept::cursor(&self.kept.of_doc(LIBRARY.kind)?, &joined.home, &name);
         // What the library found amiss or lost since the round began: the
