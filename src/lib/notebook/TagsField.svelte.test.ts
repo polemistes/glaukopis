@@ -103,6 +103,19 @@ describe('the field of the tags of a note', () => {
     expect(note.tags).toEqual(['ath', 'Pallas']);
   });
 
+  it('adds what was typed by a comma that comes in the words, as from a phone, which sends no key for it', () => {
+    const { type, note, input } = setUp(['owls']);
+    type('Pallas,');
+    expect(note.tags).toEqual(['owls', 'Pallas']);
+    expect(input.value).toBe('');
+    type('Homer, Hes');
+    expect(note.tags).toEqual(['owls', 'Pallas', 'Homer']);
+    expect(input.value).toBe(' Hes');
+    type(',');
+    expect(note.tags).toEqual(['owls', 'Pallas', 'Homer']);
+    expect(input.value).toBe('');
+  });
+
   it('takes the last tag away by Backspace in the empty field, and closes the list by Escape', () => {
     const { type, key, note, offered } = setUp(['owls', 'Homer']);
     key('Backspace');
