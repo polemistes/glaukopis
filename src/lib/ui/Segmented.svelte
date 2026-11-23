@@ -81,7 +81,7 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    height: 24px;
+    height: var(--segmented-h, 24px);
     padding: 0 10px;
     border: none;
     border-radius: 6px;
@@ -95,7 +95,7 @@
       color var(--fast) var(--ease);
   }
   .sm button {
-    height: 20px;
+    height: var(--segmented-h-sm, 20px);
     padding: 0 8px;
   }
   @media (hover: hover) {

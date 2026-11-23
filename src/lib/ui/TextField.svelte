@@ -82,11 +82,11 @@
       box-shadow var(--fast) var(--ease);
   }
   .sm .frame {
-    height: 26px;
+    height: var(--control-h-sm, 26px);
     padding: 0 7px;
   }
   .lg .frame {
-    height: 38px;
+    height: var(--control-h-lg, 38px);
     padding: 0 12px;
     font-size: var(--text-lg);
   }

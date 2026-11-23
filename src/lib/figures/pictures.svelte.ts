@@ -319,8 +319,12 @@ class Pictures {
     );
   }
 
-  /** Tries again for the pictures that were not there. */
-  async #retry() {
+  /**
+   * Tries again for the pictures that were not there: after the files of a
+   * shared project came, and on a phone when its files changed on disk or
+   * the app came back to the front.
+   */
+  async again(): Promise<void> {
     const absent = [...this.#shown.entries()].filter(([, s]) => !s.url).map(([key]) => key);
     await Promise.all(
       absent.map((key) => {
@@ -378,7 +382,7 @@ class Pictures {
           }
           if (done.fetched) {
             await this.reload();
-            await this.#retry();
+            await this.again();
           }
         } catch {
           // Not connected: it is done when the connection is there again.

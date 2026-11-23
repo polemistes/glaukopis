@@ -46,12 +46,12 @@
       color var(--fast) var(--ease);
   }
   .sm {
-    height: 26px;
+    height: var(--control-h-sm, 26px);
     padding: 0 9px;
     font-size: var(--text-sm);
   }
   .lg {
-    height: 36px;
+    height: var(--control-h-lg, 36px);
     padding: 0 16px;
     font-size: var(--text-lg);
   }

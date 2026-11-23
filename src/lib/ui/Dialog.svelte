@@ -3,6 +3,7 @@
   import X from '@lucide/svelte/icons/x';
   import { t } from '$lib/i18n';
   import IconButton from './IconButton.svelte';
+  import { over } from './over';
   import { dialogClosed, dialogOpened } from './top';
 
   interface Props {
@@ -68,6 +69,16 @@
     const dialog = el;
     dialogOpened(dialog);
     return () => dialogClosed(dialog);
+  });
+
+  // Whoever is to be told of what lies over the window (on a phone, its
+  // steps, so that the system's Back closes the dialog) is told when one
+  // that can be dismissed opens, and told again when it has closed. On a
+  // computer nobody listens.
+  $effect(() => {
+    if (!open || !dismissable || !over.opened) return;
+    const closed = over.opened(() => onclose());
+    return closed;
   });
 
   // What had the focus before the dialog opened has it again when the dialog
