@@ -1052,8 +1052,20 @@ async fn a_device_whose_notebook_is_not_taken_says_so_and_says_it_no_more_when_i
         }
         assert_eq!(std::fs::read_to_string(&kept).unwrap().trim(), "true");
 
-        // The state put back as it was: the notebook is taken again.
+        // A round that ends for the server's sake, before the notebook is
+        // come to, leaves it as it is kept: the state is readable again, but
+        // the notebook was not taken.
         std::fs::write(&state, &as_it_was).unwrap();
+        let nowhere = {
+            let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+            format!("http://{}", listener.local_addr().unwrap())
+        };
+        let server = phone.looks_at(&nowhere);
+        assert!(phone.sync.round().is_err(), "the server is not reached");
+        assert!(sync::notebook_refused(&phone.data), "not taken yet, it says so still");
+        phone.looks_at(&server);
+
+        // The state put back as it was, and the server reached: the notebook is taken again.
         phone.round();
         assert!(!sync::notebook_refused(&phone.data), "taken again, it says so no more");
         computer.round();
