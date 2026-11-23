@@ -940,6 +940,102 @@ By the main thread, on the new emulator, with the app as it is and a few lines o
 
 One emulator at a time, as a capped unit, and never beside another capped unit.
 
+### Where the parts meet
+
+Before any agent begins, the main thread makes one commit on main, **the meeting points**, and both agents start from it. It holds, for each thing one part uses of another's, a file at its path with the shape said here and a body that does the least; the part that owns the path fills it in, and no other part touches it. It also holds the three new words of the phone (`phone.ftl`, in English and Bokmål: the section *Words*) and an empty `docs/plans/phone-guide/collecting.md`.
+
+| What | Where | Shape | Filled in by | Used by |
+| --- | --- | --- | --- | --- |
+| A thing of the inbox, by its name there | `InboxItem` and `InboxKind` of `src/lib/api/notebook.ts` | `InboxKind` gets `'shared'`. `InboxItem` gets `id?: string` in the meeting points; A makes it `id: string`, with the Rust that sends it | A | B |
+| The notes made of what was taken from the inbox, each with the thing it was made of | `src/lib/notebook/inbox.ts` | `interface MadeOfInbox { thing: string; note: string }`; `madeOfInbox(notebook: Notebook, items: InboxItem[]): MadeOfInbox[]`, in the order of the things, one for each thing that became a note; `notesOfInbox` gives its notes and is otherwise as it was. In the meeting points it is what `notesOfInbox` does today, with `thing` the item's `id`, or nothing where it has none | the meeting points; A adds the kind `shared` | B |
+| What another app handed over, written into the inbox | `crates/core/src/notebook/shared.rs` | `Shared { text: String, subject: String, files: Vec<SharedFile> }` and `SharedFile { at: String, name: String }`, both read from JSON, every field with a default; `Put { id: String, problems: Vec<String> }`, written as JSON; `pub fn put(inbox: &Inbox, shared: Shared, from: &Path) -> Result<Put>`. In the meeting points `put` refuses everything | A | C (the door) |
+| A file taken in from what the page holds, in pieces | `src/lib/api/notebook.ts` | `notebookTakePiece = (ticket: string, name: string, content: string) => call<void>('notebook_take_piece', { ticket, name, content })`, `content` in base64; `notebookTakeWhole = (ticket: string, name: string) => call<NotebookFile>('notebook_take_whole', { ticket, name })`; `notebookTakeDropped = (ticket: string) => call<void>('notebook_take_dropped', { ticket })` | the meeting points; the Rust is A's | B |
+| What the Android part gives the page | `window.glaukopisAndroid` (`src/lib/phone/android.d.ts`), and an event | two functions more: `asked(): string`, what the app was started or brought to the front for since it was last asked, as JSON, `{"arrived": ["<the name of a thing in the inbox>"], "note": true}`, each told once, either left out where there is none; and `photographed(): void`, which says that the photograph the camera left for the page has been taken in, so that its file is removed. The event `glaukopis-asked` is sent to `window`, with nothing in it, when something was asked while the page runs | C (Kotlin) | B |
+| What was asked, in the page | `src/lib/phone/asked.ts` | `interface Asked { arrived: string[]; note: boolean }`; `readAsked(said: unknown): Asked`; `answer(asked: Asked): Promise<void>`; `takeAsked(): Promise<void>`; `followAsked(): () => void` | B | B, the scripts |
+| The places | `places` of `src/lib/phone/places.svelte.ts` | two functions more: `arrive(place: Place, leaves?: boolean): void` (`leaves` is true unless said) and `up(): void` | B | B |
+| The door, between the Kotlin and Rust | `Door.kt`, and `src-tauri/src/door.rs` | in part C: both sides are the main thread's | C | C |
+| The hooks of the scripts | `window.__glaukopisPhone` | by B, on the object of stage 2: `asked(asked: Partial<Asked>): Promise<void>`, which answers as if the Android part had said it; `file(name: string, content64: string): Promise<void>`, which puts a file into the note in view as *Picture or file* does | B | the scripts |
+| What the scripts press and read | attributes | of B: `data-phone-tool` gets `file` and `photograph`; the two hidden fields of files are `data-phone-input="file"` and `data-phone-input="photograph"` | B | the scripts |
+
+What stage 2 said its page parts hold to alike holds for B as it stands there: by finger; nothing shown under a pointer but where there is one; no height written in pixels on what holds words; one column from 320 pixels; the words of the notebook wherever one says it already; nothing of the projects loaded. B adds no message and changes none: one that is missing is asked of the main thread.
+
+### A. The kind `shared`, and a file taken in from what the page holds
+
+Read before building: `crates/core/src/notebook/inbox.rs` (all of it: how a thing is written whole, `put_note`, the limits), `note_window.rs` from `add_file` to `send` (the one other writer of a thing with files), `facts.rs`, `host.rs` where it refuses a kind; `crates/core/src/library/attachments.rs` (`hash_file`, `store_file`) and `library/notebook.rs` (`notebook_take`, `notebook_take_image`, `notebook_shown`); `src-tauri/src/commands/notebook.rs` from `InboxItem` to `take_all`, `notebook_take_files`, and its tests; `src/lib/notebook/inbox.ts`, `taking.ts` (`holdTaken`, `fileSourceOf`, `figureOf`) and `inbox.test.ts`; record 0102 where it says what the inbox is.
+
+**What a thing shared is.** A sixth kind of the inbox, `Kind::Shared`, written `shared`: what another app handed to Glaukopis on a phone. Its fields, one by one, in the `Collected` there is:
+
+| Field | Of a thing shared |
+| --- | --- |
+| `kind` | `shared` |
+| `text` | the words, as they were handed over; cut at `MAX_TEXT` as every thing's are; empty where only files came |
+| `title` | the subject the other app gave; cut at `MAX_SHORT`; empty where it gave none |
+| `when` | when it was put into the inbox, said by the core (`library::now()`), as a note of the window says it |
+| `files` | the files handed over, in their order, each `{ hash, name }`, lying beside the thing as `files/<hash>`, as the files of a note of the window lie. `name` is what the other app calls the file |
+| `url`, `html`, `alt`, `name` | empty, always. Whoever writes the thing never says an address: whether the words are an address and nothing else is read when the thing is taken in, in one place, and the thing keeps what came |
+| `doc` | null, always |
+
+Nothing of a thing shared is read as HTML, and nothing as a text of Glaukopis: whatever an `item.json` of this kind says in `html` or `doc`, no reader looks at it. The limits of the inbox hold as they are: a file of 50 MB at the most (`MAX_FILE`).
+
+**In the core, file by file.**
+
+- `inbox.rs`: `Kind::Shared`, with its words in the comment of `Kind` and at the head of the file, where the writers of the inbox are named. `put_note` is used as it is: it puts a thing with the files it holds, whatever its kind, and its comment says so. Nothing else of the file changes.
+- `shared.rs`, new, with the three types of the meeting points and `put`. In `put`, in this order:
+  1. Each file's `at` is a plain name, of what lies in `from`: one to 64 signs, ASCII letters, digits, `-` and `_`. Any other is refused, and nothing is put: it is a fault of whoever calls, not of a file.
+  2. Each file, in order. Where `from/<at>` is not there or cannot be read, it is left out, with a line in `problems` (`core-notebook-shared-unread`, with its name). Where it is larger than `MAX_FILE`, it is left out, with the line there is for that (`file_too_large`, which is `core-notebook-file-too-large`). Else it is hashed (`library::attachments::hash_file`) and renamed `from/<hash>`; where a file of that hash lies there already, the same content handed over twice, this one is removed and the thing names the file twice. A file with no name is called `file`.
+  3. Where there are no words (`text` is empty or white space) and no file was kept, nothing is put: an error, which says the problems where there are any, and `core-notebook-shared-empty` where there are none. A subject alone is nothing: it names a note, and a note is of something.
+  4. The thing is made as the table says and put with `inbox.put_note(&thing, from)`, which moves the files into it. `put` gives its id, and the problems.
+  
+  `from` itself is not removed: whoever made it removes it. Nothing here knows of Android: `put` is tried on a computer.
+- `facts.rs`: `pub fn facts_of(path: &Path, name: &str) -> Facts`, which is `facts` with the ending taken from `name`; `facts(path)` is `facts_of` with the path's own name. A file kept by its hash has no ending, and said nothing of when and where it was taken. `notebook.rs` sends it on beside `facts`.
+- `host.rs`: the helper of Firefox refuses a thing of the kind `shared` as it refuses a `note`: the plugin hands over neither.
+- `pieces.rs`, new: a file the page holds, taken in piece by piece, in `notebook/taking/<ticket>` of the data folder.
+  - `Pieces::new(data: &DataDir)`, and `Pieces::at(dir)` for the tests.
+  - `add(&self, ticket: &str, name: &str, bytes: &[u8]) -> Result<u64>`: the bytes are put at the end of the ticket's file, which the first piece makes, with the folder; it gives how large the file is now. Where it would be larger than `MAX_FILE`, the file is removed and the piece refused (`file_too_large(name)`).
+  - `whole(&self, ticket: &str) -> Result<PathBuf>`: where the file lies; an error where there is none.
+  - `drop(&self, ticket: &str) -> Result<()>`: the file removed; one not there is gone already.
+  - `clear(&self)`: everything in the folder removed, what a run that ended left.
+  - A ticket is one to 64 ASCII letters and digits; any other is refused.
+- `locales/en/core-notebook.ftl` and `locales/nb/core-notebook.ftl`: the two messages of the section *Words*.
+
+**In the shell.**
+
+- `InboxItem` gets `id: String`, the name of the thing in the inbox, which `take` sets.
+- `take` gives the files of a thing shared as it gives those of a note (`Kind::Note | Kind::Shared`). `held` reads what a file says of itself by `facts_of`, with the name the thing gives it. Of a thing shared the file's own time is not said (`time` is none): the copy's time says when it was shared, which the note says, and nothing of the file. When and where a photograph was taken are said, where the file says them.
+- `notebook_take_piece(state, ticket: String, name: String, content: String) -> CommandResult<()>`: the content read from base64 (a fault said as `notebook_take_image` says it), then `state.pieces.add`.
+- `notebook_take_whole(app: AppHandle, ticket: String, name: String) -> CommandResult<NotebookFile>`, on the threads for blocking work, as `notebook_take_files` runs: where the file lies (`pieces.whole`); what it says of itself (`facts_of`, by `name`); copied into the store with the library free (`attachments::store_file`, under `name`); entered as a file the notebook holds (`notebook_take`, of one `files::Taken` whose origin is the name); and given as `notebook_take_files` gives one, with what a figure shows of it, when and where it was taken, and no time of its own. The ticket's file is removed whether it went well or not.
+- `notebook_take_dropped(state, ticket: String) -> CommandResult<()>`: `pieces.drop`.
+- `state.rs`: `AppState` gets `pub pieces: Pieces`, made in `AppState::open`, which also clears it.
+- `phone.rs`: the three commands in the phone's list, under those of the notebook, and in the list of its test. They are not registered for the application: its page has the paths of files, and does not call them. Nothing else of `phone.rs` is A's.
+- `contract.rs`: every example of a thing taken from the inbox gets its `id`, and one of the kind `shared` is added, with a file. `contract.generated.ts` is committed as the test writes it.
+- `src/lib/api/notebook.ts`: `id: string`, and the comments of `InboxKind` and `InboxItem` say the sixth kind.
+
+**Taken in by the page** (`src/lib/notebook/inbox.ts`), for every page that takes the inbox in, the phone's and the application's alike. Of a thing of the kind `shared`:
+
+1. **An address and nothing else.** `addressAlone(text: string): string | null`, new and sent out for its test: the words with the white space at their ends taken away hold no white space, are read as an address (`new URL`) whose way is `http` or `https`, and may be followed (`safeHref`). It is asked only where the thing holds no file. Where it gives an address: the note's text is the address, taken as one passage whose source is the page: `{ sort: 'web', url, title, read }`, the title the subject, the time when it was shared. (A source belongs to what a note holds, a passage or a file, and a note that held nothing would have none: so the address is what the note holds.) Two things of one address in one taking share their source, as two things of one page do today.
+2. **Words**, in every other case where there are any: each line that holds anything a paragraph, taken as one passage with no source, which keeps how they read (`addPassage(null, …)`, `addText`). An address among them stays words. Where files came with the words, an address alone is words too: the program cannot know that the files are from that page.
+3. **Files**, after the words, in their order: each held with itself as its source, as a file dropped on a computer is (`holdTaken(notebook, f, notebook.addSource(fileSourceOf(f)))`); a picture a figure (`addFigure(id, figureOf(f.shown))`), any other file a file in the note (`addFile`).
+4. **The note** is named by the subject where there is one, in every case; it lies in the box that receives, not looked at, made when the thing says (`madeOf`).
+5. **Nothing** where the thing holds no words and none of its files could be taken in: no note is made of it.
+
+`item.html` and `item.doc` are not looked at for this kind. `madeOfInbox` gives each note with the `id` of its thing.
+
+**What holds it.**
+
+Beside the code, in the core:
+
+- `inbox.rs`: a thing of the kind `shared` is read from `{"kind":"shared","text":"x"}`, with everything else empty.
+- `shared.rs`: words alone are put, with when; a subject is the thing's `title`; two files are hashed, moved into the thing and read back byte for byte, each under its name, and `from` holds them no more; the same content twice is one file named twice; a file larger than `MAX_FILE` is left out and said, and the rest is put; a file not there is left out and said; a file too large with nothing beside it puts nothing, and the error says the file; an `at` that is no plain name puts nothing; neither words nor files puts nothing, and the inbox is not even made; a subject alone puts nothing; a thing read from JSON that says `html` has none.
+- `facts.rs`: a photograph kept under a name with no ending says when and where it was taken, asked by its real name.
+- `host.rs`: a thing of the kind `shared` from the plugin is refused.
+- `pieces.rs`: three pieces are the file whole, byte for byte; a ticket that is no plain name is refused; the piece that passes `MAX_FILE` is refused, and the file is gone; a ticket dropped is gone, and dropped again is no fault; `clear` takes what was left; `whole` of a ticket never given is an error.
+
+In the shell (`commands/notebook.rs`): a thing shared with a photograph and a PDF, put by `shared::put`, is taken with both in the store as the notebook's alone, each under its name, the photograph with what a figure shows of it and when it was taken, neither with a time of its own, and with its `id`; and a file sent in three pieces comes back from `notebook_take_whole` as a file the notebook holds alone, with nothing left in `notebook/taking`.
+
+In the page (`inbox.test.ts`): words become a note with one passage and no source, and no name; with a subject, the note is named by it; an address alone becomes a note whose text is the address and whose source is the page, with the subject as its title; an address with other words is words; an address with a file beside it is words, and the file's source is the file; a picture is a figure and a PDF a file, each with its own source, which says when the photograph was taken and no time of the file; `html` in a thing shared is not read; a thing with nothing makes no note; and `madeOfInbox` gives each note with its thing, in order, also for the five kinds there were.
+
+**What it is checked by**: `cargo test -p glaukopis-core -p glaukopis`, `cargo clippy --workspace --all-targets -- -D warnings`, `pnpm check` (the contract), `pnpm test`, `node scripts/check-locales.mjs nb`. Nothing for Android is built by A, and no script is run.
+
 ## Who builds what
 
 The way that held on 2026-11-13 and 2026-11-16: the main thread reads the code, settles every choice and writes one part of the plan for each agent (the decisions, the files, the names and properties where two parts meet, what to verify); each agent builds in a worktree of its own; the main thread reads every diff, merges, builds once and runs the application.
