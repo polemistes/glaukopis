@@ -25,11 +25,11 @@ const { takeInbox } = await import('./inbox');
 const { Notebook } = await import('$lib/notebook/model/notebook.svelte');
 
 /** What the page of a note left in the inbox: its words, as lines, and no document. */
-const note = (text: string): InboxItem => ({
+const note = (text: string, when = '2026-11-23T08:00:00.000Z'): InboxItem => ({
   kind: 'note',
   url: '',
   title: '',
-  when: '2026-11-23T08:00:00.000Z',
+  when,
   text,
   html: '',
   alt: '',
@@ -79,7 +79,7 @@ describe('the inbox, on the phone', () => {
             free = () => resolve([note('One')]);
           }),
       )
-      .mockResolvedValueOnce([note('Two')]);
+      .mockResolvedValueOnce([note('Two', '2026-11-23T09:00:00.000Z')]);
     const first = takeInbox();
     await vi.waitFor(() => expect(api.notebookInboxTake).toHaveBeenCalledTimes(1));
     const second = takeInbox();
