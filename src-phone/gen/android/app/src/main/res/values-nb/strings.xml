@@ -1,0 +1,5 @@
+<resources>
+    <!-- As in values/: a release is refused where a language lacks a name the others have. -->
+    <string name="app_name">"Glaukopis"</string>
+    <string name="main_activity_title">"Glaukopis"</string>
+</resources>

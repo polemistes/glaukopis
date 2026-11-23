@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Said where the device has no web view the page can run in
+     (StartActivity): the page and the core are not running to say it.
+     %1$d is the version found, %2$d the least. -->
+<resources>
+    <string name="web_view_title">Glaukopis cannot start on this device yet</string>
+    <string name="web_view_too_old">Glaukopis is shown by Android System WebView, a part of Android that is updated as an app is. This device has version %1$d of it, and Glaukopis needs version %2$d or later.\n\nUpdate Android System WebView in the app store of the device. On some devices it is Chrome that is to be updated. Then open Glaukopis again.</string>
+    <string name="web_view_none">Glaukopis is shown by Android System WebView, a part of Android that is updated as an app is. This device has none that can be used.\n\nInstall Android System WebView from the app store of the device, or turn it on among the apps in the settings. Then open Glaukopis again.</string>
+    <string name="web_view_store">Open the app store</string>
+</resources>

@@ -69,8 +69,22 @@ export const tap = (x, y) => shell(`input tap ${Math.round(x)} ${Math.round(y)}`
 /** Starts the app anew, and waits for its process. */
 export async function start() {
   await shell(`am force-stop ${PACKAGE}`);
-  await shell(`am start -n ${PACKAGE}/.MainActivity`);
+  // The way in the launcher takes, which looks at the web view before the page.
+  await shell(`am start -n ${PACKAGE}/.StartActivity`);
   return until(async () => (await shell(`pidof ${PACKAGE}`)).trim(), 'the app to start');
+}
+
+/**
+ * The words on the screen, where there is no page to ask (what the app
+ * says of a web view too old): the texts of the views Android draws, read
+ * from a dump of the window.
+ */
+export async function screenText() {
+  await shell('uiautomator dump /data/local/tmp/glaukopis-window.xml >/dev/null');
+  const xml = await shell('cat /data/local/tmp/glaukopis-window.xml');
+  return [...xml.matchAll(/ text="([^"]*)"/g)]
+    .map((m) => m[1].replace(/&#10;/g, '\n').replace(/&quot;/g, '"').replace(/&amp;/g, '&'))
+    .filter(Boolean);
 }
 
 /** A file of the app's own folder, as text: the log of a run, a note kept. */

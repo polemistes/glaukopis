@@ -16,7 +16,10 @@ export default defineConfig({
     watch: { ignored: ['**/src-tauri/**', '**/crates/**', '**/target/**'] },
   },
   build: {
-    target: ['es2022', 'safari15'],
+    // chrome111: the web view of Android the page needs, which the app looks for
+    // before it starts the page (LEAST_WEB_VIEW in StartActivity.kt): the two
+    // are changed together.
+    target: ['es2022', 'safari15', 'chrome111'],
     sourcemap: false,
     chunkSizeWarningLimit: 1500,
     rollupOptions: {

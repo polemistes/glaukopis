@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="web_view_title">Glaukopis kan ikke starte på denne enheten ennå</string>
+    <string name="web_view_too_old">Glaukopis vises av Android System WebView, en del av Android som oppdateres slik en app blir. Denne enheten har versjon %1$d av den, og Glaukopis trenger versjon %2$d eller nyere.\n\nOppdater Android System WebView i enhetens appbutikk. På noen enheter er det Chrome som skal oppdateres. Åpne så Glaukopis igjen.</string>
+    <string name="web_view_none">Glaukopis vises av Android System WebView, en del av Android som oppdateres slik en app blir. Denne enheten har ingen som kan brukes.\n\nInstaller Android System WebView fra enhetens appbutikk, eller slå den på blant appene i innstillingene. Åpne så Glaukopis igjen.</string>
+    <string name="web_view_store">Åpne appbutikken</string>
+</resources>
