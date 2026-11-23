@@ -208,9 +208,11 @@
     color: var(--ink-3);
     cursor: pointer;
   }
-  .away:hover {
-    background: var(--paper-hover);
-    color: var(--ink);
+  @media (hover: hover) {
+    .away:hover {
+      background: var(--paper-hover);
+      color: var(--ink);
+    }
   }
   .field {
     flex: 1;

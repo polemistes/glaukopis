@@ -98,8 +98,10 @@
     height: 20px;
     padding: 0 8px;
   }
-  button:hover {
-    color: var(--ink);
+  @media (hover: hover) {
+    button:hover {
+      color: var(--ink);
+    }
   }
   button:disabled {
     color: var(--ink-4);

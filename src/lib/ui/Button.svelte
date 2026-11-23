@@ -63,33 +63,41 @@
     background: var(--accent);
     color: var(--accent-ink);
   }
-  .primary:hover:not(:disabled) {
-    background: var(--accent-strong);
+  @media (hover: hover) {
+    .primary:hover:not(:disabled) {
+      background: var(--accent-strong);
+    }
   }
   .secondary {
     background: var(--paper-raised);
     border-color: var(--line-strong);
     color: var(--ink);
   }
-  .secondary:hover:not(:disabled) {
-    background: var(--paper-hover);
+  @media (hover: hover) {
+    .secondary:hover:not(:disabled) {
+      background: var(--paper-hover);
+    }
   }
   .ghost {
     background: transparent;
     color: var(--ink-2);
   }
-  .ghost:hover:not(:disabled) {
-    background: var(--paper-hover);
-    color: var(--ink);
+  @media (hover: hover) {
+    .ghost:hover:not(:disabled) {
+      background: var(--paper-hover);
+      color: var(--ink);
+    }
   }
   .danger {
     background: transparent;
     border-color: var(--line-strong);
     color: var(--danger);
   }
-  .danger:hover:not(:disabled) {
-    background: var(--danger-soft);
-    border-color: var(--danger);
+  @media (hover: hover) {
+    .danger:hover:not(:disabled) {
+      background: var(--danger-soft);
+      border-color: var(--danger);
+    }
   }
   .button:disabled {
     opacity: 0.45;

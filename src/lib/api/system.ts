@@ -38,7 +38,9 @@ export interface LanguagesInfo {
   textDefault: string;
 }
 
-export const languagesInfo = () => call<LanguagesInfo>('languages');
+/** The languages, with `system` the language the page knows the system speaks, where it says one (a phone's page). */
+export const languagesInfo = (system?: string) =>
+  call<LanguagesInfo>('languages', { system: system ?? null });
 /** Sets the language the core speaks in, which is that of the interface. */
 export const languageSet = (tag: string) => call<void>('language_set', { tag });
 /**

@@ -29,6 +29,14 @@ class TheNotebook {
   current = $state.raw<Notebook | null>(null);
   /** Why it could not be read, where it could not. */
   failure = $state<string | null>(null);
+  /**
+   * Whether its readable copy is written, and whether the files no note
+   * holds are swept out of the store: both, but on a phone (stage 2 of
+   * `docs/plans/an-app-for-android.md`), which sets them before `open()`.
+   * Stand-ins of the meeting points until part A gives them their effect.
+   */
+  readable = true;
+  sweeps = true;
   #opening: Promise<Notebook> | null = null;
 
   /** The notebook, read once: the same promise while it is being read and after. */

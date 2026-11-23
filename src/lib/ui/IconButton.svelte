@@ -75,9 +75,11 @@
     background: var(--accent-soft);
     color: var(--accent-strong);
   }
-  .active:hover:not(:disabled) {
-    background: var(--accent-soft);
-    color: var(--accent-strong);
+  @media (hover: hover) {
+    .active:hover:not(:disabled) {
+      background: var(--accent-soft);
+      color: var(--accent-strong);
+    }
   }
   .icon-button:disabled {
     opacity: 0.4;

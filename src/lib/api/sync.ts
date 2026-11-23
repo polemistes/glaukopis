@@ -23,6 +23,8 @@ export interface SyncStatus {
   last: string | null;
   /** What is wrong, in words; null where nothing is. */
   problem: string | null;
+  /** Whether something written here waits to be sent. (Optional in the meeting points of stage 2; part A makes it sure.) */
+  waiting?: boolean;
 }
 
 /** A computer of the writer's. Times are seconds since 1970. */
@@ -83,6 +85,10 @@ export const syncRemove = (device: string) => call<SyncHome>('sync_remove', { de
 /** This computer is synchronized no more. What it holds stays. */
 export const syncStop = () => call<SyncStatus>('sync_stop');
 export const syncNow = () => call<void>('sync_now');
+/** What the system calls this device: offered as its name. (The phone's role answers it from stage 2.) */
+export const syncDevice = () => call<string>('sync_device');
+/** Tells the engine whether the app is in front: a phone's rests where it is not. */
+export const syncFront = (front: boolean) => call<void>('sync_front', { front });
 
 export const projectApart = (id: string) => call<Apart | null>('project_apart', { id });
 export const projectApartSeen = (id: string) => call<void>('project_apart_seen', { id });

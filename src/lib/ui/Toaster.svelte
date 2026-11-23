@@ -123,10 +123,12 @@
     padding: 3px;
     opacity: 0.6;
   }
-  .close:hover,
-  .action:hover {
-    opacity: 1;
-    background: rgba(255, 255, 255, 0.12);
+  @media (hover: hover) {
+    .close:hover,
+    .action:hover {
+      opacity: 1;
+      background: rgba(255, 255, 255, 0.12);
+    }
   }
   @keyframes toast-in {
     from {
