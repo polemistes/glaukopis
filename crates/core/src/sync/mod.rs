@@ -48,11 +48,21 @@ pub fn notebook_refused(data: &DataDir) -> bool {
 /// exchange, and sends nothing of a project in a later form.
 pub const FORM: u32 = 2;
 
-/// What the system calls this computer: offered as its name among the
-/// writer's computers, which the writer may change before it is sent
-/// anywhere. Nothing where the system says none.
-pub fn computer() -> String {
-    #[cfg(unix)]
+/// What the system calls this device: offered as its name among the
+/// writer's devices, which the writer may change before it is sent
+/// anywhere. Nothing where the system says none. On Android, the model
+/// (`SM-S908B`), since the name of the host is `localhost` on every phone.
+pub fn device() -> String {
+    #[cfg(target_os = "android")]
+    {
+        let mut value = [0u8; libc::PROP_VALUE_MAX as usize];
+        // SAFETY: the name is a string ended by a nought, and the buffer is as
+        // long as a property's value may be, which the system ends by a nought.
+        let len = unsafe { libc::__system_property_get(c"ro.product.model".as_ptr(), value.as_mut_ptr().cast()) };
+        let len = usize::try_from(len).unwrap_or(0).min(value.len());
+        String::from_utf8_lossy(&value[..len]).trim().to_owned()
+    }
+    #[cfg(all(unix, not(target_os = "android")))]
     {
         let mut name = [0u8; 256];
         // SAFETY: the buffer is ours and its length is given; the name is ended by a nought within it.

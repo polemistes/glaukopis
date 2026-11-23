@@ -89,10 +89,17 @@ pub fn sync_status(sync: Engine<'_>) -> Status {
     sync.status()
 }
 
-/// What the system calls this computer: what it is offered to be called among the others.
+/// What the system calls this device: what it is offered to be called among the others.
 #[tauri::command]
-pub fn sync_computer() -> String {
-    sync::computer()
+pub fn sync_device() -> String {
+    sync::device()
+}
+
+/// Whether the app is in front: a phone's engine rests where it is not, and
+/// makes one round on going behind and one on coming back (the phone's alone).
+#[tauri::command]
+pub fn sync_front(sync: Engine<'_>, front: bool) {
+    sync.front(front);
 }
 
 /// Makes a home on a server, with this computer as its first.

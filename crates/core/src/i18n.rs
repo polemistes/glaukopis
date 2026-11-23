@@ -625,8 +625,19 @@ pub fn language() -> &'static str {
 /// `GLAUKOPIS_LANGUAGE` says, where it is set, which the tests of the running
 /// application use. English where nothing is said.
 pub fn system_tag() -> String {
-    let said =
-        std::env::var("GLAUKOPIS_LANGUAGE").ok().filter(|v| !v.trim().is_empty()).or_else(sys_locale::get_locale);
+    system_tag_as(None)
+}
+
+/// The system's language, where the page says what it knows of it (a
+/// phone's page, which knows the language Android is set to, where the
+/// core may not be let read it): what `GLAUKOPIS_LANGUAGE` says, where it
+/// is set (the scripts); else what the page said; else what the core finds.
+pub fn system_tag_as(said: Option<&str>) -> String {
+    let said = std::env::var("GLAUKOPIS_LANGUAGE")
+        .ok()
+        .filter(|v| !v.trim().is_empty())
+        .or_else(|| said.filter(|v| !v.trim().is_empty()).map(str::to_owned))
+        .or_else(sys_locale::get_locale);
     said.map(|tag| normalise(&tag)).filter(|tag| !tag.is_empty()).unwrap_or_else(|| ENGLISH.to_owned())
 }
 

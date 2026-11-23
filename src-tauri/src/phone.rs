@@ -11,9 +11,9 @@
 //! run with it, since a phone has no terminal; on a computer it is never
 //! the application's own (`paths::phone_root`).
 //!
-//! Until the page of the phone is built (stage 2) the window shows the page
-//! of a note: one field to write in, kept on disk until it is sent into the
-//! notebook's inbox.
+//! Its page is the phone's own (`src/lib/phone/`): the notes, a note, the
+//! settings. It registers the commands that page calls and no others; a
+//! test below holds the list.
 
 #[cfg(desktop)]
 use std::ffi::OsString;
@@ -21,8 +21,6 @@ use std::path::PathBuf;
 
 use tauri::{AppHandle, Manager};
 
-use glaukopis_core::notebook::note_window::NoteWindow;
-use glaukopis_core::paths::DataDir;
 use glaukopis_core::sync::Takes;
 
 use crate::{commands, starting};
@@ -80,14 +78,10 @@ pub fn run() {
             starting::tell_the_windows(app.handle());
             match starting::opening(root.clone(), false, None, starting::speak_as_chosen) {
                 starting::Opening::Ready(state) => {
-                    // The engine, which can join a home only from the page of
-                    // stage 2: until then it is in none, and asks nothing of anyone.
+                    // The engine, told this device takes the notes alone.
                     let sync = commands::sync::engine(app.handle(), &state, Takes::Notes);
                     app.manage(*state);
                     app.manage(sync.clone());
-                    // The page of a note, of the same folder: it claims
-                    // nothing, and the state beside it holds the claim.
-                    app.manage(commands::notewindow::NoteWindowState(Ok(NoteWindow::new(DataDir::at(root)))));
                     if let Err(error) = make_window(app.handle()) {
                         starting::failed(app.handle(), &error, log.as_deref());
                         return Ok(());
@@ -104,19 +98,37 @@ pub fn run() {
         // The system's picker, to choose the files added to the note.
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
-            commands::notewindow::note_window_start,
-            commands::notewindow::note_window_keep,
-            commands::notewindow::note_window_send,
-            commands::notewindow::note_window_add_files,
-            commands::notewindow::note_window_add_bytes,
-            commands::notewindow::note_window_file_path,
-            commands::documents::fonts_list,
+            // Of the system.
+            commands::system::system_info,
             commands::system::languages,
+            commands::system::language_set,
             commands::system::log_page,
             commands::system::file_read,
+            commands::system::settings_load,
+            commands::system::settings_set,
+            commands::notices::notices_take,
             commands::clipboard::clipboard_read,
+            // Of the notebook: no sweep on a phone (stage 2, part A), no readable copy.
+            commands::notebook::notebook_load,
+            commands::notebook::notebook_append,
+            commands::notebook::notebook_save_state,
+            commands::notebook::notebook_take_image,
+            commands::notebook::notebook_file,
+            commands::notebook::notebook_hold,
+            commands::notebook::notebook_say_held,
+            commands::notebook::notebook_inbox_waiting,
+            commands::notebook::notebook_inbox_take,
+            // Of the files a note shows.
+            commands::files::file_path,
+            commands::files::file_small,
+            // Of the references, for the line that says a source.
+            commands::library::library_list,
+            commands::library::library_refresh,
+            // Of the server, looked at before a home is started or joined.
+            commands::sharing::sharing_server,
+            // Of the synchronization.
             commands::sync::sync_status,
-            commands::sync::sync_computer,
+            commands::sync::sync_device,
             commands::sync::sync_start,
             commands::sync::sync_join,
             commands::sync::sync_home,
@@ -125,6 +137,7 @@ pub fn run() {
             commands::sync::sync_remove,
             commands::sync::sync_stop,
             commands::sync::sync_now,
+            commands::sync::sync_front,
         ])
         .build(starting::context());
     match built {
@@ -195,6 +208,67 @@ mod tests {
         let mut expected = phone.clone();
         expected.push("core:window:allow-show".to_owned());
         assert_eq!(computer, expected, "the computer's has the phone's and leave to show the window, nothing more");
+    }
+
+    /// The commands registered for the phone, read from this file's source.
+    fn registered() -> Vec<String> {
+        let source = include_str!("phone.rs");
+        let start = source.find("generate_handler![").unwrap();
+        let end = start + source[start..].find("])").unwrap();
+        source[start..end]
+            .lines()
+            .filter_map(|line| line.trim().strip_prefix("commands::"))
+            .map(|path| path.trim_end_matches(',').rsplit("::").next().unwrap().to_owned())
+            .collect()
+    }
+
+    #[test]
+    fn the_phone_registers_the_commands_of_its_page_and_no_others() {
+        let mut have = registered();
+        have.sort();
+        let mut want: Vec<String> = [
+            "system_info",
+            "languages",
+            "language_set",
+            "log_page",
+            "file_read",
+            "settings_load",
+            "settings_set",
+            "notices_take",
+            "clipboard_read",
+            "notebook_load",
+            "notebook_append",
+            "notebook_save_state",
+            "notebook_take_image",
+            "notebook_file",
+            "notebook_hold",
+            "notebook_say_held",
+            "notebook_inbox_waiting",
+            "notebook_inbox_take",
+            "file_path",
+            "file_small",
+            "library_list",
+            "library_refresh",
+            "sharing_server",
+            "sync_status",
+            "sync_device",
+            "sync_start",
+            "sync_join",
+            "sync_home",
+            "sync_code",
+            "sync_rename",
+            "sync_remove",
+            "sync_stop",
+            "sync_now",
+            "sync_front",
+        ]
+        .map(str::to_owned)
+        .to_vec();
+        want.sort();
+        assert_eq!(have, want);
+        for refused in ["notebook_sweep", "notebook_readable_write", "notebook_take_files", "notebook_to_library"] {
+            assert!(!have.iter().any(|c| c == refused), "{refused} is not the phone's");
+        }
     }
 
     #[test]

@@ -248,7 +248,7 @@ pub fn run() {
             commands::math::math_render,
             commands::tables::table_read,
             commands::sync::sync_status,
-            commands::sync::sync_computer,
+            commands::sync::sync_device,
             commands::sync::sync_start,
             commands::sync::sync_join,
             commands::sync::sync_home,

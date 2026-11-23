@@ -110,9 +110,11 @@ pub struct Languages {
     pub text_default: String,
 }
 
+/// The languages, with the system's: `system` is what the page knows the
+/// system speaks, where it says one (a phone's page says `navigator.language`).
 #[tauri::command]
-pub fn languages() -> Languages {
-    let system = i18n::system_tag();
+pub fn languages(system: Option<String>) -> Languages {
+    let system = i18n::system_tag_as(system.as_deref());
     Languages {
         interface: i18n::interface().iter().map(|&(tag, name)| Language { tag, name }).collect(),
         interface_default: i18n::interface_language(&system),

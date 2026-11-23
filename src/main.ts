@@ -47,13 +47,13 @@ if (inTauri)
       .catch((error) => console.error('The window could not be shown', error));
   }, 5000);
 
-// The window of a note (record 0109) has a page of its own, and nothing of
-// the application: each is loaded only where it is shown. The phone shows
-// the same page until its own takes its place (stage 2 of
-// docs/plans/an-app-for-android.md, `src/lib/phone/mount.ts`).
+// The window of a note (record 0109) and the phone (docs/plans/an-app-for-android.md)
+// have pages of their own, and nothing of the application: each is loaded
+// only where it is shown.
 const target = document.getElementById('app')!;
-const app =
-  isNoteWindow() || isPhone()
+const app = isPhone()
+  ? import('$lib/phone/mount').then((page) => page.mountPhone(target))
+  : isNoteWindow()
     ? import('$lib/notebook/window/mount').then((page) => page.mountNoteWindow(target))
     : import('./App.svelte').then(({ default: App }) => mount(App, { target }));
 

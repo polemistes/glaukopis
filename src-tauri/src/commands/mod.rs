@@ -9,6 +9,8 @@ pub mod library;
 pub mod math;
 pub mod notebook;
 pub mod notes;
+// The window of a note is a computer's: the phone has a page of its own.
+#[cfg(desktop)]
 pub mod notewindow;
 pub mod notices;
 pub mod ocr;
