@@ -32,8 +32,8 @@ function marked(state: EditorState, mark: string): string {
 }
 
 describe('the tools of the row over the keyboard', () => {
-  it('are five, in their order, Undo last', () => {
-    expect(TOOLS).toEqual(['bold', 'italic', 'list', 'todo', 'undo']);
+  it('are seven, in their order, the two that take a file in before Undo, which is last', () => {
+    expect(TOOLS).toEqual(['bold', 'italic', 'list', 'todo', 'file', 'photograph', 'undo']);
   });
 
   it('set the words selected in bold and in italics, and take it away again', () => {

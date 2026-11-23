@@ -47,15 +47,16 @@
   import TagsField from '$lib/notebook/TagsField.svelte';
   import { testHook, testing } from '$lib/shell/testing';
   import IconButton from '$lib/ui/IconButton.svelte';
-  import { toasts } from '$lib/ui/toast.svelte';
+  import { describeError, notifyError, toasts } from '$lib/ui/toast.svelte';
   import { fromBase64 } from '$lib/util/base64';
   import BoxSheet from './BoxSheet.svelte';
   import { places } from './places.svelte';
   import Sheet from './Sheet.svelte';
   import SourceSheet from './SourceSheet.svelte';
+  import { putTaken, takeFile } from './taking';
   import ToolRow from './ToolRow.svelte';
   import TopBar from './TopBar.svelte';
-  import { toolCommand, type TextTool } from './tools';
+  import { toolCommand, type FileTool, type TextTool } from './tools';
 
   let {
     notebook,
@@ -76,6 +77,8 @@
   let current = $state.raw<EditorState | null>(null);
   /** Whether the text has the cursor: the tools of the text are there to be pressed only then. */
   let focused = $state(false);
+  /** Whether files are being taken in: the buttons that bring them are not there to be pressed meanwhile. */
+  let taking = $state(false);
 
   let moreOpen = $state(false);
   let boxesOpen = $state(false);
@@ -164,10 +167,46 @@
   }
 
   /**
+   * Files chosen in the picker or photographed, taken into the note in their
+   * order, the first where the cursor was and the next after it. What could
+   * not be taken is said once, when all are done, with the reasons, a line
+   * each. After a photograph that was taken in the Android part is told, so
+   * that the file the camera left is removed; not after one that failed, whose
+   * file it finds at the next start.
+   */
+  async function takeIn(files: File[], from: FileTool, cursor: boolean): Promise<void> {
+    if (taking) return;
+    taking = true;
+    const problems: string[] = [];
+    let put = 0;
+    try {
+      for (const file of files) {
+        try {
+          const taken = await takeFile(file);
+          if (putTaken(notebook, id, taken, text?.getView(), cursor)) put++;
+        } catch (error) {
+          problems.push(describeError(error) ?? file.name);
+        }
+      }
+    } finally {
+      taking = false;
+    }
+    if (problems.length)
+      notifyError(t('notebook-files-not-taken'), problems.slice(0, 4).join('\n'));
+    if (from === 'photograph' && put) window.glaukopisAndroid?.photographed?.();
+  }
+
+  /** A file put into the note in view as Picture or file puts one, for the scripts. */
+  async function file(fileName: string, content64: string): Promise<void> {
+    const bytes = fromBase64(content64);
+    await takeIn([new File([bytes.slice()], fileName)], 'file', false);
+  }
+
+  /**
    * A picture put into the note, as a paste puts one: taken in through the
-   * holder, and put where the cursor is, or at the end where the text has
-   * no cursor. For the scripts now; stage 3 puts Photograph and Picture or
-   * file on it.
+   * holder, with no source, and put where the cursor is, or at the end where
+   * the text has no cursor. For the scripts; Picture or file and Photograph
+   * go by `takeIn`, which takes any file and says what it says of itself.
    */
   async function picture(pictureName: string, content64: string): Promise<void> {
     const bytes = fromBase64(content64);
@@ -178,17 +217,18 @@
     insertFigure(figure, at)(view.state, view.dispatch);
   }
 
-  // The scripts put a picture into the note in view through the hooks of the phone's page.
+  // The scripts put a picture and a file into the note in view through the hooks of the phone's page.
   onMount(() => {
     if (!testing) return;
     const hooks = (window as unknown as { __glaukopisPhone?: Record<string, unknown> })
       .__glaukopisPhone;
-    if (hooks) Object.assign(hooks, { picture });
-    else testHook('__glaukopisPhone', { picture });
+    if (hooks) Object.assign(hooks, { picture, file });
+    else testHook('__glaukopisPhone', { picture, file });
     return () => {
       const now = (window as unknown as { __glaukopisPhone?: Record<string, unknown> })
         .__glaukopisPhone;
       if (now?.picture === picture) delete now.picture;
+      if (now?.file === file) delete now.file;
     };
   });
 </script>
@@ -295,8 +335,10 @@
     state={current}
     {focused}
     canUndo={notebook.canUndo}
+    {taking}
     onrun={run}
     onundo={() => notebook.undo()}
+    ontake={(files, from, cursor) => void takeIn(files, from, cursor)}
   />
 
   <!-- The sheets lie over the place, from the bottom of the screen. -->
