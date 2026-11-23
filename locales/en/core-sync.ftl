@@ -11,8 +11,8 @@ core-sync-not-a-change = A change to a document cannot be read: { $why }
 
 core-sync-old-server = The server at { $host } is older than this version of Glaukopis and cannot synchronize. It must be brought up to date.
 core-sync-refused = The server no longer lets this device in. It was removed from those that are synchronized, or nothing of them is kept on the server any more.
-core-sync-later-home = Update is needed for synchronization.
-core-sync-later-library = Update is needed for synchronization.
+# Said on a device whose version of Glaukopis is older than the form of something that is synchronized: the synchronization has stopped on it, as a whole, until Glaukopis is updated there. The words are the owner's.
+core-sync-update-needed = Update is needed for synchronization.
 
 ## Turning it on, and the devices.
 
@@ -28,6 +28,11 @@ core-sync-problem-notebook = The notebook could not be synchronized. { $why }
 core-sync-problem-library = The library could not be synchronized. { $why }
 # A file of the library, by the name it has there.
 core-sync-file-too-large = “{ $name }” is larger than the server takes ({ $most } MB at the most), and is not on your other devices.
+# The server has no room for more files: how many files of the library and of the notes on this device were not sent for that. Said for as long as it is so.
+core-sync-server-full = { $count ->
+    [one] The server is full. One file is not on your other devices.
+   *[other] The server is full. { $count } files are not on your other devices.
+}
 core-sync-file-not-sent = “{ $name }” could not be sent to the server. { $why }
 core-sync-file-not-fetched = “{ $name }” could not be fetched from the server. { $why }
 core-sync-file-not-as-named = What the server gave is not the file that was asked for: it was damaged on its way or where it is kept.

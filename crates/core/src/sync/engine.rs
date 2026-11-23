@@ -20,6 +20,20 @@
 //! What fails for one document is said and the round goes on with the next;
 //! what fails for the server as a whole ends the round, which is tried again.
 //!
+//! Where the form has changed, the synchronization stops (the owner's rule
+//! of 2026-11-23; the addendum of that day to record 0120). A device that
+//! meets any document of its home in a later form than its version knows,
+//! the home document, the library's, the notebook or a project, ends its
+//! round there and makes no other: nothing more is sent, fetched or taken
+//! off the server, and it says that an update is needed
+//! (`State::Outdated`). It keeps what its version knew
+//! (`sync/outdated.json`), and goes on when it is another version. A
+//! computer and a phone alike. The form of a project or the notebook is
+//! guarded by the server, which sends nothing of one in a later form and
+//! takes nothing into it; the form of a document of maps is said within
+//! it, so such a document is asked for before anything is sent into it
+//! (`exchange_maps`), and nothing of a later one is kept.
+//!
 //! That is the round of a device that takes everything of its home: a
 //! computer. A device that takes the notes, a phone (`Takes`; the plan
 //! `docs/plans/an-app-for-android.md`), holds the notebook, the files its
@@ -118,6 +132,49 @@ pub enum State {
     Offline,
     /// The server lets this computer in no more.
     Refused,
+    /// This device met a document of its home in a later form than it
+    /// knows: nothing is synchronized on it until the application is updated.
+    Outdated,
+}
+
+/// The forms this version of the application writes and reads, with the
+/// version itself. A device that met a document of its home in a later
+/// form keeps what it knew then (`Stopped`), and is stopped for as long as
+/// it knows the same: until the application is another version.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Knows {
+    /// The version of the application.
+    pub version: String,
+    /// The form of the texts (`FORM`): of the projects and the notebook.
+    pub texts: u32,
+    /// The form of the home document (`HOME_FORM`).
+    pub home: u32,
+    /// The form of the library's document (`LIBRARY_FORM`).
+    pub library: u32,
+}
+
+impl Default for Knows {
+    /// What this version knows.
+    fn default() -> Self {
+        Knows { version: env!("CARGO_PKG_VERSION").to_owned(), texts: FORM, home: HOME_FORM, library: LIBRARY_FORM }
+    }
+}
+
+/// Under what name it is kept that the synchronization stopped on this
+/// device for a later form (`Stopped`).
+const OUTDATED: &str = "outdated";
+
+/// What is kept of the synchronization having stopped on this device,
+/// which met a document of its home in a later form than it knew
+/// (`sync/outdated.json`). It goes with the home when the device leaves it.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct Stopped {
+    /// What the version knew that met the later form.
+    knew: Knows,
+    /// When, in milliseconds since 1970.
+    time: i64,
 }
 
 /// What is told of the synchronization.
@@ -160,10 +217,8 @@ type Mine<'a> = &'a dyn Fn(Option<&[u8]>) -> Result<Option<Vec<u8>>>;
 struct Maps {
     /// Its kind, as the home keeps it; its id is `the`.
     kind: &'static str,
-    /// The form of it this version writes and reads.
-    form: u32,
-    /// What is said where the home's is in a later form.
-    later: fn() -> String,
+    /// The form of it a version writes and reads, of the forms it knows.
+    form: fn(&Knows) -> u32,
 }
 
 impl Maps {
@@ -173,10 +228,10 @@ impl Maps {
 }
 
 /// The home document: the folders, the settings, what is said of each project.
-const HOME: Maps = Maps { kind: "home", form: HOME_FORM, later: || tr!("core-sync-later-home") };
+const HOME: Maps = Maps { kind: "home", form: |knows| knows.home };
 
 /// The library's document: the references, the collections, the record of the files (`library`).
-const LIBRARY: Maps = Maps { kind: "library", form: LIBRARY_FORM, later: || tr!("core-sync-later-library") };
+const LIBRARY: Maps = Maps { kind: "library", form: |knows| knows.library };
 
 /// What a round of a document of maps does beyond the mirror (`maps_round`).
 trait Meeting {
@@ -367,12 +422,17 @@ pub struct Sync {
     /// everything, the phone the notes. What a round does is the narrower
     /// of this and what the device joined as (`Takes::narrower`).
     takes: Takes,
+    /// The forms this version writes and reads (`Knows`).
+    knows: Knows,
     client: Client,
     hears: Hears,
     round: Mutex<Round>,
     said: Mutex<Said>,
     wake: Mutex<Wake>,
     woken: Condvar,
+    /// Why the last round did not reach the server, where it did not: what
+    /// the log was last told of it (`log_unreached`).
+    unreached: Mutex<Option<String>>,
     /// The stores of the library whose files were found amiss or lost, and
     /// of which what was agreed on is still to be forgotten on the disk
     /// (`heed_amiss`): none, but where the disk refused it.
@@ -400,7 +460,7 @@ struct Got {
 
 /// What the network said went wrong, as a sentence of its own: it is
 /// written to follow other words, and is shown alone here.
-fn sentence(said: &str) -> String {
+pub(super) fn sentence(said: &str) -> String {
     let said = said.trim();
     let mut letters = said.chars();
     let mut out: String = match letters.next() {
@@ -417,10 +477,24 @@ fn held<T>(lock: &Mutex<T>) -> MutexGuard<'_, T> {
     lock.lock().unwrap_or_else(PoisonError::into_inner)
 }
 
-/// Whether the server as a whole did not answer, or lets this computer in
-/// no more: what ends a round, where a refusal of one document does not.
-fn of_the_server(error: &Error) -> bool {
-    matches!(error, Error::Network(_)) || refused_entry(error)
+/// What ends a round, where a refusal of one document does not: the server
+/// as a whole did not answer, or lets this computer in no more; or a
+/// document of the home is in a later form than this version knows, which
+/// stops the synchronization on this device as a whole (`Sync::outdate`).
+fn ends_the_round(error: &Error) -> bool {
+    matches!(error, Error::Network(_)) || refused_entry(error) || of_a_later_form(error)
+}
+
+/// A document of the home is in a later form than this version knows: as
+/// the server says it of a project or the notebook, which it sends nothing
+/// of and takes nothing into, and as the engine says it of a document of
+/// maps whose form it reads itself.
+fn later() -> Error {
+    Error::Refused { kind: "later", message: tr!("core-sync-update-needed") }
+}
+
+fn of_a_later_form(error: &Error) -> bool {
+    matches!(error, Error::Refused { kind: "later", .. })
 }
 
 /// Whether the server lets this computer into its home no more: it was
@@ -441,9 +515,29 @@ impl Sync {
         takes: Takes,
         hears: Hears,
     ) -> Self {
+        Self::of_version(data, projects, notebook, library, takes, hears, Knows::default())
+    }
+
+    /// The engine as a version of the application that knows the forms
+    /// `knows` would make it: this version's own (`new`), or, for the tests
+    /// that try one version against another, those of a version before it
+    /// or after it.
+    pub fn of_version(
+        data: &DataDir,
+        projects: Projects,
+        notebook: Arc<Notebook>,
+        library: Arc<Mutex<Library>>,
+        takes: Takes,
+        hears: Hears,
+        knows: Knows,
+    ) -> Self {
         let kept = Kept::new(data);
         let joined = kept.joined().ok().flatten();
         let on = joined.is_some();
+        // Stopped for a later form by this very version: it says so from the
+        // start, and asks the server nothing. A version that knows anything
+        // else was updated since, and its first round goes on (`round`).
+        let stopped = on && kept.noted::<Stopped>(OUTDATED).is_some_and(|stopped| stopped.knew == knows);
         if let Some((joined, _)) = &joined
             && joined.takes != takes
         {
@@ -465,17 +559,23 @@ impl Sync {
             words: data.words(),
             kept,
             takes,
+            knows,
             client: Client::new(),
             hears,
             round: Mutex::new(Round::default()),
             said: Mutex::new(Said {
-                state: if on { State::Idle } else { State::Off },
+                state: match (on, stopped) {
+                    (false, _) => State::Off,
+                    (true, true) => State::Outdated,
+                    (true, false) => State::Idle,
+                },
                 last: None,
-                problem: None,
+                problem: stopped.then(|| tr!("core-sync-update-needed")),
                 waiting: false,
             }),
             wake: Mutex::new(Wake::default()),
             woken: Condvar::new(),
+            unreached: Mutex::new(None),
             amiss: Mutex::new(BTreeSet::new()),
         };
         // Before any thread runs and anything is asked of a server: see `heed_amiss`.
@@ -800,16 +900,39 @@ impl Sync {
         if state == State::Refused {
             return;
         }
+        // Nor does one that is stopped for a later form, until the
+        // application is updated, which is another run of it. What the
+        // library found amiss meanwhile is heeded as before every round,
+        // since no round comes to it.
+        if state == State::Outdated {
+            if let Err(error) = self.heed_amiss() {
+                tracing::error!(%error, "what was agreed on of a damaged or lost file of the library could not be forgotten: it is tried again");
+            }
+            return;
+        }
         if hurried || state != State::Idle {
             let problem = held(&self.said).problem.clone();
             self.say(State::Working, problem, false, None);
         }
-        match self.round() {
+        // What the writer asks for, or the app coming to the front, looks at
+        // the files again, also where nothing changed: a home that was full
+        // may have been given more room.
+        if hurried {
+            held(&self.round).files_settled = false;
+        }
+        let done = self.round();
+        self.log_unreached(done.as_ref().err());
+        match done {
             Ok(problems) if problems.is_empty() => self.say(State::Idle, None, true, Some(false)),
             Ok(problems) => self.say(State::Idle, Some(problems.join("\n")), false, Some(false)),
             Err(error) if refused_entry(&error) => {
                 tracing::warn!(%error, "the server lets this computer into its home no more");
                 self.say(State::Refused, Some(tr!("core-sync-refused")), false, Some(false));
+            }
+            // A document of the home is in a later form than this version
+            // knows: the round stopped the synchronization here (`outdate`).
+            Err(error) if of_a_later_form(&error) => {
+                self.say(State::Outdated, Some(tr!("core-sync-update-needed")), false, Some(false));
             }
             // The server was not reached: whether what was written here waits for it is looked at on the disk.
             Err(Error::Network(why)) => {
@@ -821,6 +944,27 @@ impl Sync {
                 self.say(State::Idle, Some(error.to_string()), false, Some(false));
             }
         }
+    }
+
+    /// Writes in the log that a round ended because the server was not
+    /// reached, and why: once each time the reason is another, and once
+    /// when it is reached again. Not at every round, which would be every
+    /// half minute for as long as the network is away; and never not at
+    /// all, as it was, when the log could not say whether rounds had failed.
+    fn log_unreached(&self, failed: Option<&Error>) {
+        let why = match failed {
+            Some(Error::Network(why)) => Some(why.clone()),
+            _ => None,
+        };
+        let mut unreached = held(&self.unreached);
+        if *unreached == why {
+            return;
+        }
+        match &why {
+            Some(why) => tracing::warn!(%why, "a round ended because the server was not reached"),
+            None => tracing::info!("the server is reached again"),
+        }
+        *unreached = why;
     }
 
     // ---- what waits to be sent ----
@@ -887,6 +1031,11 @@ impl Sync {
     /// Brings this computer and its home to be the same. Returns what could
     /// not be done for single documents, in words. A phone does of it what
     /// a device that takes the notes does: see the head of this file.
+    ///
+    /// Where a document of the home proves to be in a later form than this
+    /// version knows, the round ends there and the synchronization stops on
+    /// this device as a whole (`outdate`): every round after it ends before
+    /// anything is asked of the server, until the application is updated.
     pub fn round(&self) -> Result<Vec<String>> {
         let Some((joined, token)) = self.kept.joined()? else { return Ok(Vec::new()) };
         // No more than the role and what the device joined as both allow: asked here, once, and handed down.
@@ -894,7 +1043,57 @@ impl Sync {
         let mut round = held(&self.round);
         // Before anything is asked of the server, and so before anything can end the round.
         self.heed_amiss()?;
-        let home = self.home(&joined, &token)?;
+        if let Some(stopped) = self.kept.noted::<Stopped>(OUTDATED) {
+            // Stopped for a later form, and this version knows what the one that stopped knew.
+            if stopped.knew == self.knows {
+                return Err(later());
+            }
+            tracing::info!(
+                stopped = %stopped.knew.version,
+                now = %self.knows.version,
+                "the application was updated since the synchronization stopped for a later form: it goes on"
+            );
+            self.kept.forget_note(OUTDATED)?;
+        }
+        let done = self.round_with(&mut round, &joined, &token, takes);
+        if done.as_ref().is_err_and(of_a_later_form) {
+            // A document of maps may have taken the later form into memory, of
+            // which nothing was kept: what a round holds is read from the disk anew.
+            *round = Round::default();
+            self.outdate()?;
+        }
+        done
+    }
+
+    /// Stops the synchronization on this device as a whole, which met a
+    /// document of its home in a later form than this version knows (the
+    /// owner's rule of 2026-11-23): what this version knows is kept, and
+    /// while the device knows the same, no round asks anything of the
+    /// server. Nothing more is sent, fetched or taken off the server, and
+    /// nothing on this device is touched: what was written here stays, and
+    /// is brought along when the application has been updated.
+    ///
+    /// What the round exchanged before it met the later form stands: each
+    /// was a document in a form this version knows, brought to be the same
+    /// by an exchange that is whole in itself, as when a round ends because
+    /// the network went. Of the document in the later form nothing was
+    /// sent and nothing kept.
+    ///
+    /// A device that is stopped lacks the notes others write from now on,
+    /// and is to sweep no file out of its store by what its own notes
+    /// hold: it is kept as one whose notebook was refused
+    /// (`sync::notebook_refused`), until its notebook is next exchanged.
+    fn outdate(&self) -> Result<()> {
+        tracing::warn!(
+            version = %self.knows.version,
+            "a document of the home is in a later form than this version knows: the synchronization stops on this device until the application is updated"
+        );
+        self.kept.note(NOTEBOOK_REFUSED, &true)?;
+        self.kept.note(OUTDATED, &Stopped { knew: self.knows.clone(), time: now_ms() })
+    }
+
+    fn round_with(&self, round: &mut Round, joined: &Joined, token: &str, takes: Takes) -> Result<Vec<String>> {
+        let home = self.home(joined, token)?;
         let mut problems = Vec::new();
 
         match home.list(round.stamp.as_deref())? {
@@ -918,26 +1117,28 @@ impl Sync {
             files_settled,
             notebook_refused,
             ..
-        } = &mut *round
+        } = round
         else {
             unreachable!("the documents of maps were read above")
         };
 
         match takes {
             Takes::Everything => {
-                let met = self.met(&joined, docs)?;
-                self.home_round(&home, &joined, doc, docs, &met)?;
-                self.projects_round(&home, &joined, doc, docs, &mut problems)?;
+                let met = self.met(joined, docs)?;
+                self.home_round(&home, joined, doc, docs, &met)?;
+                self.projects_round(&home, joined, doc, docs, &mut problems)?;
             }
             // A phone reads the home document and writes nothing into it, and touches no project.
-            Takes::Notes => self.home_read(&home, &joined, doc, docs)?,
+            Takes::Notes => self.home_read(&home, joined, doc, docs)?,
         }
         // Where the round ends here for the server's sake, or ended before,
-        // whether the notebook was refused is left as it is kept.
-        let refused = match self.notebook_round(&home, &joined, docs) {
+        // whether the notebook was refused is left as it is kept. Where it
+        // ends for a later form, here or anywhere, the device is kept as
+        // one whose notebook was refused (`outdate`).
+        let refused = match self.notebook_round(&home, joined, docs) {
             Ok(()) => false,
-            Err(error) if of_the_server(&error) => return Err(error),
-            // A later form, too large, not readable here: the notes of others are not on this device.
+            Err(error) if ends_the_round(&error) => return Err(error),
+            // Too large, not readable here: the notes of others are not on this device.
             Err(error) => {
                 problems.push(tr!("core-sync-problem-notebook", why = error.to_string()));
                 true
@@ -949,9 +1150,9 @@ impl Sync {
         }
         *notebook_refused = Some(refused);
         // After the notebook, whose notes hold files of the store.
-        if let Err(error) = self.library_round(&home, &joined, library, docs, told, files_settled, takes, &mut problems)
+        if let Err(error) = self.library_round(&home, joined, library, docs, told, files_settled, takes, &mut problems)
         {
-            if of_the_server(&error) {
+            if ends_the_round(&error) {
                 return Err(error);
             }
             tracing::warn!(%error, "the library could not be synchronized");
@@ -961,7 +1162,7 @@ impl Sync {
             // What the projects wrote into the home document, that one is gone or is not, is sent.
             Takes::Everything => {
                 if self.kept.unsent(HOME.kind) {
-                    self.exchange_maps(&home, &joined, HOME, doc, docs, true)?;
+                    self.exchange_maps(&home, joined, HOME, doc, docs, true)?;
                 }
             }
             // A phone sends nothing of the home document, also where it is marked as holding something unsent.
@@ -1003,13 +1204,17 @@ impl Sync {
     ) -> Result<Answer> {
         let changes = mine(since)?;
         let changes: Vec<&[u8]> = changes.iter().map(Vec::as_slice).collect();
-        let answer = home.exchange(kind, id, seen, since, &changes, FORM, quiet)?;
+        let answer = home.exchange(kind, id, seen, since, &changes, self.knows.texts, quiet).inspect_err(|error| {
+            if of_a_later_form(error) {
+                tracing::warn!(kind, id, "the server holds a document in a later form than this version knows");
+            }
+        })?;
         match since {
             Some(since) if !whole::covers(&answer.now, since)? => {
                 tracing::warn!(kind, id, "the server holds less of a document than it did: everything is sent again");
                 let all = mine(None)?;
                 let all: Vec<&[u8]> = all.iter().map(Vec::as_slice).collect();
-                home.exchange(kind, id, None, None, &all, FORM, quiet)
+                home.exchange(kind, id, None, None, &all, self.knows.texts, quiet)
             }
             _ => Ok(answer),
         }
@@ -1017,11 +1222,22 @@ impl Sync {
 
     // ---- the documents of maps: the home document, the library's ----
 
-    /// One exchange of a document of maps: what it holds beyond what the
-    /// server was last seen to have is sent, and what came is taken in and
-    /// kept. Whether anything came. Without `send` nothing is sent, whatever
-    /// the document holds, and the mark that it holds something unsent is
-    /// left as it is: so a phone reads the home document (`home_read`).
+    /// Brings a document of maps and the server's to be the same. What the
+    /// server's holds beyond what was last seen of it is asked for first,
+    /// with nothing sent, and taken in and kept (`take_maps`); then what
+    /// the document here holds that the server's lacks is sent. Whether
+    /// anything came. Without `send` nothing is sent, whatever the document
+    /// holds, and the mark that it holds something unsent is left as it is:
+    /// so a phone reads the home document (`home_read`).
+    ///
+    /// It is asked before it is sent into, each time, because the form of
+    /// such a document is said within it, where the server does not read
+    /// it: what the server's holds must be seen before this device knows
+    /// whether it may write into it. Where it proves to be of a later form,
+    /// nothing is sent and nothing of it is kept. What another device
+    /// writes between the two calls is not seen before the second: a later
+    /// form that comes in that moment is met by its answer, after what was
+    /// unsent here went into it.
     fn exchange_maps(
         &self,
         home: &Home,
@@ -1047,21 +1263,54 @@ impl Sync {
         }
         let seen = cursor.as_ref().and_then(|c| c.seen.clone());
         let since = cursor.as_ref().and_then(|c| c.since.as_deref()).and_then(unhex);
-        let answer = self.ask(
-            home,
-            maps.kind,
-            "the",
-            seen.as_deref(),
-            since.as_deref(),
-            // Without `send` the document gives nothing of its own whatever
-            // it is asked, so that no change goes with the exchange: also
-            // where `ask` asks a second time, the server holding less than it did.
-            &|since| if send { doc.beyond(since).map(Some) } else { Ok(None) },
-            false,
-        )?;
+        // The document gives nothing of its own whatever it is asked, so that
+        // no change goes with this call: also where `ask` asks a second
+        // time, the server holding less than it did.
+        let theirs = self.ask(home, maps.kind, "the", seen.as_deref(), since.as_deref(), &|_| Ok(None), false)?;
+        let mut news = self.take_maps(joined, maps, doc, docs, &of, &theirs)?;
+        if !send {
+            return Ok(news);
+        }
+        // What was written into the document here and not sent: the mark
+        // says it, since a name taken out of a map shows in no state
+        // vector. And all that a server lacks which holds less of the
+        // document than this device does, as one that lost it.
+        if self.kept.unsent(maps.kind) || !whole::covers(&theirs.now, &doc.vector())? {
+            let sent = self.ask(
+                home,
+                maps.kind,
+                "the",
+                Some(&theirs.digest),
+                Some(&theirs.now),
+                &|since| doc.beyond(since).map(Some),
+                false,
+            )?;
+            news |= self.take_maps(joined, maps, doc, docs, &of, &sent)?;
+        }
+        self.kept.mark_unsent(maps.kind, false)?;
+        Ok(news)
+    }
+
+    /// Takes in what an exchange of a document of maps brought, and keeps
+    /// the document and what was seen of the server's. Whether anything
+    /// came. Where what came makes the document one of a later form than
+    /// this version knows, nothing is kept of it, on the disk or of what
+    /// was seen: the device is as it was before it asked, but for the
+    /// document in memory, which the round that stops for it reads anew.
+    fn take_maps(
+        &self,
+        joined: &Joined,
+        maps: Maps,
+        doc: &HomeDoc,
+        docs: &mut BTreeMap<String, String>,
+        of: &Path,
+        answer: &Answer,
+    ) -> Result<bool> {
+        let name = maps.name();
         let news = !whole::nothing(&answer.news);
         if news {
             doc.take_in(&answer.news)?;
+            self.known(maps, doc)?;
         }
         self.kept.keep_doc(maps.kind, &doc.whole())?;
         let seen = Cursor {
@@ -1071,12 +1320,20 @@ impl Sync {
             since: Some(hex(&answer.now)),
             lies: Lies::default(),
         };
-        kept::keep_cursor(&of, &seen, &[])?;
-        if send {
-            self.kept.mark_unsent(maps.kind, false)?;
-        }
-        docs.insert(name, answer.digest);
+        kept::keep_cursor(of, &seen, &[])?;
+        docs.insert(name, answer.digest.clone());
         Ok(news)
+    }
+
+    /// That a document of maps is in a form this version knows; where it is
+    /// in a later one, what stops the synchronization on this device.
+    fn known(&self, maps: Maps, doc: &HomeDoc) -> Result<()> {
+        let (form, known) = (doc.form(), (maps.form)(&self.knows));
+        if form > known {
+            tracing::warn!(document = %maps.name(), form, known, "a document of the home is in a later form than this version knows");
+            return Err(later());
+        }
+        Ok(())
     }
 
     /// Brings the stores of a document of maps and their maps to be the
@@ -1106,11 +1363,11 @@ impl Sync {
             news = self.exchange_maps(home, joined, maps, doc, docs, true)?;
             changed |= news;
         }
-        if doc.form() > maps.form {
-            return Err(Error::invalid((maps.later)()));
-        }
+        // Also where nothing was asked: before anything is written into the
+        // document here, or from it to the stores.
+        self.known(maps, doc)?;
         // The computer that makes the document says its form.
-        if theirs.is_none() && cursor.is_none() && doc.begin(maps.form) {
+        if theirs.is_none() && cursor.is_none() && doc.begin((maps.form)(&self.knows)) {
             self.kept.mark_unsent(maps.kind, true)?;
         }
         meeting.before(doc, news)?;
@@ -1189,8 +1446,8 @@ impl Sync {
     /// project is shared, the settings, the styles, the formats, the
     /// templates or the words is read from the phone's disk or written to
     /// it, and nothing is kept of them as agreed. That a project is said to
-    /// be gone is not acted on. A home document in a later form ends the
-    /// round, as it does on a computer.
+    /// be gone is not acted on. A home document in a later form stops the
+    /// synchronization on a phone, as it does on a computer (`outdate`).
     fn home_read(
         &self,
         home: &Home,
@@ -1204,10 +1461,7 @@ impl Sync {
         if theirs.is_some() && theirs != cursor.and_then(|c| c.seen) {
             self.exchange_maps(home, joined, HOME, doc, docs, false)?;
         }
-        if doc.form() > HOME.form {
-            return Err(Error::invalid((HOME.later)()));
-        }
-        Ok(())
+        self.known(HOME, doc)
     }
 
     // ---- the library ----
@@ -1309,6 +1563,10 @@ impl Sync {
             // A file left to be tried again is tried within the half minute, in front or not (`Wake::at_most`).
             held(&self.wake).left = done.again;
         }
+        // That the home has not room for every file is one of the problems
+        // of every round for as long as it is so, whether the files were
+        // looked at in this one or not.
+        problems.extend(told.full());
         // Where only the round wrote the library's files since they were
         // looked at, they lie as it left them, and that is what is kept:
         // nothing was changed here that the next round must read. Where
@@ -1471,7 +1729,7 @@ impl Sync {
             let project = Project { id: &id, here: here.get(&id), trash: trash.get(&id), gone: gone.get(&id) };
             let done = self.project(home, joined, doc, docs, &project, &mut known, &mut trashed);
             if let Err(error) = done {
-                if of_the_server(&error) {
+                if ends_the_round(&error) {
                     self.kept.keep_base("gone", &known)?;
                     self.kept.keep_base("trash", &trashed)?;
                     return Err(error);
@@ -1590,7 +1848,7 @@ impl Sync {
         id: &str,
     ) -> Result<()> {
         let name = format!("project/{id}");
-        let answer = home.exchange("project", id, None, None, &[], FORM, true)?;
+        let answer = home.exchange("project", id, None, None, &[], self.knows.texts, true)?;
         if whole::nothing(&answer.news) {
             return Ok(());
         }
