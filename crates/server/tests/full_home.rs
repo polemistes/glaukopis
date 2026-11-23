@@ -358,6 +358,80 @@ async fn a_file_that_a_proxy_cuts_off_is_said_of_the_file_and_what_is_to_be_fetc
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_file_that_fails_at_every_try_waits_longer_each_time_and_those_as_large_are_sent_meanwhile() {
+    with_server_set(
+        |_| {},
+        |direct| {
+            // The sending of one file is cut off every time: the one of 20 KiB.
+            let tried = Arc::new(AtomicUsize::new(0));
+            let counted = tried.clone();
+            let cut = move |asked: &str, length: u64| {
+                let it = asked.starts_with("PUT /api/homes/") && asked.contains("/files/") && length == 20 << 10;
+                if it {
+                    counted.fetch_add(1, Ordering::SeqCst);
+                }
+                it
+            };
+            let proxied = tokio::runtime::Handle::current().block_on(through(&direct, cut));
+            let desk = Device::computer();
+            assert!(desk.sync.start(&proxied, "The desk", None).unwrap().on);
+            desk.round();
+            let scan = desk.take_in("scan.pdf", &kib(20, 2));
+            let plates = desk.take_in("plates.pdf", &kib(25, 3));
+            let atlas = desk.take_in("atlas.pdf", &kib(30, 4));
+            let said_of_the_scan = |status: Status| {
+                assert_eq!(status.state, State::Idle, "{:?}", status.problem);
+                let problem = status.problem.expect("it is said of the file");
+                assert!(problem.contains("scan.pdf") && problem.lines().count() == 1, "{problem}");
+            };
+
+            // The round in which it fails: nothing as large is sent in it.
+            said_of_the_scan(desk.once());
+            assert!(desk.home_files().is_empty());
+            // The next: the file waits, and those as large are sent.
+            said_of_the_scan(desk.once());
+            let there = desk.home_files();
+            assert!(there.contains(&plates) && there.contains(&atlas) && !there.contains(&scan), "{there:?}");
+            // It is tried again after one round, then after two, then after four.
+            let mut tries = vec![1, tried.load(Ordering::SeqCst)];
+            for _ in 0..7 {
+                said_of_the_scan(desk.once());
+                tries.push(tried.load(Ordering::SeqCst));
+            }
+            assert_eq!(tries, [1, 1, 2, 2, 2, 3, 3, 3, 3], "how often it was tried after each round");
+        },
+    )
+    .await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_file_that_cannot_be_fetched_is_said_of_the_file_and_what_is_to_be_sent_goes_on() {
+    with_server_set(
+        |_| {},
+        |direct| {
+            let cut = |asked: &str, _: u64| asked.starts_with("GET /api/homes/") && asked.contains("/files/");
+            let proxied = tokio::runtime::Handle::current().block_on(through(&direct, cut));
+            let (desk, laptop) = (Device::computer(), Device::computer());
+            assert!(desk.sync.start(&proxied, "The desk", None).unwrap().on);
+            desk.round();
+            join(&laptop, &desk, &direct, "The laptop");
+            laptop.round();
+            let article = laptop.take_in("article.pdf", &kib(3, 1));
+            laptop.round();
+            // The desk is to fetch that one, which is cut off, and to send one larger.
+            let scan = desk.take_in("scan.pdf", &kib(20, 2));
+            let status = desk.once();
+            assert_eq!(status.state, State::Idle, "the server is reached: {:?}", status.problem);
+            let problem = status.problem.expect("it is said of the file");
+            assert!(problem.contains("article.pdf") && problem.contains("could not be fetched"), "{problem}");
+            assert!(desk.bytes(&article).is_none());
+            assert!(desk.home_files().contains(&scan), "what was to be sent was sent, though it is larger");
+        },
+    )
+    .await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn a_network_that_is_away_when_a_file_fails_ends_the_round_as_a_server_not_reached() {
     with_server_set(
         |_| {},

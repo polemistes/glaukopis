@@ -49,11 +49,14 @@
 //! the network fails may be either, so the home is asked at once how it
 //! stands, a small thing to ask. Where that fails as well, the server is
 //! not reached, and the round ends. Where it is answered, the failure was
-//! the file's own: it is said and tried again at the next round, and
-//! nothing as large goes the same way in this one, since each try may send
-//! much before it fails. So a file that cannot be sent does not hold back
-//! what is to be fetched, and a network that is away ends the round at the
-//! second thing asked of it.
+//! the file's own: it is said, and nothing as large goes the same way in
+//! this round, since each try may send much before it fails. The file then
+//! waits before it is tried again, one round, then two, then four, and is
+//! said the while (`Failing`), so that those as large go in the rounds
+//! between: tried at every round it would fail first at every round, and
+//! hold them back for good. So a file that cannot be sent does not hold
+//! back what is to be fetched, nor for long what is to be sent, and a
+//! network that is away ends the round at the second thing asked of it.
 //!
 //! A file is sent from the disk and fetched to the disk a piece at a time,
 //! never held whole: one may hold hundreds of megabytes. What is fetched is
@@ -98,6 +101,33 @@ pub struct Told {
     /// each time the files are looked at, and while there are any, every
     /// round says that the server is full (`full`).
     full: BTreeSet<String>,
+    /// How many times the files were looked at in this run.
+    looks: u64,
+    /// The files whose sending or fetching failed as the network fails
+    /// while the server answered, each until it goes through (`Failing`).
+    failing: BTreeMap<String, Failing>,
+}
+
+/// A file whose sending or fetching failed as the network fails while the
+/// server answered. It waits before it is tried again, longer each time it
+/// fails so: were it tried at every round, it would fail first at every
+/// round, the order being the same, and hold back for good every file as
+/// large that goes the same way.
+#[derive(Debug)]
+struct Failing {
+    /// How many times running it has failed so.
+    times: u32,
+    /// At which look at the files it is tried again.
+    again_at: u64,
+    /// What is said of it, at every look for as long as it waits.
+    said: String,
+}
+
+/// How many looks at the files a file is passed over after it failed for
+/// the `times`th time running: one, then two, four, and so on to
+/// sixty-four, which is about half an hour at the pace of the rounds.
+fn passed_over(times: u32) -> u64 {
+    1 << times.saturating_sub(1).min(6)
 }
 
 impl Told {
@@ -301,6 +331,10 @@ pub fn bring(
         }
     }
     in_order(&mut due);
+    told.looks += 1;
+    let look = told.looks;
+    // What failed before and is to be done no more, as a file that left the library, is forgotten.
+    told.failing.retain(|hash, _| due.iter().any(|file| file.hash == hash));
 
     // What could not be done with a file, in words.
     let failed = |file: &Due, why: String| {
@@ -329,6 +363,15 @@ pub fn bring(
         if below.is_some_and(|below| file.size >= below) {
             continue;
         }
+        // One that failed as the network fails waits its turns, said the
+        // while, and those as large go meanwhile.
+        if let Some(failing) = told.failing.get(file.hash)
+            && look < failing.again_at
+        {
+            say(failing.said.clone());
+            done.again = true;
+            continue;
+        }
         let came = match file.way {
             Way::Sent => home.send_file(file.hash, &here[file.hash].0),
             Way::Fetched => fetch(home, library, &dir, file.hash, file.size, written),
@@ -344,13 +387,19 @@ pub fn bring(
                     Err(Error::Network(_)) => return Err(Error::Network(why)),
                     _ => {}
                 }
-                // The server answers: it was this file's own. It is tried
-                // again at the next round, and what is as large waits for
-                // it: what cuts one off on its way most often does so by
-                // how much it holds, and each try may send much before it
-                // fails. What goes the other way is not held back by it.
-                tracing::warn!(hash = file.hash, way = ?file.way, %why, "a file failed as the network fails while the server answers");
-                say(failed(file, sentence(&why)));
+                // The server answers: it was this file's own. Nothing as
+                // large goes the same way in this round: what cuts one off
+                // on its way most often does so by how much it holds, and
+                // each try may send much before it fails. The file itself
+                // waits before it is tried again, longer each time
+                // (`Failing`), and those as large are tried meanwhile.
+                // What goes the other way is not held back by it.
+                let times = told.failing.get(file.hash).map_or(0, |failing| failing.times) + 1;
+                let wait = passed_over(times);
+                tracing::warn!(hash = file.hash, way = ?file.way, %why, times, wait, "a file failed as the network fails while the server answers");
+                let said = failed(file, sentence(&why));
+                say(said.clone());
+                told.failing.insert(file.hash.to_owned(), Failing { times, again_at: look + 1 + wait, said });
                 done.again = true;
                 *below = Some(file.size);
                 continue;
@@ -358,6 +407,8 @@ pub fn bring(
             Err(error) if refused_entry(&error) => return Err(error),
             came => came,
         };
+        // It failed in no such way this time.
+        told.failing.remove(file.hash);
         match (file.way, came) {
             (Way::Sent, Ok(())) => {
                 note(file.hash, Some(&file.size.to_string()))?;
@@ -464,6 +515,14 @@ mod tests {
         in_order(&mut files);
         let order: Vec<&str> = files.iter().map(|file| file.hash).collect();
         assert_eq!(order, ["sketch", "photograph", "unsized", "a", "b", "letter", "article", "scan"]);
+    }
+
+    #[test]
+    fn a_file_that_fails_again_and_again_is_passed_over_longer_each_time() {
+        let waits: Vec<u64> = (1..=9).map(passed_over).collect();
+        assert_eq!(waits, [1, 2, 4, 8, 16, 32, 64, 64, 64]);
+        assert_eq!(passed_over(0), 1);
+        assert_eq!(passed_over(u32::MAX), 64);
     }
 
     #[test]
