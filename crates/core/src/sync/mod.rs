@@ -26,18 +26,20 @@ pub mod shelves;
 pub mod whole;
 pub mod wrote;
 
-pub use engine::{Hears, State, Status, Sync};
+pub use engine::{Hears, Knows, State, Status, Sync};
 pub use kept::Takes;
 
 use crate::paths::DataDir;
 
 /// Whether the notebook was refused when the device whose data is in
-/// `data` last exchanged it: of a later form than this version knows, too
-/// large, or not readable here. The engine keeps it from one run to the
-/// next (`sync/notebook-refused.json`). Such a device lacks notes that
-/// others wrote, and must sweep no file out of the store by what its own
-/// notes hold. False where nothing is kept, as on a device in no home,
-/// whose `sync/` went when it left.
+/// `data` last exchanged it, too large or not readable here; or the
+/// synchronization stopped on the device for a later form, of the notebook
+/// or of any other document of its home, and its notebook was not
+/// exchanged since. The engine keeps it from one run to the next
+/// (`sync/notebook-refused.json`). Such a device lacks notes that others
+/// wrote, and must sweep no file out of the store by what its own notes
+/// hold. False where nothing is kept, as on a device in no home, whose
+/// `sync/` went when it left.
 pub fn notebook_refused(data: &DataDir) -> bool {
     kept::Kept::new(data).noted::<bool>(engine::NOTEBOOK_REFUSED).unwrap_or(false)
 }

@@ -16,9 +16,11 @@ export interface SyncStatus {
   /**
    * 'off' where this computer is in no home; 'idle' between rounds;
    * 'working' in one; 'offline' where the server is not reached; 'refused'
-   * where it lets this computer in no more.
+   * where it lets this computer in no more; 'outdated' where the device met
+   * something of its home in a later form than its version knows, and
+   * nothing is synchronized on it until the application is updated.
    */
-  state: 'off' | 'idle' | 'working' | 'offline' | 'refused';
+  state: 'off' | 'idle' | 'working' | 'offline' | 'refused' | 'outdated';
   /** When everything was last the same, as RFC 3339; null before the first time. */
   last: string | null;
   /** What is wrong, in words; null where nothing is. */

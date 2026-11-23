@@ -7,7 +7,7 @@ import { bodySchema } from '$lib/editor/schema';
 vi.mock('$lib/api/notebook', () => ({ notebookTakeFiles: vi.fn(), notebookTakeImage: vi.fn() }));
 vi.mock('$lib/ui/toast.svelte', () => ({ notifyError: vi.fn() }));
 
-const { notesOfInbox, cleanHtml } = await import('./inbox');
+const { notesOfInbox, madeOfInbox, addressAlone, cleanHtml } = await import('./inbox');
 const { Notebook } = await import('./model/notebook.svelte');
 
 const PNG = 'e'.repeat(64);
@@ -39,6 +39,7 @@ const picture: NotebookFile = {
 };
 
 const item = (over: Partial<InboxItem>): InboxItem => ({
+  id: 'thing',
   kind: 'selection',
   url: 'https://example.org/owls/athena',
   title: 'The owl of Athena',
@@ -425,5 +426,331 @@ describe('HTML that tries to do harm', () => {
     expect(clean.innerHTML).toBe(
       '<p><a href="https://example.org/b">b</a> <a href="mailto:a@b.org">mail</a> <b>c</b></p>',
     );
+  });
+});
+
+describe('what another app handed over on a phone', () => {
+  const PHOTO = 'a'.repeat(64);
+  const PDF = 'b'.repeat(64);
+  /** A photograph that says when and where it was taken, and no time of its own, as a thing shared gives it. */
+  const photograph: NotebookFile = {
+    file: view(PHOTO, 'IMG_0001.jpg'),
+    shown: view(PHOTO, 'IMG_0001.jpg'),
+    time: null,
+    taken: '2026-11-15T14:03:22',
+    place: { lat: 59.9, lon: 10.75 },
+  };
+  const letter: NotebookFile = {
+    file: { ...view(PDF, 'Letter.pdf'), kind: 'pdf' },
+    shown: null,
+    time: null,
+    taken: null,
+    place: null,
+  };
+  /** A thing shared: words and a subject, as the other app gave them, no address and no HTML of its own. */
+  const shared = (over: Partial<InboxItem> = {}): InboxItem =>
+    item({
+      id: '1763280000000-abcdefgh',
+      kind: 'shared',
+      url: '',
+      title: '',
+      when: '2026-11-23T08:00:00Z',
+      text: '',
+      ...over,
+    });
+
+  /** The source of the one passage of a note, where it has one. */
+  const sourceOfPassage = (nb: Book, id: string) => nb.passages.get(passageOf(nb, id))!.source;
+
+  it('words are a note of one passage with no source, and no name', () => {
+    const nb = new Notebook();
+    const [id] = notesOfInbox(nb, [shared({ text: 'First line\n\nSecond line\r\nThird' })]);
+    const note = nb.note(id)!;
+    expect(note.name).toBe('');
+    expect(note.made).toBe('2026-11-23T08:00:00.000Z');
+    expect(note.seen).toBe(false);
+    expect(docOf(nb, id).content.content.map((p) => p.textContent)).toEqual([
+      'First line',
+      'Second line',
+      'Third',
+    ]);
+    expect(note.pieces.filter((p) => p.kind === 'passage').length).toBe(1);
+    expect(sourceOfPassage(nb, id)).toBe(null);
+    expect(nb.passages.get(passageOf(nb, id))!.text).toBe('First line\nSecond line\nThird');
+    expect(note.sources.every((s) => s === null)).toBe(true);
+    expect(nb.sources.size).toBe(0);
+    expect(nb.changedSince(id, passageOf(nb, id))).toBe(false);
+    expect(note.box).toBe(nb.receiving);
+  });
+
+  it('a subject does not name the note and is nowhere in it, however it reads', () => {
+    for (const subject of [
+      'Including link: ',
+      'A name the app gave rightly',
+      'The owl of Athena',
+    ]) {
+      const nb = new Notebook();
+      const [id] = notesOfInbox(nb, [shared({ text: 'Some words', title: subject })]);
+      expect(nb.note(id)!.name).toBe('');
+      expect(json(nb, id)).not.toContain(subject.trim());
+      expect(JSON.stringify([...nb.sources.values()])).not.toContain(subject.trim());
+      expect(JSON.stringify([...nb.passages.values()])).not.toContain(subject.trim());
+    }
+  });
+
+  it('words within straight quotation marks keep them, as Chrome hands a selection over', () => {
+    const nb = new Notebook();
+    const [id] = notesOfInbox(nb, [shared({ text: '"select"', title: 'Including link: ' })]);
+    expect(docOf(nb, id).textContent).toBe('"select"');
+    expect(nb.passages.get(passageOf(nb, id))!.text).toBe('"select"');
+    expect(nb.note(id)!.name).toBe('');
+  });
+
+  it('words are written as they were handed over, nothing taken off them', () => {
+    const nb = new Notebook();
+    const [id] = notesOfInbox(nb, [
+      shared({ text: '  indented, with a <b>tag</b> and an & sign \n' }),
+    ]);
+    expect(docOf(nb, id).textContent).toBe('  indented, with a <b>tag</b> and an & sign ');
+  });
+
+  it('an address alone is a note whose text is the address and whose source is the page, named by the subject', () => {
+    const nb = new Notebook();
+    const [id] = notesOfInbox(nb, [
+      shared({ text: 'https://example.org/owls/athena', title: 'The owl of Athena' }),
+    ]);
+    const note = nb.note(id)!;
+    expect(note.name).toBe('The owl of Athena');
+    expect(docOf(nb, id).textContent).toBe('https://example.org/owls/athena');
+    const source = sourceOfPassage(nb, id)!;
+    expect(nb.sources.get(source)).toMatchObject({
+      sort: 'web',
+      url: 'https://example.org/owls/athena',
+      title: 'The owl of Athena',
+      read: '2026-11-23T08:00:00.000Z',
+    });
+    expect(note.sources).toEqual([source]);
+    expect(nb.passages.get(passageOf(nb, id))!.text).toBe('https://example.org/owls/athena');
+    // The address as it was handed over, with the white space at its ends gone.
+    const [padded] = notesOfInbox(nb, [shared({ text: ' https://example.org/b\n', title: '' })]);
+    expect(docOf(nb, padded).textContent).toBe('https://example.org/b');
+  });
+
+  it('an address alone with no subject is a note with no name, and its source has no title', () => {
+    const nb = new Notebook();
+    const [id] = notesOfInbox(nb, [shared({ text: 'https://example.org/owls', title: '  ' })]);
+    expect(nb.note(id)!.name).toBe('');
+    expect(nb.sources.get(sourceOfPassage(nb, id)!)).toMatchObject({
+      sort: 'web',
+      url: 'https://example.org/owls',
+      title: '',
+    });
+  });
+
+  it('two things of one address in one taking share their source', () => {
+    const nb = new Notebook();
+    const ids = notesOfInbox(nb, [
+      shared({ id: 'one', text: 'https://example.org/owls', title: 'Owls' }),
+      shared({ id: 'two', text: 'https://example.org/owls', title: 'Owls again' }),
+    ]);
+    expect(ids.length).toBe(2);
+    expect(nb.sources.size).toBe(1);
+    expect(sourceOfPassage(nb, ids[0])).toBe(sourceOfPassage(nb, ids[1]));
+  });
+
+  it('an address with other words is words, and so is anything that is not a web address', () => {
+    for (const text of [
+      'See https://example.org/owls',
+      'https://example.org/owls and more',
+      'https://example.org/owls\nhttps://example.org/more',
+      'mailto:someone@example.org',
+      'ftp://example.org/file',
+      'javascript:alert(1)',
+      'example.org/owls',
+    ]) {
+      const nb = new Notebook();
+      const [id] = notesOfInbox(nb, [shared({ text, title: 'A subject' })]);
+      expect(nb.note(id)!.name, text).toBe('');
+      expect(sourceOfPassage(nb, id), text).toBe(null);
+      expect(nb.sources.size, text).toBe(0);
+    }
+  });
+
+  it('an address with a file beside it is words, and the file’s source is the file', () => {
+    const nb = new Notebook();
+    const [id] = notesOfInbox(nb, [
+      shared({ text: 'https://example.org/owls', title: 'The owl of Athena', files: [letter] }),
+    ]);
+    expect(nb.note(id)!.name).toBe('');
+    expect(sourceOfPassage(nb, id)).toBe(null);
+    const doc = docOf(nb, id);
+    expect(doc.child(0).textContent).toBe('https://example.org/owls');
+    expect(doc.child(1).type.name).toBe('file');
+    const source = nb.sources.get(nb.files.get(PDF)!.source!)!;
+    expect(source).toMatchObject({ sort: 'file', name: 'Letter.pdf' });
+    expect(nb.sources.size).toBe(1);
+  });
+
+  it('a picture with a subject and no words is a note with no name', () => {
+    const nb = new Notebook();
+    const [id] = notesOfInbox(nb, [shared({ title: 'Photo from the app', files: [photograph] })]);
+    expect(nb.note(id)!.name).toBe('');
+    const doc = docOf(nb, id);
+    expect(doc.childCount).toBe(1);
+    expect(doc.firstChild!.type.name).toBe('figure');
+    expect(nb.passages.size).toBe(0);
+    expect(json(nb, id)).not.toContain('Photo from the app');
+  });
+
+  it('a picture is a figure and a PDF a file, each with its own source, which says when the photograph was taken and no time of the file', () => {
+    const nb = new Notebook();
+    const [id] = notesOfInbox(nb, [
+      shared({ text: 'These two', title: 'Including link: ', files: [photograph, letter] }),
+    ]);
+    const doc = docOf(nb, id);
+    expect(doc.content.content.map((n) => n.type.name)).toEqual(['paragraph', 'figure', 'file']);
+    expect(doc.child(0).textContent).toBe('These two');
+    expect(doc.child(1).attrs).toMatchObject({
+      file: PHOTO,
+      name: 'IMG_0001.jpg',
+      extension: 'jpg',
+    });
+    expect(doc.child(2).attrs).toMatchObject({ hash: PDF, name: 'Letter.pdf', extension: 'pdf' });
+    const photographed = nb.sources.get(nb.files.get(PHOTO)!.source!)!;
+    expect(photographed).toMatchObject({
+      sort: 'file',
+      name: 'IMG_0001.jpg',
+      taken: '2026-11-15T14:03:22',
+      place: { lat: 59.9, lon: 10.75 },
+    });
+    expect(photographed).not.toHaveProperty('time');
+    const filed = nb.sources.get(nb.files.get(PDF)!.source!)!;
+    expect(filed).toMatchObject({ sort: 'file', name: 'Letter.pdf' });
+    expect(filed).not.toHaveProperty('time');
+    expect(filed).not.toHaveProperty('taken');
+    expect(photographed.id).not.toBe(filed.id);
+    // The words have no source; the note has no name.
+    expect(sourceOfPassage(nb, id)).toBe(null);
+    expect(nb.note(id)!.name).toBe('');
+  });
+
+  it('a picture whose figure shows another file points to that file, held with the same source', () => {
+    const SHOWN = '1'.repeat(64);
+    const tiff: NotebookFile = {
+      ...photograph,
+      file: view(PHOTO, 'scan.tiff'),
+      shown: { ...view(SHOWN, 'scan.png'), madeFrom: PHOTO },
+    };
+    const nb = new Notebook();
+    const [id] = notesOfInbox(nb, [shared({ files: [tiff] })]);
+    expect(docOf(nb, id).child(0).attrs).toMatchObject({ file: SHOWN, name: 'scan.png' });
+    expect(nb.files.get(SHOWN)).toMatchObject({ madeFrom: PHOTO });
+    expect(nb.files.get(PHOTO)!.source).toBe(nb.files.get(SHOWN)!.source);
+  });
+
+  it('the HTML and the document a thing says are not read', () => {
+    const nb = new Notebook();
+    const [id] = notesOfInbox(nb, [
+      shared({
+        text: 'plain words',
+        html: '<p onclick="steal()">Read <a href="https://evil.example/">this</a></p><script>steal()</script>',
+        doc: {
+          type: 'doc',
+          content: [{ type: 'paragraph', content: [{ type: 'text', text: 'from the document' }] }],
+        },
+      }),
+    ]);
+    expect(docOf(nb, id).textContent).toBe('plain words');
+    expect(json(nb, id)).not.toMatch(/evil|steal|document|link/i);
+  });
+
+  it('a thing with no words and no file makes no note, a subject alone among them', () => {
+    const nb = new Notebook();
+    const ids = notesOfInbox(nb, [
+      shared({}),
+      shared({ text: '  \n\t ' }),
+      shared({ title: 'A subject alone' }),
+      shared({ text: 'but this has words' }),
+    ]);
+    expect(ids.length).toBe(1);
+    expect(nb.list.length).toBe(1);
+    expect(docOf(nb, ids[0]).textContent).toBe('but this has words');
+  });
+
+  it('is a note for each thing, in the box that receives, all in one step of undo', () => {
+    const nb = new Notebook();
+    const box = nb.addBox('From outside');
+    nb.receiveIn(box);
+    const ids = notesOfInbox(nb, [
+      shared({ text: 'one' }),
+      shared({ files: [letter] }),
+      shared({ text: 'https://example.org/owls', title: 'Owls' }),
+    ]);
+    expect(ids.map((id) => nb.note(id)!.box)).toEqual([box, box, box]);
+    expect(ids.map((id) => nb.note(id)!.at)).toEqual([null, null, null]);
+    nb.undo();
+    expect(nb.list).toEqual([]);
+    expect(nb.sources.size).toBe(0);
+    expect(nb.passages.size).toBe(0);
+  });
+});
+
+describe('the address words are, where they are one and nothing else', () => {
+  it('is the address with the white space at its ends taken away', () => {
+    expect(addressAlone('https://example.org/a')).toBe('https://example.org/a');
+    expect(addressAlone('  http://example.org/a?b=c#d \n')).toBe('http://example.org/a?b=c#d');
+    expect(addressAlone('https://example.org')).toBe('https://example.org');
+  });
+
+  it('is none for anything that is not a web address, or that holds more', () => {
+    for (const text of [
+      '',
+      '   ',
+      'example.org',
+      'https://',
+      'see https://example.org',
+      'https://example.org and more',
+      'https://example.org/a b',
+      'https://example.org\nhttps://example.org/b',
+      'https://example.org/ more',
+      'ftp://example.org/x',
+      'mailto:someone@example.org',
+      'javascript:alert(1)',
+      'data:text/html,<b>x</b>',
+      'doi:10.1000/182',
+    ])
+      expect(addressAlone(text), JSON.stringify(text)).toBe(null);
+  });
+});
+
+describe('the notes made of the inbox, each with its thing', () => {
+  it('are given in the order of the things, one for each thing that became a note, of every kind', () => {
+    const nb = new Notebook();
+    const made = madeOfInbox(nb, [
+      item({ id: 'a', kind: 'selection', text: 'one' }),
+      item({ id: 'b', kind: 'page', text: 'two' }),
+      item({ id: 'c', kind: 'image', image: null }),
+      item({ id: 'd', kind: 'region', image: picture }),
+      item({ id: 'e', kind: 'note', url: '', title: '', text: 'five', doc: null }),
+      item({ id: 'f', kind: 'shared', url: '', title: '', text: 'six' }),
+      item({ id: 'g', kind: 'shared', url: '', title: 'nothing', text: '' }),
+      item({ id: 'h', kind: 'image', image: picture }),
+    ]);
+    expect(made.map((m) => m.thing)).toEqual(['a', 'b', 'd', 'e', 'f', 'h']);
+    expect(new Set(made.map((m) => m.note)).size).toBe(6);
+    expect(made.every((m) => nb.note(m.note))).toBe(true);
+    expect(docOf(nb, made[0].note).textContent).toBe('one');
+    expect(nb.note(made[1].note)!.name).toBe('The owl of Athena');
+    expect(docOf(nb, made[4].note).textContent).toBe('six');
+    expect(nb.list.length).toBe(6);
+  });
+
+  it('are none where there is nothing, and notesOfInbox gives the notes of them', () => {
+    const nb = new Notebook();
+    expect(madeOfInbox(nb, [])).toEqual([]);
+    const things = [item({ id: 'x', text: 'one' }), item({ id: 'y', text: 'two' })];
+    const made = madeOfInbox(nb, things);
+    expect(made.map((m) => m.thing)).toEqual(['x', 'y']);
+    expect(notesOfInbox(new Notebook(), things).length).toBe(made.length);
   });
 });

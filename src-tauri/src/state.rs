@@ -12,6 +12,7 @@ use glaukopis_core::library::Library;
 use glaukopis_core::net::Client;
 use glaukopis_core::notebook::Notebook;
 use glaukopis_core::notebook::inbox::Inbox;
+use glaukopis_core::notebook::pieces::Pieces;
 use glaukopis_core::ocr;
 use glaukopis_core::paths::{Claim, DataDir};
 use glaukopis_core::projects::Projects;
@@ -42,6 +43,8 @@ pub struct AppState {
     /// Held while what lies in the inbox is taken, so that two windows never
     /// get the same thing.
     pub inbox_taking: Mutex<()>,
+    /// The files the page holds that are being taken in piece by piece.
+    pub pieces: Pieces,
     /// The store of pictures.
     /// What comes with the application: styles, formats, filters.
     pub resources: PathBuf,
@@ -170,6 +173,9 @@ impl AppState {
             }
             _ => {}
         }
+        // What a run that ended left of files half taken in.
+        let pieces = Pieces::new(&data);
+        pieces.clear();
         let state = AppState {
             projects,
             notebook: Arc::new(Notebook::new(&data)),
@@ -177,6 +183,7 @@ impl AppState {
             notebook_refused: glaukopis_core::sync::notebook_refused(&data),
             inbox: Inbox::new(&data),
             inbox_taking: Mutex::new(()),
+            pieces,
             resources,
             styles,
             formats,

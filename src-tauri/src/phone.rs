@@ -133,6 +133,10 @@ pub fn run() {
             commands::notebook::notebook_say_held,
             commands::notebook::notebook_inbox_waiting,
             commands::notebook::notebook_inbox_take,
+            // A file the page holds, taken in piece by piece; the application's page has paths instead.
+            commands::notebook::notebook_take_piece,
+            commands::notebook::notebook_take_whole,
+            commands::notebook::notebook_take_dropped,
             // Of the files a note shows.
             commands::files::file_path,
             commands::files::file_small,
@@ -260,6 +264,9 @@ mod tests {
             "notebook_say_held",
             "notebook_inbox_waiting",
             "notebook_inbox_take",
+            "notebook_take_piece",
+            "notebook_take_whole",
+            "notebook_take_dropped",
             "file_path",
             "file_small",
             "library_list",

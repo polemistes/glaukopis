@@ -26,6 +26,7 @@ const { Notebook } = await import('$lib/notebook/model/notebook.svelte');
 
 /** What the page of a note left in the inbox: its words, as lines, and no document. */
 const note = (text: string, when = '2026-11-23T08:00:00.000Z'): InboxItem => ({
+  id: `thing-${when}`,
   kind: 'note',
   url: '',
   title: '',

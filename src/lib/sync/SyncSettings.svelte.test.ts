@@ -128,7 +128,9 @@ describe('the synchronization in the settings', () => {
   it('says what a computer has under the heading, and what a phone has with takes="notes"', async () => {
     const computer = await setUp();
     expect(computer.about()).toBe(t('sync-about'));
-    expect(computer.about()).toBe('Projects, the library, the notebook and your settings will be synchronized between devices.');
+    expect(computer.about()).toBe(
+      'Projects, the library, the notebook and your settings will be synchronized between devices.',
+    );
     done();
     done = () => {};
     const phone = await setUp({ takes: 'notes' });
@@ -179,6 +181,26 @@ describe('the synchronization in the settings', () => {
     expect(listed[0].textContent).toContain('Phone (this device)');
     expect(target.querySelector('h3')?.textContent).toBe('Devices');
     expect(target.querySelector('[data-sync-add]')?.textContent?.trim()).toBe('Add a device…');
+  });
+
+  it('says that it has stopped and that an update is needed where the device met a later form, and offers no round', async () => {
+    const { target } = await setUp({
+      status: { ...ON, state: 'outdated', problem: 'Update is needed for synchronization.' },
+      home: HOME(device('a', 'Desk', true), device('b', 'Phone', false)),
+    });
+    expect(
+      target.querySelector('[data-synchronization]')?.getAttribute('data-synchronization'),
+    ).toBe('outdated');
+    expect(target.querySelector('[data-sync-standing]')?.textContent?.trim()).toBe(
+      'Synchronization has stopped on this device',
+    );
+    expect(target.querySelector('[data-sync-problem]')?.textContent?.trim()).toBe(
+      'Update is needed for synchronization.',
+    );
+    expect(target.querySelector('[data-sync-now]')).toBeNull();
+    // The devices are still told, and the device can still leave.
+    expect(target.querySelectorAll('[data-sync-computer]').length).toBe(2);
+    expect(target.querySelector('[data-sync-stop]')).not.toBeNull();
   });
 
   describe('the question before it stops', () => {

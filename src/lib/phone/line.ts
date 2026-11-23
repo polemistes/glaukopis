@@ -9,12 +9,14 @@
 import type { SyncStatus } from '$lib/api/sync';
 
 /** What the line says, as the name of its message; none where there is no line. */
-export type LineWords = 'sync-refused' | 'phone-waiting' | 'phone-problem';
+export type LineWords = 'sync-refused' | 'sync-outdated' | 'phone-waiting' | 'phone-problem';
 
 /** The line the status asks for; none where there is to be none. */
 export function lineOf(status: SyncStatus | null): LineWords | null {
   if (!status || status.state === 'off') return null;
   if (status.state === 'refused') return 'sync-refused';
+  // Stopped for a later form: the line says what is needed, in the owner's words.
+  if (status.state === 'outdated') return 'sync-outdated';
   if (status.state === 'offline') return status.waiting ? 'phone-waiting' : null;
   if (status.problem) return 'phone-problem';
   return null;

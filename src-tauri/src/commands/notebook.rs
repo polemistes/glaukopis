@@ -176,6 +176,67 @@ pub fn notebook_take_image(state: State<'_, AppState>, name: String, content: St
     Ok(NotebookFile { file, shown, time: None, taken: None, place: None })
 }
 
+/// Puts a piece of a file the page holds at the end of what was sent before
+/// under the same ticket, the piece in base64 (stage 3 of
+/// `docs/plans/an-app-for-android.md`): on Android a call reaches Rust as
+/// one string of JSON, so a file is sent in pieces, and never whole.
+#[tauri::command(async)]
+pub fn notebook_take_piece(
+    state: State<'_, AppState>,
+    ticket: String,
+    name: String,
+    content: String,
+) -> CommandResult<()> {
+    let bytes =
+        B64.decode(content.trim()).map_err(|_| glaukopis_core::Error::invalid(tr!("core-pictures-not-whole")))?;
+    state.pieces.add(&ticket, &name, &bytes)?;
+    Ok(())
+}
+
+/// Takes the file the pieces of a ticket make into the notebook, as
+/// `notebook_take_files` takes one that lies on this computer: copied into
+/// the store with the library free, entered as a file the notebook holds,
+/// and given with what a figure shows of it and, of a photograph, when and
+/// where it was taken. Of the file's own time nothing is said: a copy's time
+/// is when it was copied. The file of the ticket is removed whether it went
+/// well or not. Run on the threads for blocking work: a file is copied.
+#[tauri::command]
+pub async fn notebook_take_whole(app: AppHandle, ticket: String, name: String) -> CommandResult<NotebookFile> {
+    blocking(move || Ok(take_whole(&app.state::<AppState>(), &ticket, &name)?)).await
+}
+
+/// What `notebook_take_whole` does: the file of the ticket taken in, and
+/// removed whether that went well or not.
+fn take_whole(state: &AppState, ticket: &str, name: &str) -> glaukopis_core::Result<NotebookFile> {
+    let taken = (|| {
+        let path = state.pieces.whole(ticket)?;
+        // Read where it lies: the copy would lose what it says of itself.
+        let facts = notebook::facts_of(&path, name);
+        let dir = state.library().dir().to_owned();
+        let stored = attachments::store_file(&dir, &path, name)?;
+        let mut library = state.library();
+        library.notebook_take(&[files::Taken {
+            stored: stored.clone(),
+            folders: Vec::new(),
+            origin: name.to_owned(),
+        }])?;
+        let hash = attachments::hash_of_path(&stored).ok_or_else(not_found)?;
+        let file = library.file_view(hash).ok_or_else(not_found)?;
+        let shown = shown(&mut library, hash);
+        Ok(NotebookFile { file, shown, time: None, taken: facts.taken, place: facts.place })
+    })();
+    if let Err(error) = state.pieces.drop(ticket) {
+        tracing::warn!(%error, "the pieces of a file taken in could not be removed");
+    }
+    taken
+}
+
+/// Throws away what was sent under a ticket: the page gave the file up.
+#[tauri::command(async)]
+pub fn notebook_take_dropped(state: State<'_, AppState>, ticket: String) -> CommandResult<()> {
+    Ok(state.pieces.drop(&ticket)?)
+}
+
 /// A file of the store by its hash, whether the library lists it or the notebook holds it alone.
 #[tauri::command(async)]
 pub fn notebook_file(state: State<'_, AppState>, hash: String) -> CommandResult<FileView> {
@@ -203,7 +264,10 @@ pub fn notebook_to_library(
 /// leaves the store. The files the notebook said it held when it was last
 /// saved are held as well, so that a page that read less than there is
 /// removes nothing a saved note holds. Done once in a run; asked again, it
-/// does nothing. Gives how many files left the store.
+/// does nothing. Gives how many files left the store. Only the files that
+/// were the notebook's when the run began are judged: the page does not
+/// wait for the sweep, and what is taken out of the inbox or put into a
+/// note before it comes to the library is in no list the page read.
 #[tauri::command(async)]
 pub fn notebook_sweep(state: State<'_, AppState>, held: Vec<String>) -> CommandResult<usize> {
     Ok(sweep(&state, &held)?)
@@ -233,7 +297,10 @@ pub(crate) fn sweep(state: &AppState, held: &[String]) -> glaukopis_core::Result
     }
     let saved = state.notebook.held();
     let held: HashSet<&str> = held.iter().chain(&saved).map(String::as_str).collect();
-    let swept = library.notebook_sweep(&held);
+    // Of the files that were the notebook's when the run began, and that
+    // no note was given since: what a note was given in this run before the
+    // sweep is in no list the page read (`Library::notebook_sweep_of_run`).
+    let swept = library.notebook_sweep_of_run(&held);
     if swept.is_err() {
         // What failed may be asked again.
         state.notebook_swept.store(false, Ordering::SeqCst);
@@ -252,14 +319,17 @@ pub fn notebook_say_held(state: State<'_, AppState>, files: Vec<String>) -> Comm
 
 // ---- what the plugin for Firefox hands over (record 0102) ----
 
-/// A thing the plugin for Firefox handed to the helper, or a note written
-/// in a window of its own, as it is taken out of the notebook's inbox:
-/// where it came from, what it is, its picture taken into the store where
-/// it has one, and of a note its text and the files it holds, taken into
+/// A thing the plugin for Firefox handed to the helper, a note written in a
+/// window of its own, or what another app handed over on a phone, as it is
+/// taken out of the notebook's inbox: where it came from, what it is, its
+/// picture taken into the store where it has one, and of a note its text and
+/// the files it holds, and of a thing shared the files it holds, taken into
 /// the store.
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct InboxItem {
+    /// Its name in the inbox: by it the page knows which note a thing became.
+    pub id: String,
     pub kind: inbox::Kind,
     pub url: String,
     pub title: String,
@@ -270,9 +340,10 @@ pub struct InboxItem {
     pub image: Option<NotebookFile>,
     /// Of a note, its text as ProseMirror's JSON of the body schema; null for the rest.
     pub doc: serde_json::Value,
-    /// Of a note, the files it holds, in the order it names them; each by
-    /// the hash the store keeps it by, which is the hash the note names it
-    /// by. A file that could not be taken in is left out, and logged.
+    /// Of a note or of a thing shared, the files it holds, in the order it
+    /// names them; each by the hash the store keeps it by, which is the hash
+    /// the thing names it by. A file that could not be taken in is left out,
+    /// and logged.
     pub files: Vec<NotebookFile>,
 }
 
@@ -296,24 +367,30 @@ fn take(state: &AppState, id: &str) -> glaukopis_core::Result<InboxItem> {
         }
         None => None,
     };
-    let files = if collected.kind == inbox::Kind::Note { held(state, id, &collected.files) } else { Vec::new() };
+    // Of a thing shared the file's own time is not said: the copy's time is
+    // when it was shared, which the note says, and nothing of the file.
+    let files = match collected.kind {
+        inbox::Kind::Note => held(state, id, &collected.files, true),
+        inbox::Kind::Shared => held(state, id, &collected.files, false),
+        _ => Vec::new(),
+    };
     let inbox::Collected { kind, url, title, when, text, html, alt, name: _, doc, files: _ } = collected;
-    Ok(InboxItem { kind, url, title, when, text, html, alt, image, doc, files })
+    Ok(InboxItem { id: id.to_owned(), kind, url, title, when, text, html, alt, image, doc, files })
 }
 
-/// The files a note in the inbox holds, taken into the store as the
-/// notebook's, with what each says of itself, read from where it lies, and
-/// under the name the note gives it. A file the store has already is that
-/// file. One that cannot be taken in is left out, and the rest go on.
-fn held(state: &AppState, id: &str, held: &[inbox::HeldFile]) -> Vec<NotebookFile> {
+/// The files a note or a thing shared in the inbox holds, taken into the
+/// store as the notebook's, with what each says of itself, read from where
+/// it lies, and under the name the thing gives it; its own time only where
+/// `time_said`. A file the store has already is that file. One that cannot
+/// be taken in is left out, and the rest go on.
+fn held(state: &AppState, id: &str, held: &[inbox::HeldFile], time_said: bool) -> Vec<NotebookFile> {
     let dir = state.library().dir().to_owned();
     let mut taken = Vec::new();
     let mut facts = Vec::new();
     for file in held {
-        let stored = state
-            .inbox
-            .file_of(id, &file.hash)
-            .and_then(|path| Ok((notebook::facts(&path), attachments::store_file(&dir, &path, &file.name)?)));
+        let stored = state.inbox.file_of(id, &file.hash).and_then(|path| {
+            Ok((notebook::facts_of(&path, &file.name), attachments::store_file(&dir, &path, &file.name)?))
+        });
         match stored {
             Ok((said, stored)) => {
                 facts.push(said);
@@ -334,7 +411,8 @@ fn held(state: &AppState, id: &str, held: &[inbox::HeldFile]) -> Vec<NotebookFil
         let Some(hash) = attachments::hash_of_path(&t.stored) else { continue };
         let Some(file) = library.file_view(hash) else { continue };
         let shown = shown(&mut library, hash);
-        out.push(NotebookFile { file, shown, time: facts.time, taken: facts.taken, place: facts.place });
+        let time = if time_said { facts.time } else { None };
+        out.push(NotebookFile { file, shown, time, taken: facts.taken, place: facts.place });
     }
     out
 }
@@ -556,33 +634,185 @@ mod tests {
         assert!(state.inbox.ids().is_empty(), "taken, and gone from the inbox");
     }
 
+    /// A JPEG of nothing but its start, an Exif segment that says when it was taken, and its end: enough
+    /// for what reads the Exif, and a picture a figure shows as it is.
+    fn photograph_taken(when: &str) -> Vec<u8> {
+        assert_eq!(when.len(), 19, "as the Exif writes it: 2026:11:15 14:03:22");
+        let mut tiff = vec![b'I', b'I', 0x2a, 0, 8, 0, 0, 0];
+        // The first directory holds a pointer to the Exif directory, which holds when it was taken.
+        tiff.extend([1, 0, 0x69, 0x87, 4, 0, 1, 0, 0, 0, 26, 0, 0, 0, 0, 0, 0, 0]);
+        tiff.extend([1, 0, 0x03, 0x90, 2, 0, 20, 0, 0, 0, 44, 0, 0, 0, 0, 0, 0, 0]);
+        tiff.extend(when.as_bytes());
+        tiff.push(0);
+        let mut out = vec![0xff, 0xd8, 0xff, 0xe1];
+        out.extend(((tiff.len() + 8) as u16).to_be_bytes());
+        out.extend(b"Exif\0\0");
+        out.extend(tiff);
+        out.extend([0xff, 0xd9]);
+        out
+    }
+
+    /// The folder opened as when the application starts: a run. The claim
+    /// of the run before is let go when its state is dropped. Yet, run
+    /// beside the other tests, the folder was now and then found in use
+    /// right after, and never when the test ran alone or the tests one at
+    /// a time. What is believed to hold the claim for that instant, and
+    /// was not proven: a program that another test is starting just then
+    /// (each opening of a folder asks the programs it finds for their
+    /// versions), which between its fork and its exec holds every
+    /// descriptor this process has open, that of the claim among them. So
+    /// a folder found in use is asked for again.
+    fn run(root: &std::path::Path) -> Box<AppState> {
+        let began = std::time::Instant::now();
+        loop {
+            match crate::starting::opening(root.to_owned(), false, None, |_| {}) {
+                crate::starting::Opening::Ready(state) => break state,
+                crate::starting::Opening::InUse(_) if began.elapsed() < Duration::from_secs(10) => {
+                    std::thread::sleep(Duration::from_millis(5))
+                }
+                crate::starting::Opening::InUse(_) => panic!("the data folder stays in use"),
+                crate::starting::Opening::Failed(error) => panic!("the data folder was not opened: {error}"),
+            }
+        }
+    }
+
+    #[test]
+    fn a_picture_taken_from_the_inbox_before_the_sweep_is_kept_and_the_file_of_a_note_deleted_before_the_run_is_swept()
+    {
+        let tmp = tempfile::tempdir().unwrap();
+        let root = tmp.path().join("data");
+        // The run before: a picture the notebook holds alone, whose note was deleted.
+        let state = run(&root);
+        let old = state.library().notebook_take_image("owl.png", include_bytes!("../../icons/32x32.png")).unwrap().hash;
+        drop(state);
+
+        // This run. The page has read the notebook, and its list holds no
+        // file. Before the sweep it asked for comes to the library, what
+        // the plugin collected while the application was closed is taken
+        // out of the inbox: a region of a page, as a picture.
+        let state = run(&root);
+        state.inbox.put(&collected(Kind::Region, ""), Some(include_bytes!("../../icons/64x64.png"))).unwrap();
+        let items = take_all(&state);
+        let region = items[0].image.as_ref().expect("the picture was taken into the store").file.hash.clone();
+        assert!(state.inbox.ids().is_empty(), "it is nowhere but in the store now");
+
+        assert_eq!(sweep(&state, &[]).unwrap(), 1, "the file no note holds leaves the store");
+        assert!(state.library().file_view(&old).is_none() && state.library().stored_path(&old).is_none());
+        assert!(state.library().stored_path(&region).is_some(), "the picture just taken is still in the store");
+        assert!(state.library().file_view(&region).is_some(), "and so is its record");
+        drop(state);
+
+        // The next run judges it by a list read after it came: held by a
+        // note it stays, and held by none it goes.
+        let state = run(&root);
+        assert_eq!(sweep(&state, std::slice::from_ref(&region)).unwrap(), 0);
+        assert!(state.library().stored_path(&region).is_some());
+        drop(state);
+        let state = run(&root);
+        assert_eq!(sweep(&state, &[]).unwrap(), 1);
+        assert!(state.library().stored_path(&region).is_none());
+    }
+
+    #[test]
+    fn a_thing_shared_is_taken_with_its_files_into_the_store_as_the_notebooks_alone() {
+        use glaukopis_core::library::attachments::hash_bytes;
+        use glaukopis_core::notebook::shared::{Shared, SharedFile, put};
+        let tmp = tempfile::tempdir().unwrap();
+        let state = run(&tmp.path().join("data"));
+        // As the part of the app that was handed them leaves them, beside the inbox on the same disk.
+        let from = tmp.path().join("data").join("notebook").join("sharing").join("1-abcdefgh");
+        std::fs::create_dir_all(&from).unwrap();
+        let photograph = photograph_taken("2026:11:15 14:03:22");
+        std::fs::write(from.join("0"), &photograph).unwrap();
+        std::fs::write(from.join("1"), b"%PDF-1.4 a letter").unwrap();
+        let shared = Shared {
+            text: "\"Words\" as handed over".into(),
+            subject: "Including link: ".into(),
+            files: vec![
+                SharedFile { at: "0".into(), name: "IMG_0001.jpg".into() },
+                SharedFile { at: "1".into(), name: "Letter.pdf".into() },
+            ],
+        };
+        let put = put(&state.inbox, shared, &from).unwrap();
+
+        let items = take_all(&state);
+        assert_eq!(items.len(), 1);
+        let thing = &items[0];
+        assert_eq!(thing.id, put.id, "named as the inbox names it");
+        assert_eq!(thing.kind, Kind::Shared);
+        assert_eq!((thing.text.as_str(), thing.title.as_str()), ("\"Words\" as handed over", "Including link: "));
+        assert!(thing.html.is_empty() && thing.url.is_empty() && thing.image.is_none() && thing.doc.is_null());
+        let names: Vec<&str> = thing.files.iter().map(|f| f.file.name.as_str()).collect();
+        assert_eq!(names, vec!["IMG_0001.jpg", "Letter.pdf"], "each under its name");
+        let hashes = [hash_bytes(&photograph), hash_bytes(b"%PDF-1.4 a letter")];
+        assert_eq!(thing.files[0].file.hash, hashes[0]);
+        assert_eq!(thing.files[1].file.hash, hashes[1]);
+        // The photograph says when it was taken, and has what a figure shows of it; no file says a time of its own.
+        assert!(thing.files[0].shown.is_some());
+        assert_eq!(thing.files[0].taken.as_deref(), Some("2026-11-15T14:03:22"));
+        assert!(thing.files[1].shown.is_none() && thing.files[1].taken.is_none());
+        assert!(thing.files.iter().all(|f| f.time.is_none() && f.place.is_none()));
+        // Held by the notebook alone: in the store, and in none of the library's lists.
+        for hash in &hashes {
+            assert!(state.library().file_view(hash).is_some());
+            assert!(state.library().file_views().iter().all(|f| f.hash != *hash), "{hash} is in the library's list");
+        }
+        assert!(state.inbox.ids().is_empty(), "taken, and gone from the inbox");
+    }
+
+    #[test]
+    fn a_thing_taken_from_the_inbox_has_the_name_it_had_there_whatever_its_kind() {
+        let tmp = tempfile::tempdir().unwrap();
+        let state = run(&tmp.path().join("data"));
+        let first = state.inbox.put(&collected(Kind::Page, ""), None).unwrap();
+        let second = state.inbox.put(&collected(Kind::Selection, ""), None).unwrap();
+        let ids: Vec<String> = take_all(&state).into_iter().map(|item| item.id).collect();
+        assert_eq!(ids, vec![first, second]);
+    }
+
+    #[test]
+    fn a_file_sent_in_three_pieces_is_taken_in_whole_as_the_notebooks_alone_and_nothing_is_left() {
+        let tmp = tempfile::tempdir().unwrap();
+        let state = run(&tmp.path().join("data"));
+        let photograph = photograph_taken("2026:11:15 14:03:22");
+        let parts = [&photograph[..20], &photograph[20..60], &photograph[60..]];
+        for part in parts {
+            assert!(state.pieces.add("ticket1", "IMG_0002.jpg", part).is_ok());
+        }
+        let taken = take_whole(&state, "ticket1", "IMG_0002.jpg").unwrap();
+        assert_eq!(taken.file.name, "IMG_0002.jpg");
+        assert_eq!(taken.file.hash, glaukopis_core::library::attachments::hash_bytes(&photograph));
+        assert!(taken.shown.is_some());
+        assert_eq!(taken.taken.as_deref(), Some("2026-11-15T14:03:22"), "read where it lay, as the copy would not say");
+        assert!(taken.time.is_none() && taken.place.is_none());
+        assert!(state.library().file_view(&taken.file.hash).is_some());
+        assert!(state.library().file_views().iter().all(|f| f.hash != taken.file.hash), "the notebook's alone");
+        let leftovers = std::fs::read_dir(tmp.path().join("data").join("notebook").join("taking")).unwrap().count();
+        assert_eq!(leftovers, 0, "nothing is left in notebook/taking");
+        // The same file again is that file; a ticket never given is an error, and nothing is made of it.
+        state.pieces.add("ticket2", "again.jpg", &photograph).unwrap();
+        assert_eq!(take_whole(&state, "ticket2", "again.jpg").unwrap().file.hash, taken.file.hash);
+        assert!(take_whole(&state, "never", "x.jpg").is_err());
+        assert!(state.pieces.whole("ticket2").is_err());
+    }
+
+    #[test]
+    fn what_a_run_that_ended_left_of_files_half_taken_in_is_removed_when_the_folder_is_opened() {
+        let tmp = tempfile::tempdir().unwrap();
+        let root = tmp.path().join("data");
+        let state = run(&root);
+        state.pieces.add("left", "half.pdf", b"%PDF-1.4 half of it").unwrap();
+        assert!(state.pieces.whole("left").is_ok());
+        drop(state);
+        let state = run(&root);
+        assert!(state.pieces.whole("left").is_err());
+    }
+
     #[test]
     fn nothing_is_swept_in_a_run_where_the_notebook_was_refused() {
         let tmp = tempfile::tempdir().unwrap();
         let root = tmp.path().join("data");
-        // The folder opened as when the application starts: a run. The claim
-        // of the run before is let go when its state is dropped. Yet, run
-        // beside the other tests, the folder was now and then found in use
-        // right after, and never when this test ran alone or the tests one
-        // at a time. What is believed to hold the claim for that instant,
-        // and was not proven: a program that another test is starting just
-        // then (each opening of a folder asks the programs it finds for
-        // their versions), which between its fork and its exec holds every
-        // descriptor this process has open, that of the claim among them.
-        // So a folder found in use is asked for again.
-        let open = || {
-            let began = std::time::Instant::now();
-            loop {
-                match crate::starting::opening(root.clone(), false, None, |_| {}) {
-                    crate::starting::Opening::Ready(state) => break state,
-                    crate::starting::Opening::InUse(_) if began.elapsed() < Duration::from_secs(10) => {
-                        std::thread::sleep(Duration::from_millis(5))
-                    }
-                    crate::starting::Opening::InUse(_) => panic!("the data folder stays in use"),
-                    crate::starting::Opening::Failed(error) => panic!("the data folder was not opened: {error}"),
-                }
-            }
-        };
+        let open = || run(&root);
         // Where the engine of the synchronization keeps whether the notebook was refused at its last exchange.
         let refused = root.join("sync").join("notebook-refused.json");
         let keep = |said: &str| {

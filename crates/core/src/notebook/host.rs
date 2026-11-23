@@ -19,7 +19,8 @@
 //! ```
 //!
 //! The words: `not-understood` (no JSON, or a kind not known, or `note`,
-//! which is the window's of a note and never the plugin's), `too-large`
+//! which is the window's of a note, or `shared`, which is what another app
+//! hands over on a phone, neither ever the plugin's), `too-large`
 //! (a message over 96 MB, which ends the helper, or a picture over 50 MB),
 //! `not-a-picture`, `no-data-folder` (Glaukopis was never started for this
 //! user), `not-written`. The plugin says them to the writer in its own words.
@@ -133,9 +134,10 @@ fn answer(message: &[u8], inbox: std::result::Result<&Inbox, &Error>) -> Value {
     }
     let image = message.as_object_mut().and_then(|fields| fields.remove("image"));
     let Ok(mut collected) = serde_json::from_value::<Collected>(message) else { return refused("not-understood") };
-    // A note written in a window of its own is no kind the plugin hands
-    // over, and the text and the files of one are none of the plugin's.
-    if collected.kind == Kind::Note {
+    // A note written in a window of its own, and a thing another app handed
+    // over on a phone, are no kinds the plugin hands over, and the text and
+    // the files of a note are none of the plugin's.
+    if matches!(collected.kind, Kind::Note | Kind::Shared) {
         return refused("not-understood");
     }
     collected.doc = Value::Null;
@@ -332,14 +334,15 @@ mod tests {
         input.extend_from_slice(b"oops");
         input.extend(framed(&[json!({"kind": "video", "url": "x"}), json!({"url": "no kind"}), json!([1, 2])]));
         input.extend(framed(&[json!({"kind": "page", "title": 3})]));
-        // A note of the window of its own is not the plugin's to hand over.
+        // A note of the window of its own is not the plugin's to hand over, nor a thing another app shared.
         input.extend(framed(&[json!({"kind": "note", "text": "Words."})]));
+        input.extend(framed(&[json!({"kind": "shared", "text": "Words.", "title": "A subject"})]));
         input.extend(framed(&[json!({"kind": "hello"})]));
         let (code, answers) = helper.run(&input);
         assert_eq!(code, 0);
         let refused = json!({"ok": false, "error": "not-understood"});
-        assert_eq!(answers[..6], vec![refused; 6][..]);
-        assert_eq!(answers[6]["ok"], json!(true), "it went on");
+        assert_eq!(answers[..7], vec![refused; 7][..]);
+        assert_eq!(answers[7]["ok"], json!(true), "it went on");
         assert!(helper.inbox().ids().is_empty());
     }
 
