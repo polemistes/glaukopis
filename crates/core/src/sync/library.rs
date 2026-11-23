@@ -575,7 +575,9 @@ struct Mark {
 /// tells the home that their records went, or that the notes hold them no
 /// more. Here, where the notes hold the file, neither is taken: a record
 /// said to be gone leaves the file to the notebook whatever its mark says,
-/// and a mark said to be gone stays as it is; and both are told again.
+/// and where the mark alone is said to be gone, the file is marked as one
+/// the notes hold beside the library, which then lists it, whatever its
+/// mark was here; and both are told again.
 pub struct Records<'a> {
     pub library: &'a Mutex<Library>,
     pub doc: &'a HomeDoc,
@@ -587,8 +589,8 @@ pub struct Records<'a> {
     /// take them from the others.
     pub kept_for_notes: RefCell<BTreeSet<String>>,
     /// The files of which only the mark that the notes hold them was taken
-    /// off elsewhere, and whose mark stays here, the notes here holding
-    /// them: the mark is told again.
+    /// off elsewhere, and that are marked here as held beside the library,
+    /// the notes here holding them: that mark is told again.
     pub marks_kept_for_notes: RefCell<BTreeSet<String>>,
     pub written: Cell<u64>,
 }
@@ -719,7 +721,13 @@ impl Store for Records<'_> {
                         };
                         if said.is_none() && record.notebook.is_some() && self.held.contains(hash) {
                             // Taken off elsewhere, by one that knows less of the notebook than
-                            // this device: the notes here hold the file, and the mark stays.
+                            // this device: the notes here hold the file, and a mark stays. It
+                            // is the mark of a file the library has too, never of one the
+                            // notebook holds alone: with no mark in the home the library
+                            // lists the file, and to tell again that the notebook holds it
+                            // alone would take it out of the library's lists on every
+                            // device, for the next sweep there to delete.
+                            record.notebook = Some(Held::Also);
                             self.marks_kept_for_notes.borrow_mut().insert(hash.to_owned());
                         } else {
                             record.notebook = said;
@@ -1104,6 +1112,39 @@ mod tests {
         a.meet(&server);
         assert_eq!(mark(&a), None, "the library's alone again");
         assert!(a.lib().stored_path(&hash).is_some(), "and the library has its file");
+    }
+
+    #[test]
+    fn a_mark_kept_for_the_notes_is_of_a_file_the_library_has_too_never_of_one_the_notebook_holds_alone() {
+        let server = HomeDoc::new();
+        let (a, b) = (Computer::new(), Computer::new());
+        // A picture pasted into a note: the notebook holds it alone, on both.
+        let hash = a.lib().notebook_take_image("pasted", &crate::library::figures::fixtures::PNG).unwrap().hash;
+        let held: BTreeSet<String> = [hash.clone()].into();
+        a.meet_holding(&server, &held);
+        b.meet(&server);
+        let mark = |c: &Computer| c.lib().files.get(&hash).expect("the record").notebook;
+        assert_eq!((mark(&a), mark(&b)), (Some(Held::Only), Some(Held::Only)));
+        // On the second the picture is put among the library's files, as
+        // when its note goes into a document; then the note is deleted
+        // there, and the sweep leaves the picture to the library alone.
+        b.lib().to_library(&hash, None).unwrap();
+        assert_eq!(mark(&b), Some(Held::Also));
+        assert_eq!(b.lib().notebook_sweep(&std::collections::HashSet::new()).unwrap(), 0);
+        assert_eq!(mark(&b), None);
+        b.meet(&server);
+        // The first was not running meanwhile: what its notes hold was last said when they held the picture.
+        a.meet_holding(&server, &held);
+        assert_eq!(mark(&a), Some(Held::Also), "held beside the library, which lists it now");
+        assert!(a.lib().files.get(&hash).unwrap().listed());
+        a.meet_holding(&server, &held);
+        assert_eq!(server.get("files", &format!("{hash}/{MARK}")).as_deref(), Some("also"), "that is what is told");
+        b.meet(&server);
+        assert_eq!(mark(&b), Some(Held::Also));
+        assert!(b.lib().files.get(&hash).unwrap().listed(), "the library of the second lists it still");
+        // The second sweeps again, its notes holding nothing: the picture is the library's, and stays.
+        assert_eq!(b.lib().notebook_sweep(&std::collections::HashSet::new()).unwrap(), 0, "nothing leaves the store");
+        assert!(b.lib().files.get(&hash).is_some());
     }
 
     #[test]
