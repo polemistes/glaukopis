@@ -865,7 +865,8 @@ So that no builder adds it.
 3. **`waiting` is false** where a phone's notes are held back by a home document or a notebook of a later form; the line then says what `problem` says.
 4. **A file left to try again** waits the half minute, not at once, also when the app is behind, so that a file that fails for its own sake does not make the engine ask without pause.
 5. **On Android a body of bytes arrives as JSON**: found on the emulator, where nothing written on the phone was kept until `with_head` took that form (record 0123).
-6. **The settings' script** has failed since the synchronization was built: the sentence under *Synchronization* counts as a help text. The owner's to say.
+7. **The owner's rule of 2026-11-23: where the form has changed, the synchronization stops** on the older device as a whole, a computer or a phone, which says *Update is needed for synchronization*. Today a later form ends a round only where it is the home document's; a later notebook leaves the references going on a phone, and a later project is refused alone on a computer. To be built, by the most capable model, at the head of the next stage.
+6. **The settings' script** (mended on 2026-11-23: the sentence is the owner's) has failed since the synchronization was built: the sentence under *Synchronization* counts as a help text. The owner's to say.
 
 ### Chosen here, to be told
 

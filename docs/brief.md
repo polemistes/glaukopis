@@ -2056,3 +2056,16 @@ Of what stage 2 left to the owner (asked what the sentence under
   device, and can be brought back; what it holds goes when the trash is
   emptied. Not built; a stage of the plan.
 - The phone's new words are the owner's to look at later.
+
+Answered when the words were shown:
+
+> 1. Change the sentence to: "Projects, the library, the notebook and your settings will be synchronized between devices". On the phone: "Only the Notebook is synchronized." 2. If the format has changed, the synchronization stops. The older device (it could also be the desktop program that is out of date, you know), gets the message: "Update is needed for syncronization." 3. I am not sure yet if for example an image is the note or an attachment of the note. How is it now? It should at least be possible to make a picture in a note into a picture that can be used in a document.
+
+- The sentences and the message are as the owner wrote them (built the same
+  day, in English and Bokmål).
+- **Where the form has changed, the synchronization stops** on the older
+  device, a computer or a phone, as a whole: today a computer goes on with
+  what it can, and a phone goes on with the references where only the
+  notebook is of a later form. Not yet built: for the next stage.
+- **What a picture in a note is**: undecided. A picture in a note is to be
+  usable in a document.
