@@ -684,7 +684,8 @@ impl Sync {
             problems.push(tr!("core-sync-problem-notebook", why = error.to_string()));
         }
         // After the notebook, whose notes hold files of the store.
-        if let Err(error) = self.library_round(&home, &joined, library, docs, told, files_settled, &mut problems) {
+        if let Err(error) = self.library_round(&home, &joined, library, docs, told, files_settled, takes, &mut problems)
+        {
             if of_the_server(&error) {
                 return Err(error);
             }
@@ -950,6 +951,8 @@ impl Sync {
     /// changed; then its files, where they are due. Where the files of the
     /// library lie as they did when it was last brought to be the same, and
     /// the server's document is the one last seen, nothing of it is read.
+    /// The same on a phone, its stores mirrored both ways as on a computer:
+    /// `takes` is for the files alone (`files::bring`).
     #[allow(clippy::too_many_arguments, reason = "what a round holds, handed on as it is")]
     fn library_round(
         &self,
@@ -959,6 +962,7 @@ impl Sync {
         docs: &mut BTreeMap<String, String>,
         told: &mut files::Told,
         files_settled: &mut bool,
+        takes: Takes,
         problems: &mut Vec<String>,
     ) -> Result<()> {
         let name = LIBRARY.name();
@@ -1032,7 +1036,7 @@ impl Sync {
         }
         if changed || !*files_settled {
             let note = |hash: &str, size: Option<&str>| self.note(LIBRARY, doc, STORED, hash, size);
-            let done = files::bring(home, &self.library, doc, told, &note, &own)?;
+            let done = files::bring(home, &self.library, doc, told, &note, &own, takes)?;
             problems.extend(done.problems);
             *files_settled = !done.again;
         }

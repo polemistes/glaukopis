@@ -9,6 +9,16 @@
 //! - one a record names that the home holds and that is not here is fetched;
 //! - one the home holds that no record names any more is taken off the server.
 //!
+//! So on a device that takes everything of its home, a computer. One that
+//! takes the notes, a phone (`Takes`), holds the files its notes hold and no
+//! others, and does not hold what the home holds:
+//!
+//! - a file is sent as on a computer;
+//! - one is fetched only where its record says, besides, that the notes hold
+//!   it (`<hash>/notebook`, beside the library or alone);
+//! - none is taken off the server, ever: a file no record names lies there
+//!   until a computer of the home makes a round.
+//!
 //! What the home holds is said in the map `stored` of the library's
 //! document, by the computer that sent a file or found it there, so that a
 //! computer knows what there is to fetch without asking, and a round in
@@ -37,6 +47,7 @@ use crate::tr;
 
 use super::hex;
 use super::home::HomeDoc;
+use super::kept::Takes;
 use super::library::{RECORD, STORED};
 use super::remote::Home;
 
@@ -64,6 +75,8 @@ pub struct Done {
 /// A file a record names, as the library's document says it.
 struct Named {
     name: String,
+    /// Whether the record says that the notes hold it, beside the library or alone.
+    notes: bool,
 }
 
 /// Writes what is fetched to its file, and works out what it holds as it does.
@@ -102,8 +115,11 @@ fn clear(arrived: &Path) {
 /// the records of the library's document say. `note` writes into the map
 /// `stored` of the document: a size where the home holds the file, nothing
 /// where it does not. `written` counts how often the library's files were
-/// written by keeping what came (`Library::writes`). What fails for one file
-/// is said and the rest go on; what fails for the server as a whole ends it.
+/// written by keeping what came (`Library::writes`). `takes` is what this
+/// device takes of its home: one that takes the notes fetches the files
+/// the notes hold and no others, and takes none off the server. What fails
+/// for one file is said and the rest go on; what fails for the server as a
+/// whole ends it.
 pub fn bring(
     home: &Home,
     library: &Mutex<Library>,
@@ -111,13 +127,18 @@ pub fn bring(
     told: &mut Told,
     note: &dyn Fn(&str, Option<&str>) -> Result<()>,
     written: &Cell<u64>,
+    takes: Takes,
 ) -> Result<Done> {
     let records = doc.map("files");
     let named: BTreeMap<&str, Named> = records
         .keys()
         .filter_map(|name| name.strip_suffix(&format!("/{RECORD}")))
         .filter(|hash| attachments::is_hash(hash))
-        .map(|hash| (hash, Named { name: records.get(&format!("{hash}/name")).cloned().unwrap_or_default() }))
+        .map(|hash| {
+            let name = records.get(&format!("{hash}/name")).cloned().unwrap_or_default();
+            let notes = matches!(records.get(&format!("{hash}/notebook")).map(String::as_str), Some("also" | "only"));
+            (hash, Named { name, notes })
+        })
         .collect();
     let stored = doc.map(STORED);
     // Where each lies here, with its size, looked up at once.
@@ -179,9 +200,15 @@ pub fn bring(
         }
     }
 
-    for (hash, size) in
-        stored.iter().filter(|(hash, _)| named.contains_key(hash.as_str()) && !here.contains_key(hash.as_str()))
-    {
+    // Whether a file a record names is one this device fetches: a computer
+    // every one, a phone those whose record says that the notes hold them.
+    let fetched = |file: &Named| match takes {
+        Takes::Everything => true,
+        Takes::Notes => file.notes,
+    };
+    for (hash, size) in stored.iter().filter(|(hash, _)| {
+        named.get(hash.as_str()).is_some_and(fetched) && !here.contains_key(hash.as_str())
+    }) {
         let name = &named[hash.as_str()].name;
         let limit = size.parse::<u64>().unwrap_or(u64::MAX);
         match fetch(home, library, &dir, hash, limit, written) {
@@ -197,15 +224,22 @@ pub fn bring(
         }
     }
 
-    for hash in stored.keys().filter(|hash| !named.contains_key(hash.as_str())) {
-        match home.delete_file(hash) {
-            Ok(()) => note(hash, None)?,
-            Err(error) if of_the_server(&error) => return Err(error),
-            Err(error) => {
-                tracing::warn!(%error, hash, "a file no record names could not be taken off the server");
-                done.again = true;
+    match takes {
+        Takes::Everything => {
+            for hash in stored.keys().filter(|hash| !named.contains_key(hash.as_str())) {
+                match home.delete_file(hash) {
+                    Ok(()) => note(hash, None)?,
+                    Err(error) if of_the_server(&error) => return Err(error),
+                    Err(error) => {
+                        tracing::warn!(%error, hash, "a file no record names could not be taken off the server");
+                        done.again = true;
+                    }
+                }
             }
         }
+        // A phone takes nothing off the server: it does not hold what the
+        // home holds, and a record it lacks says nothing of the file.
+        Takes::Notes => {}
     }
     Ok(done)
 }
