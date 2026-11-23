@@ -45,6 +45,8 @@ async function setUp(fresh = false) {
   const id = notebook.addNote();
   // As a note read from the disk: nothing to undo yet.
   notebook.undoManager.clear();
+  // The steps begun anew, as the page begins them when it starts: one note gone to from the notes.
+  places.begin();
   places.go({ at: 'note', note: id, fresh });
   const target = document.createElement('div');
   document.body.append(target);
