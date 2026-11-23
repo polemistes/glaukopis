@@ -9,13 +9,15 @@
 // Then the web view is taken away for the device's user and the app started
 // again: the words for none. It is put back, and the first words are there
 // again. A web view is taken away on emulator-5586 and on no other device.
+// Last, words are shared to the app: the screen says why it cannot start,
+// and the thing lies in the inbox of the app's folder.
 //
 // On the new device (the default, emulator-5584): the app started, the page
 // of the phone is there, at the notes.
 //
 // Screenshots in e2e/output/android-web-view-<n>-<what>.png.
 
-import { PACKAGE, page, screenText, screenshot, shell, sleep, start } from './device.mjs';
+import { PACKAGE, page, screenText, screenshot, share, shell, sleep, start } from './device.mjs';
 
 const serial = process.env.ANDROID_SERIAL || 'emulator-5584';
 const checks = [];
@@ -61,6 +63,18 @@ if (serial === 'emulator-5586') {
     await screenshot('web-view-3-back');
     check('with the web view back the first words are there again', old ? text.some((t) => OLD.test(t)) : text.some((t) => NONE.test(t)));
   }
+
+  // A share where the web view will not do (stage 3): what was shared is
+  // put into the inbox before the web view is looked at, and becomes a note
+  // when the app first runs where it can.
+  await shell(`am force-stop ${PACKAGE}`);
+  await share({ text: 'Shared on a device too old for the page' });
+  await sleep(5000);
+  text = await screenText();
+  await screenshot('web-view-4-shared');
+  check('a share on such a device: the screen says why the app cannot start', text.some((t) => TITLE.test(t)), text.join(' | '));
+  const inbox = (await shell(`run-as ${PACKAGE} sh -c "ls files/data/notebook/inbox 2>/dev/null"`)).trim();
+  check('and the inbox in the app\'s folder holds the thing shared', inbox.split(/\s+/).filter((n) => /^\d{13}-/.test(n)).length >= 1, inbox);
 } else if (serial === 'emulator-5584') {
   await start();
   const p = await page();
