@@ -12,6 +12,8 @@ pub mod notes;
 pub mod notewindow;
 pub mod notices;
 pub mod ocr;
+// Printing is a computer's: a phone's web view has none to ask for.
+#[cfg(desktop)]
 pub mod printing;
 pub mod projectfile;
 pub mod projects;

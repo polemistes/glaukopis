@@ -37,7 +37,7 @@ pub fn run() {
                     tracing::info!(data = %root.display(), "Glaukopis on a phone");
                     match DataDir::open(root) {
                         Ok(data) => {
-                            crate::speak_as_chosen(Some(&data));
+                            crate::starting::speak_as_chosen(Some(&data));
                             Ok(NoteWindow::new(data))
                         }
                         Err(error) => {
@@ -70,7 +70,7 @@ pub fn run() {
             commands::system::file_read,
             commands::clipboard::clipboard_read,
         ])
-        .build(crate::context());
+        .build(crate::starting::context());
     match built {
         Ok(app) => app.run(|_, event| {
             if let tauri::RunEvent::Exit = event {

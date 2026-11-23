@@ -17,8 +17,10 @@ use tauri::{AppHandle, Emitter, EventTarget, Manager, State, WebviewWindow};
 
 use glaukopis_core::i18n::tr;
 use glaukopis_core::library::{FileView, Library, attachments, files};
+#[cfg(desktop)]
+use glaukopis_core::notebook::firefox;
 use glaukopis_core::notebook::inbox::{self, Stamp};
-use glaukopis_core::notebook::{self, Place, Summary, firefox};
+use glaukopis_core::notebook::{self, Place, Summary};
 
 use super::projects::{put_part, with_head};
 use super::viewer::blocking;
@@ -424,22 +426,28 @@ fn tell_one_window(app: &AppHandle) {
     }
 }
 
+// Firefox and its helper are a computer's alone: there is no helper on a phone.
+
 /// Whether Firefox is set up to start the helper for this user.
+#[cfg(desktop)]
 pub type FirefoxSetup = firefox::Setup;
 
 /// This program, as Firefox is to start it.
+#[cfg(desktop)]
 fn this_program() -> glaukopis_core::Result<PathBuf> {
     let exe = std::env::current_exe().map_err(|e| glaukopis_core::Error::invalid(e.to_string()))?;
     Ok(firefox::this_program(exe))
 }
 
 /// Whether the file that tells Firefox of the helper is there, and names this program.
+#[cfg(desktop)]
 #[tauri::command(async)]
 pub fn firefox_setup() -> CommandResult<FirefoxSetup> {
     Ok(firefox::Place::of_this_user().state(&this_program()?))
 }
 
 /// Writes the file that tells Firefox of the helper, for this user.
+#[cfg(desktop)]
 #[tauri::command(async)]
 pub fn firefox_set_up() -> CommandResult<FirefoxSetup> {
     let setup = firefox::Place::of_this_user().set_up(&this_program()?)?;
@@ -448,6 +456,7 @@ pub fn firefox_set_up() -> CommandResult<FirefoxSetup> {
 }
 
 /// Removes it.
+#[cfg(desktop)]
 #[tauri::command(async)]
 pub fn firefox_remove() -> CommandResult<FirefoxSetup> {
     let setup = firefox::Place::of_this_user().remove(&this_program()?)?;
@@ -479,7 +488,9 @@ mod tests {
     fn a_note_in_the_inbox_is_taken_with_its_files_into_the_store() {
         use glaukopis_core::notebook::note_window::{NoteText, NoteWindow};
         let tmp = tempfile::tempdir().unwrap();
-        let crate::Opening::Ready(state) = crate::opening(tmp.path().join("data"), false, None, |_| {}) else {
+        let crate::starting::Opening::Ready(state) =
+            crate::starting::opening(tmp.path().join("data"), false, None, |_| {})
+        else {
             panic!("the data folder was not opened");
         };
         // Written in a window of its own, beside the application.
@@ -517,7 +528,9 @@ mod tests {
     #[test]
     fn what_lies_in_the_inbox_is_taken_once_in_order_and_what_cannot_be_is_set_aside() {
         let tmp = tempfile::tempdir().unwrap();
-        let crate::Opening::Ready(state) = crate::opening(tmp.path().join("data"), false, None, |_| {}) else {
+        let crate::starting::Opening::Ready(state) =
+            crate::starting::opening(tmp.path().join("data"), false, None, |_| {})
+        else {
             panic!("the data folder was not opened");
         };
         let picture = include_bytes!("../../icons/32x32.png");
