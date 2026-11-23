@@ -124,8 +124,28 @@ impl Device {
         self.projects.info(id).is_ok()
     }
 
+    /// The name a project has in the trash, where it is there.
+    fn trashed(&self, id: &str) -> Option<String> {
+        self.projects.trash().unwrap().into_iter().find(|(_, info)| info.id == id).map(|(entry, _)| entry)
+    }
+
     fn in_trash(&self, id: &str) -> bool {
-        self.projects.trash().unwrap().into_iter().any(|(_, info)| info.id == id)
+        self.trashed(id).is_some()
+    }
+
+    /// Puts a project that another device holds into this one's folder by
+    /// hand, under its id, with all it holds and with what the other last
+    /// saw of the server's document: as a computer of the home holds it,
+    /// and as a phone has no way to come by it.
+    fn put_project_of(&self, other: &Device, id: &str) {
+        let from = other.projects.dir(id).unwrap();
+        let state = whole::read(&from).unwrap().expect("the other holds the project");
+        let name = other.projects.info(id).unwrap().name;
+        self.projects.create_from(id, &name, &state).unwrap();
+        let (joined, _) = Kept::new(&other.data).joined().unwrap().expect("the other is in a home");
+        let seen = sync::kept::cursor(&from, &joined.home, &format!("project/{id}")).expect("the other exchanged it");
+        let had = sync::kept::had(&from).unwrap_or_default();
+        sync::kept::keep_cursor(&self.projects.dir(id).unwrap(), &seen, &had).unwrap();
     }
 
     // ---- the settings ----
@@ -314,10 +334,11 @@ impl Device {
         self.asked(|home| home.files().unwrap().0.into_iter().map(|f| f.hash).collect())
     }
 
-    /// The library's document as the server holds it: all of it asked for, and nothing sent.
-    fn library_of_the_home(&self) -> HomeDoc {
+    /// A document of maps as the server holds it, by its kind (`home`,
+    /// `library`): all of it asked for, and nothing sent.
+    fn maps_of_the_home(&self, kind: &str) -> HomeDoc {
         self.asked(|home| {
-            let answer = home.exchange("library", "the", None, None, &[], sync::FORM, true).unwrap();
+            let answer = home.exchange(kind, "the", None, None, &[], sync::FORM, true).unwrap();
             HomeDoc::load(Some(&answer.news)).unwrap()
         })
     }
@@ -653,7 +674,7 @@ async fn a_phone_fetches_a_file_once_a_note_holds_it_and_takes_none_off_the_serv
         assert!(phone.bytes(&photograph).is_none() && phone.lib().files.get(&photograph).is_none());
         for _ in 0..2 {
             phone.round();
-            let said = phone.library_of_the_home();
+            let said = phone.maps_of_the_home("library");
             assert_eq!(said.get("files", &format!("{photograph}/added")), None, "its record is out of the document");
             assert!(said.get("stored", &photograph).is_some(), "which says still that the home holds the file");
             assert!(phone.home_files().contains(&photograph), "and the server holds it: a phone takes none off");
@@ -807,6 +828,68 @@ async fn a_device_does_no_more_than_its_role_and_what_it_joined_as_both_allow() 
         assert_eq!(computer.settings().get("enterBreaks"), None);
         assert_eq!(laptop.text(&iliad), "Sing, goddess, the wrath", "the device holds what was written on it");
         assert!(laptop.has(&other));
+    })
+    .await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_phone_takes_no_document_off_the_server_and_says_no_project_gone_whatever_its_trash_holds() {
+    with_server(|address, _| {
+        let (computer, phone) = a_computer_and_a_phone(&address);
+        let in_the_trash = computer.project("Left in the trash", WORDS);
+        let brought_back = computer.project("Brought back from the trash", WORDS);
+        let removed = computer.project("Removed from the trash", WORDS);
+        let all = [&in_the_trash, &brought_back, &removed];
+        settle(&[&computer, &phone]);
+        assert!(phone.projects.list().unwrap().is_empty(), "a phone fetches none of them");
+
+        // Put into the phone's folder by hand: the computer's projects, each
+        // as a computer of the home holds it.
+        for id in all {
+            phone.put_project_of(&computer, id);
+        }
+        let before = phone.listed();
+        // Then, by the core's own calls, one goes to the trash and stays;
+        // one goes there and is brought back; and one goes there and, after
+        // a round or two, is removed from it for good. On a computer the
+        // first is then said to be gone, and the last is taken off the server.
+        phone.projects.delete(&in_the_trash).unwrap();
+        phone.projects.delete(&brought_back).unwrap();
+        let back = phone.projects.restore(&phone.trashed(&brought_back).expect("it is in the trash")).unwrap();
+        assert_eq!(back.id, brought_back, "under its own id");
+        phone.projects.delete(&removed).unwrap();
+        for _ in 0..2 {
+            phone.round();
+        }
+        phone.projects.purge(&phone.trashed(&removed).expect("it is in the trash")).unwrap();
+        for _ in 0..3 {
+            phone.round();
+        }
+
+        let listed = phone.listed();
+        for id in all {
+            assert!(listed.contains_key(&format!("project/{id}")), "the server lists every project the computer made");
+        }
+        assert_eq!(listed, before, "each as it was, and the home document as it was");
+        assert!(phone.maps_of_the_home("home").map("gone").is_empty(), "no project is said to be gone");
+        let base = phone.data.sync().join("base");
+        assert!(
+            !base.join("gone.json").exists() && !base.join("trash.json").exists(),
+            "the phone keeps nothing of what is gone or of what it saw in its trash"
+        );
+
+        // The computer holds them all as it did, and on the phone they lie where they were left.
+        for _ in 0..2 {
+            computer.round();
+        }
+        for id in all {
+            assert!(computer.has(id) && !computer.in_trash(id), "none went to the computer's trash");
+            assert_eq!(computer.text(id), WORDS);
+        }
+        assert!(computer.home_kept().map("gone").is_empty());
+        assert_eq!(computer.listed(), before);
+        assert!(phone.in_trash(&in_the_trash) && phone.has(&brought_back));
+        assert!(!phone.has(&removed) && !phone.in_trash(&removed));
     })
     .await;
 }
