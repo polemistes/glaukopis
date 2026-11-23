@@ -233,8 +233,9 @@ try {
     `return Array.from(document.querySelectorAll('.settings p.about')).map((p) => p.textContent.trim().slice(0, 40))`,
   );
   check(
-    'the settings have no help texts but the one of the dictionaries and the one for translators',
-    abouts.length === 2 && /Hunspell/.test(abouts[0]) && /translators/.test(abouts[1]),
+    'the settings have no help texts but those of the dictionaries, the synchronization and translators',
+    // The sentence under Synchronization is the owner's (2026-11-23): what is synchronized.
+    abouts.length === 3 && /Hunspell/.test(abouts[0]) && /synchronized between devices/.test(abouts[1]) && /translators/.test(abouts[2]),
     JSON.stringify(abouts),
   );
   const defaults = await app.exec(

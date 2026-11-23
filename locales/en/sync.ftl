@@ -3,9 +3,9 @@
 # written in on two devices apart. See locales/README.md.
 
 sync-title = Synchronization
-sync-about = Your projects, your library, your notebook and your settings, the same on each of your computers, through a server.
+sync-about = Projects, the library, the notebook and your settings will be synchronized between devices.
 # Under the heading on a device that takes the notes only, a phone.
-sync-about-notes = Your notebook, the same on this device as on your others, through a server. The references of your library come with it, without their files.
+sync-about-notes = Only the notebook is synchronized.
 
 ## Before it is on.
 

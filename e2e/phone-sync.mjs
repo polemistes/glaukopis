@@ -326,7 +326,7 @@ try {
     return { inputmode: s.getAttribute('inputmode'), capitals: s.getAttribute('autocapitalize'), correct: s.getAttribute('autocorrect'), remember: s.getAttribute('autocomplete') };`);
   check('the field of the server asks the keyboard for an address, with no capital, no correction and nothing remembered', asked.inputmode === 'url' && asked.capitals === 'off' && asked.correct === 'off' && asked.remember === 'off', JSON.stringify(asked));
   const aboutNotes = await phone.text('[data-sync-about]');
-  check('under Synchronization is the sentence of a device that takes the notes', aboutNotes.includes('Your notebook, the same on this device as on your others') && !aboutNotes.includes('projects'), aboutNotes);
+  check('under Synchronization is the sentence of a device that takes the notes', aboutNotes.includes('Only the notebook is synchronized.') && !aboutNotes.includes('projects'), aboutNotes);
   const nameLabel = await phone.exec(`return document.querySelector('input[name="sync-name"]').closest('.field')?.querySelector('label')?.textContent.trim() ?? ''`);
   check('the field of the name says device', nameLabel === 'Name of this device', nameLabel);
   const about = await phone.text('[data-phone-about]');

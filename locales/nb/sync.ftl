@@ -3,9 +3,9 @@
 # prosjekt ble skrevet i på to enheter hver for seg. Se locales/README.md.
 
 sync-title = Synkronisering
-sync-about = Prosjektene, biblioteket, notatblokken og innstillingene dine, de samme på hver av datamaskinene dine, gjennom en server.
+sync-about = Prosjekter, biblioteket, notatblokken og innstillingene dine blir synkronisert mellom enhetene.
 # Under overskriften på en enhet som bare tar imot notatene, en telefon.
-sync-about-notes = Notatblokken din, den samme på denne enheten som på de andre enhetene dine, gjennom en server. Referansene i biblioteket følger med, uten filene sine.
+sync-about-notes = Bare notatblokken blir synkronisert.
 
 ## Før den er slått på.
 

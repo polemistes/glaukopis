@@ -128,16 +128,16 @@ describe('the synchronization in the settings', () => {
   it('says what a computer has under the heading, and what a phone has with takes="notes"', async () => {
     const computer = await setUp();
     expect(computer.about()).toBe(t('sync-about'));
-    expect(computer.about()).toContain('on each of your computers');
+    expect(computer.about()).toBe('Projects, the library, the notebook and your settings will be synchronized between devices.');
     done();
     done = () => {};
     const phone = await setUp({ takes: 'notes' });
     expect(phone.about()).toBe(t('sync-about-notes'));
-    expect(phone.about()).toContain('Your notebook, the same on this device as on your others');
+    expect(phone.about()).toBe('Only the notebook is synchronized.');
     expect(phone.about()).not.toContain('projects');
     languages.current = 'nb';
     flushSync();
-    expect(phone.about()).toContain('Notatblokken din, den samme på denne enheten');
+    expect(phone.about()).toBe('Bare notatblokken blir synkronisert.');
   });
 
   it('says the same as without a prop where takes is "everything"', async () => {

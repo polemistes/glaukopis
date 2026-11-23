@@ -11,8 +11,8 @@ core-sync-not-a-change = A change to a document cannot be read: { $why }
 
 core-sync-old-server = The server at { $host } is older than this version of Glaukopis and cannot synchronize. It must be brought up to date.
 core-sync-refused = The server no longer lets this device in. It was removed from those that are synchronized, or nothing of them is kept on the server any more.
-core-sync-later-home = Another of your devices has a later version of Glaukopis, which keeps what is synchronized in a form this version does not know. Update Glaukopis here.
-core-sync-later-library = Another of your devices has a later version of Glaukopis, which keeps the library in a form this version does not know. Update Glaukopis here.
+core-sync-later-home = Update is needed for synchronization.
+core-sync-later-library = Update is needed for synchronization.
 
 ## Turning it on, and the devices.
 
