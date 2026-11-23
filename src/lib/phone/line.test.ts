@@ -30,6 +30,13 @@ describe('the line over the notes', () => {
     expect(lineOf(status({ state: 'refused', waiting: true }))).toBe('sync-refused');
   });
 
+  it('says that an update is needed where the synchronization stopped for a later form', () => {
+    expect(lineOf(status({ state: 'outdated', problem: 'Update is needed' }))).toBe(
+      'sync-outdated',
+    );
+    expect(lineOf(status({ state: 'outdated', waiting: true }))).toBe('sync-outdated');
+  });
+
   it('says what waits where the server is not reached and something does', () => {
     expect(lineOf(status({ state: 'offline', waiting: true, problem: 'no network' }))).toBe(
       'phone-waiting',
