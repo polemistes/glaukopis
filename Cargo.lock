@@ -2283,6 +2283,7 @@ version = "0.2.14"
 dependencies = [
  "base64 0.22.1",
  "glaukopis-core",
+ "jni",
  "serde",
  "serde_json",
  "tauri",

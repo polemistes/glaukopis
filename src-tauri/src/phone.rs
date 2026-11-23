@@ -40,6 +40,13 @@ pub const FLAG: &str = "--phone";
 #[cfg(desktop)]
 pub const ROUND: &str = "--round";
 
+/// Whether the phone is asked to make one round of the door and end:
+/// `--round` among its arguments, wherever it stands.
+#[cfg(desktop)]
+fn round_asked(args: &[OsString]) -> bool {
+    args.iter().skip(1).any(|a| a == ROUND)
+}
+
 /// Whether the application is asked to be the phone: `--phone` among its
 /// arguments, wherever it stands.
 #[cfg(desktop)]
@@ -66,7 +73,7 @@ pub fn run() {
     // for done and 1 for to be tried again.
     #[cfg(desktop)]
     if let Some(root) = &root
-        && std::env::args_os().skip(1).any(|a| a == ROUND)
+        && round_asked(&std::env::args_os().collect::<Vec<_>>())
     {
         std::process::exit(door::FOLDER.round(root, "").code());
     }
@@ -300,5 +307,14 @@ mod tests {
         assert!(asked(&args(&["glaukopis", "-psn_0_1", "--phone"])));
         assert!(!asked(&args(&["glaukopis"])));
         assert!(!asked(&args(&["--phone"])), "the program's own name is not an argument");
+    }
+
+    #[test]
+    fn a_round_is_asked_for_by_its_argument_wherever_it_stands_after_the_program() {
+        let args = |list: &[&str]| list.iter().map(OsString::from).collect::<Vec<_>>();
+        assert!(round_asked(&args(&["glaukopis", "--phone", "--round"])));
+        assert!(round_asked(&args(&["glaukopis", "--round", "--phone"])));
+        assert!(!round_asked(&args(&["glaukopis", "--phone"])));
+        assert!(!round_asked(&args(&["--round"])), "the program's own name is not an argument");
     }
 }
