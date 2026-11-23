@@ -4,7 +4,8 @@
 # macOS is made twice, for Apple silicon on macos-latest and for Intel on
 # macos-15-intel. That is the last Intel Mac GitHub offers, until the autumn
 # of 2027; after it, the Intel build has to be cross-compiled on Apple
-# silicon, with an Intel Tesseract from a Homebrew run under Rosetta.
+# silicon, Tesseract with it (packaging/macos/tesseract.sh, given
+# CMAKE_OSX_ARCHITECTURES=x86_64).
 # The installers are not signed: Windows asks once whether to run the
 # installer; macOS needs the app to be let open under Privacy & Security in
 # the System Settings the first time (see docs/guide.md). All are kept as artifacts of the run, not
@@ -139,25 +140,14 @@ jobs:
           cp work/pandoc/*/share/doc/pandoc/COPYRIGHT* resources/bin/licenses/ 2>/dev/null || true
           resources/bin/pandoc --version | head -1
 
-      # Homebrew's Tesseract, with the libraries it needs copied beside it and
-      # pointed to there, so that it runs on a Mac without Homebrew; and its
-      # folder of data whole: English, and the configurations and the font it
-      # makes PDFs and TSV with. Homebrew builds for the macOS it runs on, so
-      # the log says which macOS this Tesseract was built for at the least.
+      # Tesseract built from its sources for the oldest macOS the application
+      # runs on, with what it reads pictures with built into it, and its data:
+      # English, the orientation of pages, its configurations and the font of
+      # its PDFs (packaging/macos/tesseract.sh). Homebrew's was built for the
+      # macOS of GitHub's Mac, which older Macs refused to run.
       - name: Tesseract for macOS
         if: runner.os == 'macOS'
-        continue-on-error: true
-        run: |
-          brew install tesseract dylibbundler
-          mkdir -p resources/bin/tesseract/tessdata
-          cp "$(brew --prefix tesseract)/bin/tesseract" resources/bin/tesseract/
-          chmod u+w resources/bin/tesseract/tesseract
-          dylibbundler -od -b -x resources/bin/tesseract/tesseract -d resources/bin/tesseract/libs -p @executable_path/libs/
-          for f in resources/bin/tesseract/tesseract resources/bin/tesseract/libs/*; do codesign --force -s - "$f"; done
-          cp -RL "$(brew --prefix tesseract)/share/tessdata/." resources/bin/tesseract/tessdata/
-          resources/bin/tesseract/tesseract --version
-          otool -l resources/bin/tesseract/tesseract | grep -A4 LC_BUILD_VERSION | grep minos || true
-          TESSDATA_PREFIX="$PWD/resources/bin/tesseract/tessdata" resources/bin/tesseract/tesseract --list-langs
+        run: packaging/macos/tesseract.sh resources/bin/tesseract
 
       # ---- the application ----
 

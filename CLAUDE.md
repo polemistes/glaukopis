@@ -157,6 +157,7 @@ which starts it where it takes `src-tauri` for the application.
 - `packaging/`: `android/` (what a build for Android needs of the machine,
   `env.sh`; the owl set for a launcher, `make-icon.py`; `out/`, not in git,
   for an app built to be tried), `arch/` (PKGBUILD, and `release/` for the tagged one),
+  `macos/` (Tesseract built from its sources for the oldest macOS, for the installers),
   `linux/` (the desktop file, the command `glaukopis-note`, and the file that
   tells Firefox of the helper, which the packages put in the system's
   place), `server/`, `web/`, `release-x.y.z/` (the website folder of a

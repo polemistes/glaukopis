@@ -4763,11 +4763,9 @@ or you would rather use the Terminal, run `xattr -cr
 On a Mac, Glaukopis draws its window with Safari's engine, and needs
 Safari 16.4 or newer, which macOS 11 Big Sur and later get with *Software
 Update*; on an older system it says so at its start, and goes no further.
-The Tesseract that comes with Glaukopis may need a newer macOS than
-Glaukopis itself. Where it does, it is not used, and *Settings* ›
-*Programs* says which macOS it needs: text in scans and images is then read
-only with a Tesseract installed otherwise, told of under *Where Tesseract
-is*.
+A program Glaukopis finds that is made for a newer macOS than the Mac has,
+such as a Tesseract copied from another Mac, is not used, and *Settings* ›
+*Programs* says which macOS it needs.
 
 ### New versions
 
