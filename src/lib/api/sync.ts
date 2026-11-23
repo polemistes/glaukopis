@@ -68,8 +68,6 @@ export interface Apart {
 }
 
 export const syncStatus = () => call<SyncStatus>('sync_status');
-/** What the system calls this computer: offered as its name among the others. */
-export const syncComputer = () => call<string>('sync_computer');
 /** Begins with this computer as the first. The password is the server's, where it asks one. */
 export const syncStart = (server: string, name: string, password: string | null) =>
   call<SyncStatus>('sync_start', { server, name, password });

@@ -9,7 +9,7 @@
 // that the project was written in apart, and Show the changes opens the
 // review from the moment kept. A reference added to the library of one is
 // in the library of the other. A project deleted on one goes from the list
-// of the other, into its trash. Last, Stop synchronizing on this computer,
+// of the other, into its trash. Last, Stop synchronizing on this device,
 // on both: with the last, nothing is left on the server.
 //
 
@@ -252,15 +252,15 @@ try {
     both.every((t) => /Written at the desk/.test(t) && /Written on the laptop/.test(t)),
     both.join(' ‖ '),
   );
-  const apartToast = await laptop.waitForText('.toaster .toast', 'was written in on two computers', 15000);
+  const apartToast = await laptop.waitForText('.toaster .toast', 'was written in on two devices', 15000);
   const toast = await laptop.text(apartToast);
-  check('the second says that the project was written in on two computers apart', toast.includes('“Wrath and the hero” was written in on two computers while they were apart.'), toast);
+  check('the second says that the project was written in on two computers apart', toast.includes('“Wrath and the hero” was written in on two devices while they were apart.'), toast);
   // The history is kept on the second by then, which the toast asks; where it were not, the toast would
   // offer the earlier versions instead.
   check('with Show the changes', toast.includes('Show the changes'), toast);
   check(
     'and the first, which met the server first, says nothing of it',
-    !(await desk.exec(`return Array.from(document.querySelectorAll('.toaster .toast')).some((t) => t.textContent.includes('was written in on two computers'))`)),
+    !(await desk.exec(`return Array.from(document.querySelectorAll('.toaster .toast')).some((t) => t.textContent.includes('was written in on two devices'))`)),
   );
   await laptop.screenshot('synchronization-8-apart');
   await laptop.clickText('.toaster .toast .action', 'Show the changes');
@@ -276,10 +276,10 @@ try {
   );
   check(
     'Show the changes opens the review from the moment the two met, with what the other wrote',
-    review.chosen === 'the computers met' && review.own && review.changes > 0,
+    review.chosen === 'the devices met' && review.own && review.changes > 0,
     JSON.stringify(review),
   );
-  check('the review says from when', (await laptop.text('.review-panel')).includes('Since “the computers met”'));
+  check('the review says from when', (await laptop.text('.review-panel')).includes('Since “the devices met”'));
   await laptop.screenshot('synchronization-9-review');
   const seen = await invoke(laptop, 'project_apart', { id: await laptop.exec(`return window.__glaukopisHistory.history.id`) });
   check('and what was kept of it is seen, and forgotten', seen === null, JSON.stringify(seen));
@@ -329,7 +329,7 @@ try {
   // ---- stopping ----
   await openSync(laptop);
   await laptop.click('[data-sync-stop]');
-  await laptop.waitForText('dialog h2', 'Stop synchronizing on this computer?');
+  await laptop.waitForText('dialog h2', 'Stop synchronizing on this device?');
   const asked = await laptop.exec(`return Array.from(document.querySelectorAll('dialog[open]')).map((d) => d.textContent).join(' ')`);
   check('stopping is asked once more, and says that what is here stays', asked.includes('stays here as it is') && !asked.includes('nothing is left on the server'), asked.replace(/\s+/g, ' '));
   await laptop.screenshot('synchronization-11-stop');
@@ -343,7 +343,7 @@ try {
   await until('the first to list itself alone', async () => (await desk.count('[data-sync-computer]')) === 1, 10000);
   check('the first lists itself alone', true);
   await desk.click('[data-sync-stop]');
-  await desk.waitForText('dialog h2', 'Stop synchronizing on this computer?');
+  await desk.waitForText('dialog h2', 'Stop synchronizing on this device?');
   const last = await desk.exec(`return Array.from(document.querySelectorAll('dialog[open]')).map((d) => d.textContent).join(' ')`);
   check('the last to stop is told that nothing is left on the server', last.includes('nothing is left on the server'), last.replace(/\s+/g, ' '));
   await desk.clickText('dialog footer button', 'Stop synchronizing');

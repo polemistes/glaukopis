@@ -3860,6 +3860,8 @@ If you write on more than one computer, Glaukopis can keep them the same:
 what you make or write on one is on the others too. This goes through a
 server, the same kind as for working together (see `server.md`), and it is
 turned on once for each computer, under **Synchronization** in the settings.
+There they are called devices, since a phone is one of them too; what a
+phone holds is told in its own chapter.
 
 It is not sharing. Nobody else is let in, and nothing is chosen project by
 project: every project is on every computer, those you make later too. It
@@ -3871,7 +3873,7 @@ the computer (the name the system gives it is offered), keep **Start here**,
 and press **Start synchronizing**. Where the server asks for a password,
 the field for it comes up.
 
-**To add another computer**, press **Add a computer…** on one that is
+**To add another computer**, press **Add a device…** on one that is
 synchronized already. It shows a code, which can be used once, within an
 hour. On the new computer, enter the same server and a name, choose **Join
 with a code**, enter the code, and press **Join**. What each held before is
@@ -3930,7 +3932,7 @@ When two computers were both written in while they could not reach each
 other, nothing is lost: when they meet, each is given what the other wrote,
 and the project holds both. Before it is brought together, the project as it
 stood is kept among its earlier versions, and you are told: **“Name” was
-written in on two computers while they were apart.** **Show the changes**
+written in on two devices while they were apart.** **Show the changes**
 opens the project, with the changes since the two met in the document pane,
 to be gone through as in **Reviewing changes** below, those of your other
 computer among them. The review needs the history of the project; where it
@@ -3949,12 +3951,12 @@ unless it was written in on one of them since: then it is kept, on all of
 them. Brought back from the trash, it comes back on the others too.
 Emptying the trash is done on each computer.
 
-**The computers** are listed in the settings, with when each was last seen.
+**The devices** are listed in the settings, with when each was last seen.
 Any of them can **Rename** any, and **Remove** another, as one that was
-lost. What is on a removed computer stays there; it is synchronized no more,
+lost. What is on a removed device stays there; it is synchronized no more,
 and says so in its settings.
 
-**Stop synchronizing on this computer** takes this computer out, after it
+**Stop synchronizing on this device** takes this computer out, after it
 has asked. What is on it stays as it is. Where it is the last computer,
 nothing is left on the server. It can join again later with a code, as a new
 computer does.

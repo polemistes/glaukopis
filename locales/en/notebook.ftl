@@ -61,7 +61,7 @@ notebook-org-first-box = Unsorted
 
 # A file a note holds, as it stands in the note: opened by two presses.
 notebook-file-open-named = Open { $name }
-notebook-file-not-here = The file is not on this computer
+notebook-file-not-here = The file is not on this device
 
 # Files that could not be taken in as notes, said in one message.
 notebook-files-not-taken = Some files could not be taken in

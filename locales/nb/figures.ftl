@@ -138,7 +138,7 @@ figures-targets-hint = Ordene følger det de viser til: nummeret, og hva Utseend
 
 ## Vist av stilarket, der siden ikke har noe element for ordene.
 
-figures-picture-absent = Bildet finnes ikke på denne datamaskinen
+figures-picture-absent = Bildet finnes ikke på denne enheten
 figures-picture-unread = Bildet kunne ikke leses: { $reason }
 figures-caption-placeholder = Bildetekst
 

@@ -139,7 +139,7 @@ figures-targets-hint = A cross-reference follows what it refers to: its number, 
 
 ## Shown by the stylesheet, where the page has no element for the words.
 
-figures-picture-absent = The image is not on this computer
+figures-picture-absent = The image is not on this device
 # A picture that is on this computer and could not be read: the reason is what the reading said.
 figures-picture-unread = The image could not be read: { $reason }
 figures-caption-placeholder = What is said of the image
