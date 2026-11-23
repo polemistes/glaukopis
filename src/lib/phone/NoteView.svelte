@@ -296,32 +296,33 @@
     onrun={run}
     onundo={() => notebook.undo()}
   />
+
+  <!-- The sheets lie over the place, from the bottom of the screen. -->
+  <Sheet open={moreOpen} title={t('phone-more')} onclose={() => (moreOpen = false)}>
+    <div class="more">
+      <button
+        type="button"
+        class="action"
+        disabled={!notebook.canRedo}
+        data-phone-redo
+        onclick={redo}
+      >
+        <Redo2 size={20} />
+        <span>{t('notebook-redo')}</span>
+      </button>
+      <button type="button" class="action danger" data-phone-delete onclick={() => void remove()}>
+        <Trash2 size={20} />
+        <span>{t('common-delete')}</span>
+      </button>
+    </div>
+  </Sheet>
+
+  <BoxSheet {notebook} note={id} open={boxesOpen} onclose={() => (boxesOpen = false)} />
+
+  {#if opened}
+    <SourceSheet {notebook} note={id} source={opened.source} onclose={() => (opened = null)} />
+  {/if}
 </section>
-
-<Sheet open={moreOpen} title={t('phone-more')} onclose={() => (moreOpen = false)}>
-  <div class="more">
-    <button
-      type="button"
-      class="action"
-      disabled={!notebook.canRedo}
-      data-phone-redo
-      onclick={redo}
-    >
-      <Redo2 size={20} />
-      <span>{t('notebook-redo')}</span>
-    </button>
-    <button type="button" class="action danger" data-phone-delete onclick={() => void remove()}>
-      <Trash2 size={20} />
-      <span>{t('common-delete')}</span>
-    </button>
-  </div>
-</Sheet>
-
-<BoxSheet {notebook} note={id} open={boxesOpen} onclose={() => (boxesOpen = false)} />
-
-{#if opened}
-  <SourceSheet {notebook} note={id} source={opened.source} onclose={() => (opened = null)} />
-{/if}
 
 <style>
   .note {
