@@ -203,7 +203,10 @@ pub fn notebook_to_library(
 /// leaves the store. The files the notebook said it held when it was last
 /// saved are held as well, so that a page that read less than there is
 /// removes nothing a saved note holds. Done once in a run; asked again, it
-/// does nothing. Gives how many files left the store.
+/// does nothing. Gives how many files left the store. Only the files that
+/// were the notebook's when the run began are judged: the page does not
+/// wait for the sweep, and what is taken out of the inbox or put into a
+/// note before it comes to the library is in no list the page read.
 #[tauri::command(async)]
 pub fn notebook_sweep(state: State<'_, AppState>, held: Vec<String>) -> CommandResult<usize> {
     Ok(sweep(&state, &held)?)
@@ -233,7 +236,10 @@ pub(crate) fn sweep(state: &AppState, held: &[String]) -> glaukopis_core::Result
     }
     let saved = state.notebook.held();
     let held: HashSet<&str> = held.iter().chain(&saved).map(String::as_str).collect();
-    let swept = library.notebook_sweep(&held);
+    // Of the files that were the notebook's when the run began, and that
+    // no note was given since: what a note was given in this run before the
+    // sweep is in no list the page read (`Library::notebook_sweep_of_run`).
+    let swept = library.notebook_sweep_of_run(&held);
     if swept.is_err() {
         // What failed may be asked again.
         state.notebook_swept.store(false, Ordering::SeqCst);
@@ -556,33 +562,72 @@ mod tests {
         assert!(state.inbox.ids().is_empty(), "taken, and gone from the inbox");
     }
 
+    /// The folder opened as when the application starts: a run. The claim
+    /// of the run before is let go when its state is dropped. Yet, run
+    /// beside the other tests, the folder was now and then found in use
+    /// right after, and never when the test ran alone or the tests one at
+    /// a time. What is believed to hold the claim for that instant, and
+    /// was not proven: a program that another test is starting just then
+    /// (each opening of a folder asks the programs it finds for their
+    /// versions), which between its fork and its exec holds every
+    /// descriptor this process has open, that of the claim among them. So
+    /// a folder found in use is asked for again.
+    fn run(root: &std::path::Path) -> Box<AppState> {
+        let began = std::time::Instant::now();
+        loop {
+            match crate::starting::opening(root.to_owned(), false, None, |_| {}) {
+                crate::starting::Opening::Ready(state) => break state,
+                crate::starting::Opening::InUse(_) if began.elapsed() < Duration::from_secs(10) => {
+                    std::thread::sleep(Duration::from_millis(5))
+                }
+                crate::starting::Opening::InUse(_) => panic!("the data folder stays in use"),
+                crate::starting::Opening::Failed(error) => panic!("the data folder was not opened: {error}"),
+            }
+        }
+    }
+
+    #[test]
+    fn a_picture_taken_from_the_inbox_before_the_sweep_is_kept_and_the_file_of_a_note_deleted_before_the_run_is_swept()
+    {
+        let tmp = tempfile::tempdir().unwrap();
+        let root = tmp.path().join("data");
+        // The run before: a picture the notebook holds alone, whose note was deleted.
+        let state = run(&root);
+        let old = state.library().notebook_take_image("owl.png", include_bytes!("../../icons/32x32.png")).unwrap().hash;
+        drop(state);
+
+        // This run. The page has read the notebook, and its list holds no
+        // file. Before the sweep it asked for comes to the library, what
+        // the plugin collected while the application was closed is taken
+        // out of the inbox: a region of a page, as a picture.
+        let state = run(&root);
+        state.inbox.put(&collected(Kind::Region, ""), Some(include_bytes!("../../icons/64x64.png"))).unwrap();
+        let items = take_all(&state);
+        let region = items[0].image.as_ref().expect("the picture was taken into the store").file.hash.clone();
+        assert!(state.inbox.ids().is_empty(), "it is nowhere but in the store now");
+
+        assert_eq!(sweep(&state, &[]).unwrap(), 1, "the file no note holds leaves the store");
+        assert!(state.library().file_view(&old).is_none() && state.library().stored_path(&old).is_none());
+        assert!(state.library().stored_path(&region).is_some(), "the picture just taken is still in the store");
+        assert!(state.library().file_view(&region).is_some(), "and so is its record");
+        drop(state);
+
+        // The next run judges it by a list read after it came: held by a
+        // note it stays, and held by none it goes.
+        let state = run(&root);
+        assert_eq!(sweep(&state, std::slice::from_ref(&region)).unwrap(), 0);
+        assert!(state.library().stored_path(&region).is_some());
+        drop(state);
+        let state = run(&root);
+        assert_eq!(sweep(&state, &[]).unwrap(), 1);
+        assert!(state.library().stored_path(&region).is_none());
+    }
+
     #[test]
     fn nothing_is_swept_in_a_run_where_the_notebook_was_refused() {
         let tmp = tempfile::tempdir().unwrap();
         let root = tmp.path().join("data");
-        // The folder opened as when the application starts: a run. The claim
-        // of the run before is let go when its state is dropped. Yet, run
-        // beside the other tests, the folder was now and then found in use
-        // right after, and never when this test ran alone or the tests one
-        // at a time. What is believed to hold the claim for that instant,
-        // and was not proven: a program that another test is starting just
-        // then (each opening of a folder asks the programs it finds for
-        // their versions), which between its fork and its exec holds every
-        // descriptor this process has open, that of the claim among them.
-        // So a folder found in use is asked for again.
-        let open = || {
-            let began = std::time::Instant::now();
-            loop {
-                match crate::starting::opening(root.clone(), false, None, |_| {}) {
-                    crate::starting::Opening::Ready(state) => break state,
-                    crate::starting::Opening::InUse(_) if began.elapsed() < Duration::from_secs(10) => {
-                        std::thread::sleep(Duration::from_millis(5))
-                    }
-                    crate::starting::Opening::InUse(_) => panic!("the data folder stays in use"),
-                    crate::starting::Opening::Failed(error) => panic!("the data folder was not opened: {error}"),
-                }
-            }
-        };
+        let open = || run(&root);
         // Where the engine of the synchronization keeps whether the notebook was refused at its last exchange.
         let refused = root.join("sync").join("notebook-refused.json");
         let keep = |said: &str| {
