@@ -23,9 +23,10 @@
 // that receives. In that note: the seven tools are in the row and within the
 // window; file('plate.png', ...): a figure in the text, the file its source;
 // file('paper.pdf', ...): a file at the note's end; a file of two megabytes
-// and a half of pseudo-random bytes, which goes in five pieces (the calls of
-// the page to the shell are counted): the store's file is the one the script
-// worked out and notebook/taking holds nothing; a photograph handed to the
+// and a half of pseudo-random bytes, which goes in five pieces (counted by
+// taking.test.ts: the page's calls cannot be counted from a script): the
+// store's file is the one the script worked out and notebook/taking holds
+// nothing; a photograph handed to the
 // field of the camera, as the camera hands one: a figure, and the Android
 // part is told once. Back: the notes, and `leave` not asked. The command
 // `notebook_take_files` is refused, as the phone's list holds it. No errors
@@ -380,14 +381,10 @@ try {
     JSON.stringify(row),
   );
 
-  // Counted: the calls of the page to the shell that send a piece of a file.
-  await phone.exec(`const invoke = window.__TAURI_INTERNALS__.invoke;
-    window.__pieces = 0;
-    window.__TAURI_INTERNALS__.invoke = function (command, ...rest) {
-      if (command === 'notebook_take_piece') window.__pieces++;
-      return invoke.call(this, command, ...rest);
-    };
-    return true;`);
+  // The calls of the page to the shell cannot be counted from the page:
+  // Tauri defines `invoke` and `ipc` of `__TAURI_INTERNALS__` unwritable and
+  // frozen. How many pieces a file goes in is held by `taking.test.ts`
+  // beside the code; here, that the file arrives whole and leaves nothing.
 
   await hook(phone, 'file', 'plate.png', PLATE.toString('base64'));
   await sleep(500);
@@ -418,8 +415,6 @@ try {
     SCAN,
   );
   await sleep(500);
-  const pieces = await phone.exec(`return window.__pieces;`);
-  check('a file of two and a half megabytes goes in five pieces, and each of the two small ones in one', pieces === 5 + 1 + 1, String(pieces));
   const hash = sha(scan);
   const stored = filesUnder(join(store, hash.slice(0, 2), hash));
   check(
