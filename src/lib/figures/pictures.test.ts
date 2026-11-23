@@ -49,3 +49,16 @@ describe('a picture that cannot be shown', () => {
     expect(holder.title).toBe('');
   });
 });
+
+describe('a picture tried again', () => {
+  it('is shown once it has come, where it was not there before', async () => {
+    read.mockRejectedValueOnce({ kind: 'not-found', message: 'the picture was not found' });
+    const name = hash(3);
+    expect((await shownOf(name)).state).toBe('absent');
+    read.mockResolvedValueOnce('/store/picture.png');
+    const url = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:picture');
+    await pictures.again();
+    expect(pictures.of(name, 'png')).toEqual({ url: 'blob:picture', state: 'shown' });
+    expect(url).toHaveBeenCalled();
+  });
+});

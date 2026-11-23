@@ -1,0 +1,24 @@
+/*
+ * The measures of a finger, on the phone's page alone (stage 2 of
+ * docs/plans/an-app-for-android.md): what is pressed is at least 44 pixels
+ * high and wide. The shared buttons, fields and segmented controls read
+ * their heights from these, and are as they were where nothing sets them.
+ */
+:root[data-phone] {
+  --control-h: 44px;
+  --control-h-sm: 40px;
+  --control-h-lg: 44px;
+  --segmented-h: 44px;
+  --segmented-h-sm: 40px;
+  /* The least height of a row that holds words: the words decide the rest. */
+  --phone-row: 56px;
+  /* The room at either side of what a place shows. */
+  --phone-gutter: 16px;
+}
+
+:root[data-phone] body {
+  /* Nothing scrolls the page as a whole: each place scrolls what is its own. */
+  overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+}
