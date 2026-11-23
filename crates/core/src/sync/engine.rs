@@ -744,12 +744,18 @@ impl Sync {
     }
 
     /// Whether the notebook's files lie otherwise than at its last
-    /// exchange, and the document here holds something beyond what the
-    /// server was last seen to have. The document is read only where the
-    /// files lie otherwise. What was deleted in a document is in what it
-    /// holds beyond another always (`whole::beyond`): a notebook in which
-    /// something was deleted once, and whose files were written since the
-    /// last exchange, is said to hold something the server lacks.
+    /// exchange, and the document here holds more than it held at the
+    /// moment kept then (`sync.had`, kept with what was last seen of the
+    /// server's document): a change, or a deletion, made since. All it held
+    /// at that moment the server holds: what it had was sent, and what came
+    /// was taken in. The document is read only where the files lie
+    /// otherwise.
+    ///
+    /// It is not asked what the document holds beyond the state vector the
+    /// server was last seen at (`whole::beyond`): what was deleted is in
+    /// that always, so a notebook in which anything was ever deleted would
+    /// be said to wait whenever its files were written since, as when its
+    /// page saves the whole with nothing new in it.
     fn notebook_waits(&self, joined: &Joined) -> bool {
         let dir = self.notebook.dir();
         let cursor = kept::cursor(dir, &joined.home, NOTEBOOK);
@@ -757,9 +763,11 @@ impl Sync {
         if whole::lies(dir) == cursor.as_ref().map(|c| c.lies).unwrap_or_default() {
             return false;
         }
-        let since = cursor.and_then(|c| c.since).as_deref().and_then(unhex);
-        match (whole::read(dir), since) {
-            (Ok(Some(here)), Some(since)) => whole::beyond(&here, &since).map_or(true, |more| !whole::nothing(&more)),
+        // The moment is of the exchange with this home, as what was seen then is; of a notebook never exchanged there is none.
+        let then = cursor.and_then(|_| kept::had(dir)).filter(|moment| !moment.is_empty());
+        match (whole::read(dir), then) {
+            // A moment that cannot be read says nothing of what was sent.
+            (Ok(Some(here)), Some(then)) => whole::holds_more(&here, &then).unwrap_or(true),
             (Ok(Some(here)), None) => !whole::nothing(&here),
             (Ok(None), _) => false,
             // Written to since, and not readable: what it holds cannot be said to have been sent.

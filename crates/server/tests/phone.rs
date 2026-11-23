@@ -198,6 +198,28 @@ impl Device {
         self.notebook.append(&doc.transact().encode_state_as_update_v1(&before), now_ms()).unwrap();
     }
 
+    /// Takes a note away, as its page would: a deletion, and nothing added.
+    fn take_note_away(&self, words: &str) {
+        let doc = self.notebook_open();
+        let notes = doc.get_or_insert_map("notes");
+        let key = {
+            let txn = doc.transact();
+            let found =
+                notes.iter(&txn).find_map(|(key, value)| (value.to_string(&txn) == words).then(|| key.to_owned()));
+            found.expect("the note is there")
+        };
+        let before = doc.transact().state_vector();
+        notes.remove(&mut doc.transact_mut(), &key);
+        self.notebook.append(&doc.transact().encode_state_as_update_v1(&before), now_ms()).unwrap();
+    }
+
+    /// Saves the notebook whole, as its page does now and then: the state
+    /// written anew and the log emptied, with nothing new in it.
+    fn save_notebook(&self) {
+        let whole = whole::read(self.notebook.dir()).unwrap().expect("there is a notebook");
+        self.notebook.save_state(&whole, &Default::default()).unwrap();
+    }
+
     fn notes(&self) -> Vec<String> {
         let doc = self.notebook_open();
         let notes = doc.get_or_insert_map("notes");
@@ -1156,6 +1178,9 @@ async fn a_phone_says_that_what_was_written_waits_while_the_server_is_not_reache
         let (computer, phone) = a_computer_and_a_phone(&address);
         computer.note("from the desk");
         phone.note("from the street");
+        // A note taken away again, so that the notebook holds a deletion, as every notebook that is written in does.
+        phone.note("thought better of");
+        phone.take_note_away("thought better of");
         settle(&[&computer, &phone]);
         assert_eq!(phone.once(), (State::Idle, false));
 
@@ -1167,16 +1192,33 @@ async fn a_phone_says_that_what_was_written_waits_while_the_server_is_not_reache
         let server = phone.looks_at(&nowhere);
         assert_eq!(phone.once(), (State::Offline, false), "nothing was written here that the server lacks");
 
+        // The notebook saved whole, as its page saves it, with nothing new
+        // in it: its files lie otherwise, and it holds no more than it did.
+        phone.save_notebook();
+        assert_eq!(phone.once(), (State::Offline, false), "a save of the whole is nothing that waits");
+
         // A note written.
         phone.note("written under ground");
         assert_eq!(phone.once(), (State::Offline, true), "what was written waits");
         assert_eq!(phone.once(), (State::Offline, true), "and goes on waiting");
+        phone.save_notebook();
+        assert_eq!(phone.once(), (State::Offline, true), "also when the whole is saved with it");
 
         // The server reached again.
         phone.looks_at(&server);
         assert_eq!(phone.once(), (State::Idle, false), "sent, it waits no more");
         computer.round();
         assert!(computer.notes().contains(&"written under ground".to_owned()));
+
+        // A note taken away while the server is not reached waits too, though nothing is added by it.
+        phone.looks_at(&nowhere);
+        assert_eq!(phone.once(), (State::Offline, false));
+        phone.take_note_away("written under ground");
+        assert_eq!(phone.once(), (State::Offline, true), "a deletion alone waits");
+        phone.looks_at(&server);
+        assert_eq!(phone.once(), (State::Idle, false));
+        computer.round();
+        assert!(!computer.notes().contains(&"written under ground".to_owned()));
 
         // A picture taken while the server is not reached waits as a note does: its record is the library's.
         phone.looks_at(&nowhere);

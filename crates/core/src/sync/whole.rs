@@ -140,6 +140,26 @@ pub fn holds(whole: &[u8], moment: &[u8]) -> Result<bool> {
     }))
 }
 
+/// Whether a whole document holds more than it held at an earlier `moment`
+/// of its own: a change, or a deletion, made since. The mirror of `holds`.
+/// What a document holds beyond a state vector (`beyond`) cannot say this,
+/// since what was deleted is in it always: a document in which anything was
+/// ever deleted would hold more than every moment.
+pub fn holds_more(whole: &[u8], moment: &[u8]) -> Result<bool> {
+    let whole = change(whole)?;
+    let then = Snapshot::decode_v1(moment).map_err(unread)?;
+    let vector = whole.state_vector();
+    if vector.iter().any(|(client, clock)| *clock > then.state_map.get(client)) {
+        return Ok(true);
+    }
+    let deleted = whole.delete_set();
+    Ok(deleted.client_ids().any(|client| match (deleted.get(&client), then.delete_set.get(&client)) {
+        (Some(now), Some(then)) => !now.subset_of(then),
+        (Some(now), None) => !now.is_empty(),
+        (None, _) => false,
+    }))
+}
+
 /// What a project calls itself: the name in the map `meta` of its document,
 /// which the interface writes. For this alone the document is made, since
 /// a map is read from no bytes.
@@ -264,6 +284,35 @@ pub(crate) mod tests {
         assert!(holds(&deleted, &moment(&deleted).unwrap()).unwrap());
         assert!(!holds(&early, &moment(&written).unwrap()).unwrap(), "words are missing");
         assert!(!holds(&written, &moment(&deleted).unwrap()).unwrap(), "a deletion alone is missed too");
+    }
+
+    #[test]
+    fn a_document_holds_more_than_at_an_earlier_moment_only_where_something_was_written_or_deleted_since() {
+        let a = Written::new();
+        a.write(0, "Sing, goddess");
+        let early = a.whole();
+        a.take_away(0, 6);
+        let then = a.whole();
+        let at = moment(&then).unwrap();
+        assert!(!holds_more(&then, &at).unwrap(), "as it was at the moment, it holds no more");
+        // The same document written anew by another that holds it, as when the whole is saved.
+        let saved = Written::new();
+        saved.take_in(&then);
+        assert!(!holds_more(&saved.whole(), &at).unwrap(), "nor where it is written whole again");
+        assert!(!holds_more(&early, &at).unwrap(), "nor where it holds less");
+        // What it holds beyond its own state vector is not nothing, for the deletion in it.
+        let beyond_itself = beyond(&then, &vector(&then).unwrap()).unwrap();
+        assert!(!nothing(&beyond_itself), "which what a document holds beyond a state vector cannot say");
+
+        a.write(7, ", the wrath");
+        assert!(holds_more(&a.whole(), &at).unwrap(), "words written since");
+        let deleting = Written::new();
+        deleting.take_in(&then);
+        deleting.take_away(0, 3);
+        assert!(holds_more(&deleting.whole(), &at).unwrap(), "a deletion alone, made since");
+        // A moment before anything was deleted, and a document that only deleted since.
+        assert!(holds_more(&then, &moment(&early).unwrap()).unwrap());
+        assert!(holds_more(&then, b"\xff\xff no moment").is_err());
     }
 
     #[test]
